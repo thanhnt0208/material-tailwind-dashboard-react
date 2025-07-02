@@ -10,7 +10,7 @@ export function Users() {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
+    axios.get("https://api-ndolv2.nongdanonline.vn/users/my", {
       headers: { Authorization: "Bearer YOUR_TOKEN" }
     })
     .then(res => setUsers(res.data))
