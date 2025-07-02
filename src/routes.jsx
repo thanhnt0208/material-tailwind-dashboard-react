@@ -37,9 +37,9 @@ export const routes = [
       },
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "notifications",
-        path: "/notifications",
-        element: <Notifications />,
+        name: "Accept Farms",
+        path: "/AcceptFarm",
+        element: <AcceptFarm />,
       },
     ],
   },
