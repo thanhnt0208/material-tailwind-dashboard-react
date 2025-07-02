@@ -6,11 +6,8 @@ import {
   ServerStackIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
-<<<<<<< Updated upstream
 import { Home, Users, Tables, AcceptFarm } from "@/pages/dashboard";
-=======
-import { Home, User , Tables, AcceptFarm } from "@/pages/dashboard";
->>>>>>> Stashed changes
+
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -28,19 +25,11 @@ export const routes = [
         element: <Home />,
       },
       {
-<<<<<<< Updated upstream
-  icon: <UserCircleIcon {...icon} />,
-  name: "users",
-  path: "/users",
-  element: <Users />,
-},
-=======
         icon: <UserCircleIcon {...icon} />,
         name: "users",
         path: "/users",
         element: <Users />,
       },
->>>>>>> Stashed changes
       {
         icon: <TableCellsIcon {...icon} />,
         name: "tables",
