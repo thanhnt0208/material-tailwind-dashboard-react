@@ -77,7 +77,7 @@ export function Tables() {
                       </td>
                       <td className={className}>
                         <Chip
-variant="gradient"
+                          variant="gradient"
                           color={online ? "green" : "blue-gray"}
                           value={online ? "online" : "offline"}
                           className="py-0.5 px-2 text-[11px] font-medium w-fit"
