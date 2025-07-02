@@ -33,9 +33,9 @@ export const routes = [
       },
       {
         icon: <TableCellsIcon {...icon} />,
-        name: "Fram",
-        path: "/Fram",
-        element: <Fram />,
+        name: "Tables",
+        path: "/Tables",
+        element: <Tables />,
       },
       {
         icon: <InformationCircleIcon {...icon} />,
