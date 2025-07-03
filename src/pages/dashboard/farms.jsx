@@ -140,4 +140,4 @@ export function Farms() {
   );
 }
 
-export default Farms;
+export default Farms
