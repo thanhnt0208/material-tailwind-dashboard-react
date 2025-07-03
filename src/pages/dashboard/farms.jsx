@@ -16,7 +16,7 @@ export function Farms() {
       try {
         const response = await fetch("https://api-ndolv2.nongdanonline.vn/adminfarms");
         const data = await response.json();
-        console.log("Fetched data:", data); // Xem cấu trúc nếu cần chỉnh sửa
+        console.log("Fetched data:", data);
         setFarmData(data);
       } catch (error) {
         console.error("Lỗi khi fetch dữ liệu:", error);
@@ -25,7 +25,6 @@ export function Farms() {
 
     fetchData();
   }, []);
-
   return (
     <div className="mt-12 mb-8 flex flex-col gap-12">
       <Card>
