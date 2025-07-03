@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
   Card, CardHeader, CardBody, CardFooter,
-  Avatar, Typography, Button, Tooltip
+  Typography, Button, Tooltip
 } from "@material-tailwind/react";
 import { Link } from "react-router-dom";
 
@@ -11,13 +11,17 @@ export function Users() {
 
   useEffect(() => {
     axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-      headers: { Authorization: "Bearer YOUR_TOKEN" }
+      headers: {
+        Authorization: "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE1NDIyMDgsImV4cCI6MTc1MTgwMTQwOH0.t5Vl4SVsFu5sty27uWWcedZXTI21uPIrzUqsoHHDV5k"
+      }
     })
-    .then(res => setUsers(res.data))
+    .then(res => {
+      console.log("Response:", res.data);
+      setUsers(res.data); // res.data là mảng user
+    })
     .catch(err => console.error("Lỗi:", err));
   }, []);
 
-  
   return (
     <div className="px-4 pb-4">
       <Typography variant="h6" color="blue-gray" className="mb-2">
@@ -27,11 +31,11 @@ export function Users() {
         Danh sách người dùng
       </Typography>
       <div className="mt-6 grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-4">
-        {users.map((user) => (
+        {Array.isArray(users) && users.map((user) => (
           <Card key={user.id} color="transparent" shadow={false}>
             <CardHeader floated={false} color="gray" className="mx-0 mt-0 mb-4 h-64 xl:h-40">
               <img
-                src={user.avatar || "/img/default-avatar.png"}
+                src={user.avatar ? user.avatar : "/img/default-avatar.png"}
                 alt={user.fullName}
                 className="h-full w-full object-cover"
               />
@@ -44,10 +48,10 @@ export function Users() {
                 Email: {user.email}
               </Typography>
               <Typography variant="small" className="font-normal text-blue-gray-500">
-                Phone: {user.phone}
+                Phone: {user.phone || "N/A"}
               </Typography>
               <Typography variant="small" className="font-normal text-blue-gray-500">
-                Role: {user.role}
+                Role: {Array.isArray(user.role) ? user.role.join(", ") : user.role}
               </Typography>
               <Typography variant="small" className="font-normal text-blue-gray-500">
                 Active: {user.isActive ? "Yes" : "No"}
