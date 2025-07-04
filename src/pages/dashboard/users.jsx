@@ -108,7 +108,11 @@ export function Users() {
             <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
             <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-            <Input label="Role" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} />
+            <Select label="Role" value={formData.role} onChange={val => setFormData({ ...formData, role: val })}>
+              <Option value="customer">Customer</Option>
+              <Option value="admin">Admin</Option>
+              <Option value="farmer">Farmer</Option>
+            </Select>
           </div>
         </DialogBody>
         <DialogFooter>
