@@ -14,7 +14,7 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: '' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: 'customer' });
 
   useEffect(() => {
     const token = localStorage.getItem("accessToken");
@@ -60,6 +60,21 @@ export function Users() {
     .catch(() => alert("Cập nhật thất bại!"));
   };
 
+  const handleDelete = (userId) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc muốn xoá người dùng này?")) return;
+
+    axios.delete(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then(() => {
+      alert("Xoá người dùng thành công!");
+      setUsers(users.filter(user => user.id !== userId));
+    })
+    .catch(() => alert("Xoá thất bại!"));
+  };
+
   return (
     <div className="px-4 pb-4">
       <Typography variant="h6" color="blue-gray" className="mb-2">
@@ -71,15 +86,9 @@ export function Users() {
       <div className="mt-6 grid grid-cols-1 gap-12 md:grid-cols-2 xl:grid-cols-4">
         {users.map((user) => (
           <Card key={user.id} color="transparent" shadow={false}>
-            {user.avatar && (
-              <CardHeader floated={false} color="gray" className="mx-0 mt-0 mb-4 h-64 xl:h-40">
-                <img
-                  src={user.avatar}
-                  alt={user.fullName}
-                  className="h-full w-full object-cover"
-                />
-              </CardHeader>
-            )}
+            <CardHeader floated={false} color="gray" className="mx-0 mt-0 mb-4 h-64 xl:h-40">
+              {user.avatar && <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />}
+            </CardHeader>
             <CardBody className="py-0 px-1">
               <Typography variant="h5" color="blue-gray" className="mb-1">
                 {user.fullName}
@@ -90,9 +99,8 @@ export function Users() {
               <Typography variant="small">Active: {user.isActive ? "Yes" : "No"}</Typography>
             </CardBody>
             <CardFooter className="mt-6 flex items-center justify-between py-0 px-1">
-              <Button variant="outlined" size="sm" onClick={() => openEdit(user)}>
-                Edit
-              </Button>
+              <Button variant="outlined" size="sm" onClick={() => openEdit(user)}>Edit</Button>
+              <Button variant="outlined" color="red" size="sm" onClick={() => handleDelete(user.id)}>Delete</Button>
             </CardFooter>
           </Card>
         ))}
