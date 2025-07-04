@@ -12,7 +12,6 @@ export function Farms() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   useEffect(() => {
     const fetchFarms = async () => {
       try {
@@ -118,18 +117,15 @@ export function Farms() {
                 <div className="flex gap-2">
   <Button
     size="sm"
-    className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white"
-  >
+    className="flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white">
     <PencilSquareIcon className="h-4 w-4" /> Sửa
   </Button>
   <Button
     size="sm"
-    className="flex items-center gap-2 bg-rose-100 text-rose-600 hover:bg-rose-200"
-  >
+    className="flex items-center gap-2 bg-rose-100 text-rose-600 hover:bg-rose-200">
     <TrashIcon className="h-4 w-4" /> Xoá
   </Button>
 </div>
-
               </td>
             </tr>
           ))}
@@ -138,7 +134,6 @@ export function Farms() {
     </CardBody>
   )}
 </Card>
-
   );
 }
 export default Farms
