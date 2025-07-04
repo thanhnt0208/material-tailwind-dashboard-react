@@ -27,14 +27,14 @@ export function Users() {
       return;
     }
     axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MzQzMDUsImV4cCI6MTc1MTg5MzUwNX0.qfl2smCZ35xZ49gwqgx8NwlkolEY2NV9hohMmG0M8do` }
     })
     .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
     .catch(() => setError("Lỗi khi tải danh sách người dùng."))
     .finally(() => setLoading(false));
 
     axios.get("https://api-ndolv2.nongdanonline.vn/admin-users/roles", {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MzQzMDUsImV4cCI6MTc1MTg5MzUwNX0.qfl2smCZ35xZ49gwqgx8NwlkolEY2NV9hohMmG0M8do` }
     })
     .then(res => setRoles(Array.isArray(res.data) ? res.data : []))
     .catch(() => setRoles(["customer", "admin", "farmer"]));
@@ -57,7 +57,7 @@ export function Users() {
 
     axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MzQzMDUsImV4cCI6MTc1MTg5MzUwNX0.qfl2smCZ35xZ49gwqgx8NwlkolEY2NV9hohMmG0M8do`,
         "Content-Type": "application/json",
       },
     })
@@ -75,7 +75,7 @@ export function Users() {
     if (!window.confirm("Bạn có chắc muốn xoá người dùng này?")) return;
 
     axios.delete(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MzQzMDUsImV4cCI6MTc1MTg5MzUwNX0.qfl2smCZ35xZ49gwqgx8NwlkolEY2NV9hohMmG0M8do` },
     })
     .then(() => {
       alert("Xoá người dùng thành công!");
