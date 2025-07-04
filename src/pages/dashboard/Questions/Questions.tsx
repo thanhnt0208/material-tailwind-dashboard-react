@@ -28,7 +28,7 @@ console.log("Có lỗi trong lúc lấy data")
 }
 
 const gotoUpdate =async(id)=>{
-navigate(`/UpdateQuestion/${id}`)
+// navigate(`/UpdateQuestion/${id}`)
 }
 console.log(questions)
 useEffect(()=>{
