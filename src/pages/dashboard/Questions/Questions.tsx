@@ -6,11 +6,11 @@ import { useNavigate } from 'react-router-dom'
 import { Oval } from 'react-loader-spinner';
 
 export const Questions = () => {
-      const [loading, setLoading] = useState(true);
-   const tokenUser= localStorage.getItem("token")
-const [questions,setQuestions]=useState([])
-const navigate=useNavigate()
-const getData=async()=>{
+  const [loading, setLoading] = useState(true);
+  const tokenUser= localStorage.getItem("token")
+  const [questions,setQuestions]=useState([])
+  const navigate=useNavigate()
+  const getData=async()=>{
 try {
 const res= await axios.get(`${BaseUrl}/admin-questions`,{
   headers:{Authorization:`Bearer ${tokenUser}` }

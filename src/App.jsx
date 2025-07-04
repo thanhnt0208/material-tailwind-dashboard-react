@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
-import FarmDetail from "./pages/dashboard/FarmDetail";
 import UpdateQuestion from "./pages/dashboard/Questions/UpdateQuestion";
 function App() {
   return (
