@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  Card, CardBody, Input, Button, Typography, Checkbox, Chip,
+  Card, CardBody, Input, Button, Typography, Checkbox, Chip, Tabs, TabsHeader, Tab
 } from "@material-tailwind/react";
 import {
   PencilSquareIcon, TrashIcon, PlusIcon,
 } from "@heroicons/react/24/solid";
 import FarmForm from "./farmForm";
 
+const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const getOpts = () => ({
+  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+});
+
 export function Farms() {
   const [farms, setFarms] = useState([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const [tab, setTab] = useState("all")
+  const [search, setSearch] = useState("");
+
   const [openForm, setOpenForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState(null);
 
   const fetchFarms = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const res = await axios.get("https://api-ndolv2.nongdanonline.vn/adminfarms", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(`${BASE_URL}/adminfarms`, getOpts());
       setFarms(res.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
@@ -30,57 +35,20 @@ export function Farms() {
     }
   };
 
-  useEffect(() => {
-    fetchFarms();
-  }, []);
-
-  const addFarm = async (newFarm) => {
+  const addFarm = async (data) => {
     try {
-      const token = localStorage.getItem("token");
-
-      const completedFarm = {
-        ...newFarm,
-        ownerInfo: {
-          name: newFarm.ownerInfo?.name || "Chưa rõ",
-          phone: newFarm.ownerInfo?.phone || "",
-          email: newFarm.ownerInfo?.email || "",
-        },
-        coordinates: {
-          lat: newFarm.coordinates?.lat || 0,
-          lng: newFarm.coordinates?.lng || 0,
-        },
-        features: newFarm.features || [],
-        phone: newFarm.phone || "",
-        zalo: newFarm.zalo || "",
-        operationTime: newFarm.operationTime || "",
-        defaultImage: newFarm.defaultImage || "",
-        services: newFarm.services || [],
-      };
-
-      console.log("📦 Dữ liệu gửi đi:", completedFarm);
-
-      await axios.post("https://api-ndolv2.nongdanonline.vn/adminfarms", completedFarm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
+      await axios.post(`${BASE_URL}/adminfarms`, data, getOpts());
+      await fetchFarms();
       alert(" Tạo farm thành công!");
-      fetchFarms();
     } catch (err) {
-      console.error(" Lỗi tạo farm:", {
-        status: err.response?.status,
-        data: err.response?.data,
-      });
-      alert("Lỗi thêm: " + (err.response?.data?.message || err.message));
+      alert("Lỗi thêm: " + (err.response?.data?.message || err.message)); 
     }
   };
 
-  const editFarm = async (id, updatedFarm) => {
+  const editFarm = async (id, data) => {
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, updatedFarm, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchFarms();
+      await axios.put(`${BASE_URL}/adminfarms/${id}`, data, getOpts());
+      await fetchFarms();
     } catch (err) {
       alert("Lỗi sửa: " + (err.response?.data?.message || err.message));
     }
@@ -90,45 +58,87 @@ export function Farms() {
     if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
     console.log(" Xoá farm với id:", id);
     try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await axios.delete(`${BASE_URL}/adminfarms/${id}`, getOpts());
       setFarms((prevFarms) => prevFarms.filter((farm) => farm._id !== id));
     } catch (err) {
       alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
     }
   };
 
-  const handleAddClick = () => {
-    setEditingFarm(null);
-    setOpenForm(true);
-  };
+  const activateFarm = async (id) => {
+    try {
+      await axios.patch(`${BASE_URL}/adminfarms/${id}/activate`, null, getOpts());
+      await fetchFarms();
+    }catch (err) {
+      alert("Lỗi kích hoạt: " + (err.response?.data?.message || err.message));
+    }
+  }
 
-  const handleEditClick = (farm) => {
-    setEditingFarm(farm);
-    setOpenForm(true);
-  };
+  const deactivateFarm = async (id) => {
+    try {
+      await axios.patch(`${BASE_URL}/adminfarms/${id}/deactivate`, null, getOpts());
+      await fetchFarms();
+    }catch (err) {
+      alert("Lỗi kích hoạt: " + (err.response?.data?.message || err.message));
+    }
+  }
 
-  const filteredFarms = farms.filter((farm) =>
+  useEffect(() => {
+    fetchFarms();
+  }, []);
+
+  const displayedFarms = farms
+  .filter((farm) => {
+    if (tab === "all") return true;
+    return farm.status === tab;
+  })
+  .filter((farm) =>
     farm.name?.toLowerCase().includes(search.toLowerCase())
   );
 
+  const approveFarm = (id) => activateFarm(id);
+  const rejectFarm = (id) => deactivateFarm(id);
   return (
     <>
       <Card className="p-6 shadow-md rounded-xl bg-white">
         <div className="flex items-center justify-between mb-6">
-          <Typography variant="h4" className="text-indigo-600">Danh sách nông trại</Typography>
-          <Button onClick={handleAddClick} color="indigo" className="flex items-center gap-2">
+          <Typography variant="h4" className="text-indigo-600">
+            Quản lý nông trại
+          </Typography>
+
+          <Tabs value={tab} className="w-full lg:w-auto">
+            <TabsHeader className="flex-nowrap overflow-x-auto whitespace-nowrap gap-2">
+              <Tab value="all" onClick={() => setTab("all")}>
+                Tất cả
+              </Tab>
+              <Tab value="pending" onClick={() => setTab("pending")}>
+                Chờ duyệt
+              </Tab>
+              <Tab value="active" onClick={() => setTab("active")}>
+                Đang hoạt động
+              </Tab>
+              <Tab value="inactive" onClick={() => setTab("inactive")}>
+                Đã khoá
+              </Tab>
+            </TabsHeader>
+          </Tabs>
+
+          <Button onClick={() => {
+            setEditingFarm(null);
+            setOpenForm(true);
+            }} 
+            color="indigo" className="flex items-center gap-2">
             <PlusIcon className="h-5 w-5" /> Thêm nông trại
           </Button>
         </div>
+
         <Input
           label="Tìm kiếm"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="mb-6"
         />
+
         {loading ? (
           <Typography className="text-indigo-500">Đang tải dữ liệu...</Typography>
         ) : error ? (
@@ -145,7 +155,7 @@ export function Farms() {
                 </tr>
               </thead>
               <tbody>
-                {filteredFarms.map((farm) => (
+                {displayedFarms.map((farm) => (
                   <tr key={farm._id} className="border-b hover:bg-indigo-50 transition">
                     <td className="px-4 py-4"><Checkbox ripple={false} /></td>
                     <td className="px-4 py-4">{farm.name}</td>
@@ -157,27 +167,71 @@ export function Farms() {
                     <td className="px-4 py-4">{farm.pricePerMonth?.toLocaleString("vi-VN") || "0"} đ</td>
                     <td className="px-4 py-4">
                       <Chip
-                        value={farm.status === "pending" ? "Chờ duyệt" : farm.status}
-                        color={farm.status === "pending" ? "amber" : "teal"}
+                        value={farm.status === "pending" ? "Chờ duyệt" : farm.status === "active" ? "Đang hoạt động" : "Đã khóa"}
+                        color={farm.status === "pending" ? "amber" : farm.status === "inactive" ? "red" : "teal"}
                         size="sm"
                       />
                     </td>
+
                     <td className="px-4 py-4">
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2 justify-start items-center">
+                        {/* Sửa */}
                         <Button
                           size="sm"
-                          onClick={() => handleEditClick(farm)}
-                          className="bg-indigo-500 text-white hover:bg-indigo-600"
+                          onClick={() => { setEditingFarm(farm); setOpenForm(true); }}
+                          className="bg-blue-600 text-white px-3 py-1 rounded-md shadow-md hover:bg-blue-700"
                         >
-                          <PencilSquareIcon className="h-4 w-4" /> Sửa
+                          <PencilSquareIcon className="h-4 w-4 mr-1" /> Sửa
                         </Button>
+
+                        {/* Xoá */}
                         <Button
                           size="sm"
                           onClick={() => deleteFarm(farm._id)}
-                          className="bg-rose-100 text-rose-600 hover:bg-rose-200"
+                          className="bg-gray-200 text-gray-800 px-3 py-1 rounded-md shadow-md hover:bg-gray-300"
                         >
-                          <TrashIcon className="h-4 w-4" /> Xoá
+                          <TrashIcon className="h-4 w-4 mr-1" /> Xoá
                         </Button>
+
+                        {/* Theo trạng thái */}
+                        {farm.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => activateFarm(farm._id)}
+                              className="bg-green-500 text-white px-3 py-1 rounded-md shadow-md hover:bg-green-600"
+                            >
+                              Duyệt
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => deactivateFarm(farm._id)}
+                              className="bg-yellow-400 text-white px-3 py-1 rounded-md shadow-md hover:bg-yellow-500"
+                            >
+                              Từ chối
+                            </Button>
+                          </>
+                        )}
+
+                        {farm.status === "inactive" && (
+                          <Button
+                            size="sm"
+                            onClick={() => activateFarm(farm._id)}
+                            className="bg-green-500 text-white px-3 py-1 rounded-md shadow-md hover:bg-green-600"
+                          >
+                            Kích hoạt
+                          </Button>
+                        )}
+
+                        {farm.status === "active" && (
+                          <Button
+                            size="sm"
+                            onClick={() => deactivateFarm(farm._id)}
+                            className="bg-yellow-400 text-white px-3 py-1 rounded-md shadow-md hover:bg-yellow-500"
+                          >
+                            Vô hiệu hoá
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
