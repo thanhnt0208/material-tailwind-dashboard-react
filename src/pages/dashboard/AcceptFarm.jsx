@@ -7,6 +7,7 @@ export function AcceptFarm() {
   const BaseUrl=`https://api-ndolv2.nongdanonline.vn`
   const [Accept, setAccept] = React.useState({});
   const [farm,setFarm]=useState([])
+  
   const AcceptFarm = async (id) => {
     // setAccept((prev) => ({ ...prev, [id]: true }));
     setFarm((prev) => prev.filter((item) => item.id !== id));
