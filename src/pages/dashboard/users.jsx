@@ -3,7 +3,7 @@ import axios from "axios";
 import {
   Card, CardHeader, CardBody, CardFooter,
   Typography, Button, Tooltip, Dialog, DialogHeader,
-  DialogBody, DialogFooter, Input
+  DialogBody, DialogFooter, Input, Select, Option
 } from "@material-tailwind/react";
 import { Link } from "react-router-dom";
 
@@ -14,24 +14,21 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: '' });
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: 'customer' });
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken") ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw";
-
+    const token = localStorage.getItem("accessToken");
     if (!token) {
       setError("Không tìm thấy access token!");
       setLoading(false);
       return;
     }
-
     axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw` }
     })
-      .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setError("Lỗi khi tải danh sách người dùng."))
-      .finally(() => setLoading(false));
+    .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
+    .catch(() => setError("Lỗi khi tải danh sách người dùng."))
+    .finally(() => setLoading(false));
   }, []);
 
   const openEdit = (user) => {
@@ -46,9 +43,7 @@ export function Users() {
   };
 
   const handleUpdate = () => {
-    const token = localStorage.getItem("accessToken") ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw";
-
+    const token = localStorage.getItem("accessToken");
     if (!token || !selectedUser) return;
 
     axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
@@ -57,12 +52,27 @@ export function Users() {
         "Content-Type": "application/json",
       },
     })
-      .then(() => {
-        alert("Cập nhật thành công!");
-        setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...formData } : u));
-        setEditOpen(false);
-      })
-      .catch(() => alert("Cập nhật thất bại!"));
+    .then(() => {
+      alert("Cập nhật thành công!");
+      setUsers(users.map(u => u.id === selectedUser.id ? { ...u, ...formData } : u));
+      setEditOpen(false);
+    })
+    .catch(() => alert("Cập nhật thất bại!"));
+  };
+
+  const handleDelete = (userId) => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+    if (!window.confirm("Bạn có chắc muốn xoá người dùng này?")) return;
+
+    axios.delete(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`, {
+      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw` },
+    })
+    .then(() => {
+      alert("Xoá người dùng thành công!");
+      setUsers(users.filter(user => user.id !== userId));
+    })
+    .catch(() => alert("Xoá thất bại!"));
   };
 
   return (
@@ -77,11 +87,7 @@ export function Users() {
         {users.map((user) => (
           <Card key={user.id} color="transparent" shadow={false}>
             <CardHeader floated={false} color="gray" className="mx-0 mt-0 mb-4 h-64 xl:h-40">
-              <img
-                src={user.avatar}
-                alt={user.fullName}
-                className="h-full w-full object-cover"
-              />
+              {user.avatar && <img src={user.avatar} alt={user.fullName} className="h-full w-full object-cover" />}
             </CardHeader>
             <CardBody className="py-0 px-1">
               <Typography variant="h5" color="blue-gray" className="mb-1">
@@ -93,9 +99,8 @@ export function Users() {
               <Typography variant="small">Active: {user.isActive ? "Yes" : "No"}</Typography>
             </CardBody>
             <CardFooter className="mt-6 flex items-center justify-between py-0 px-1">
-              <Button variant="outlined" size="sm" onClick={() => openEdit(user)}>
-                Edit
-              </Button>
+              <Button variant="outlined" size="sm" onClick={() => openEdit(user)}>Edit</Button>
+              <Button variant="outlined" color="red" size="sm" onClick={() => handleDelete(user.id)}>Delete</Button>
             </CardFooter>
           </Card>
         ))}
