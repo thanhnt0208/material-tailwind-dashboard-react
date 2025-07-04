@@ -1,1 +1,1 @@
-export const BaseUrl=`https://api-ndolv2.nongdanonline.vn`
+export const BaseUrl= `https://api-ndolv2.nongdanonline.vn`
