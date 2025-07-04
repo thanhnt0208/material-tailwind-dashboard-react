@@ -5,10 +5,10 @@ import { BaseUrl } from '@/ipconfig'
 import { useState } from 'react'
 
  export const UpdateQuestion = () => {
-   const tokenUser= localStorage.getItem("token")
+    const tokenUser= localStorage.getItem("token")
     const [questionOptions,setQuestionOptions]=useState([])
     const [questionText,setQuestionText]=useState()
-  const [questionDetail,setQuestionDetail]=useState()
+    const [questionDetail,setQuestionDetail]=useState()
     const {id}=useParams()
 
 const getQuestionByid =async()=>{
