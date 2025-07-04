@@ -7,7 +7,7 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 
-import { Home, Users , Farms, AcceptFarm,Questions } from "@/pages/dashboard";
+import { Home, Users , Farms,Questions } from "@/pages/dashboard";
 
 
 import { SignIn, SignUp } from "@/pages/auth";
@@ -38,12 +38,7 @@ export const routes = [
         path: "/Farms",
         element: <Farms />,
       },
-      {
-        icon: <InformationCircleIcon {...icon} />,
-        name: "Accept Farms",
-        path: "/AcceptFarm",
-        element: <AcceptFarm />,
-      },
+      
        {
         icon: <InformationCircleIcon {...icon} />,
         name: "Questions",

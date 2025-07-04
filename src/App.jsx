@@ -7,8 +7,7 @@ function App() {
     <Routes>
       <Route path="/dashboard/*" element={<Dashboard />} />
       <Route path="/auth/*" element={<Auth />} />
-     <Route path="/FarmDetail/:id" element={<FarmDetail />} />
-<Route path="/UpdateQuestion/:id" element={<UpdateQuestion />} />
+      <Route path="/UpdateQuestion/:id" element={<UpdateQuestion />} />
   <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
     </Routes>
   );
