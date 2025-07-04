@@ -58,18 +58,22 @@ export function Farms() {
     }
   };
 
-  const deleteFarm = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
-    try {
-      const token = localStorage.getItem("token");
-      await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      fetchFarms();
-    } catch (err) {
-      alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
-    }
-  };
+const deleteFarm = async (id) => {
+  if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
+  console.log("Xoá farm với id:", id);
+  try {
+    const token = localStorage.getItem("token");
+    await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("Xoá thành công");
+    // Xoá trực tiếp khỏi danh sách đã hiển thị
+    setFarms((prevFarms) => prevFarms.filter((farm) => farm._id !== id));
+  } catch (err) {
+    console.error("Lỗi xoá:", err);
+    alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
+  }
+};
 
   const handleAddClick = () => {
     setEditingFarm(null);
