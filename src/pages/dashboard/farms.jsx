@@ -6,7 +6,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon,
 } from "@heroicons/react/24/solid";
-import FarmForm from "./farmForm";
+import FarmForm from "./FarmForm";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
 const getOpts = () => ({
