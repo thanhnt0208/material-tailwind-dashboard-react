@@ -8,6 +8,7 @@ import { BaseUrl } from "@/ipconfig";
 export function AcceptFarm() {
     const navigate = useNavigate();
   const [farm,setFarm]=useState([])
+  
   const AcceptFarm = async (id) => {
     setFarm((prev) => prev.filter((item) => item.id !== id));
   };

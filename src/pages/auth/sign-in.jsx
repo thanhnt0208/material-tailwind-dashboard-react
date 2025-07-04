@@ -2,7 +2,7 @@ import React, {useRef, useState} from "react";
 import {Card, Input, Checkbox, Button, Typography,} from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
 import { data } from "autoprefixer";
-
+import { useMaterialTailwindController, setAuthStatus } from "@/context";
 
 
 
@@ -12,7 +12,7 @@ export function SignIn() {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
-
+  const [, dispatch] = useMaterialTailwindController();
   const emailRef = useRef();
   const passwordRef = useRef();
   
@@ -45,6 +45,7 @@ export function SignIn() {
 
       if(res.ok) {
         localStorage.setItem("token", data.accessToken);
+        setAuthStatus(dispatch, true); 
         alert("Đăng nhập thành công!");
         navigate("/dashboard/home");
       } else {
