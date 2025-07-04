@@ -63,10 +63,10 @@ export function Farms() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert("✅ Tạo farm thành công!");
+      alert(" Tạo farm thành công!");
       fetchFarms();
     } catch (err) {
-      console.error("❌ Lỗi tạo farm:", {
+      console.error(" Lỗi tạo farm:", {
         status: err.response?.status,
         data: err.response?.data,
       });
@@ -88,7 +88,7 @@ export function Farms() {
 
   const deleteFarm = async (id) => {
     if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
-    console.log("🗑️ Xoá farm với id:", id);
+    console.log(" Xoá farm với id:", id);
     try {
       const token = localStorage.getItem("token");
       await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
