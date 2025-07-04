@@ -6,7 +6,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon,
 } from "@heroicons/react/24/solid";
-import FarmForm from "./FarmForm";
+import FarmForm from "./farmForm";
 
 export function Farms() {
   const [farms, setFarms] = useState([]);
@@ -37,11 +37,39 @@ export function Farms() {
   const addFarm = async (newFarm) => {
     try {
       const token = localStorage.getItem("token");
-      await axios.post("https://api-ndolv2.nongdanonline.vn/adminfarms", newFarm, {
+
+      const completedFarm = {
+        ...newFarm,
+        ownerInfo: {
+          name: newFarm.ownerInfo?.name || "Chưa rõ",
+          phone: newFarm.ownerInfo?.phone || "",
+          email: newFarm.ownerInfo?.email || "",
+        },
+        coordinates: {
+          lat: newFarm.coordinates?.lat || 0,
+          lng: newFarm.coordinates?.lng || 0,
+        },
+        features: newFarm.features || [],
+        phone: newFarm.phone || "",
+        zalo: newFarm.zalo || "",
+        operationTime: newFarm.operationTime || "",
+        defaultImage: newFarm.defaultImage || "",
+        services: newFarm.services || [],
+      };
+
+      console.log("📦 Dữ liệu gửi đi:", completedFarm);
+
+      await axios.post("https://api-ndolv2.nongdanonline.vn/adminfarms", completedFarm, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
+      alert("✅ Tạo farm thành công!");
       fetchFarms();
     } catch (err) {
+      console.error("❌ Lỗi tạo farm:", {
+        status: err.response?.status,
+        data: err.response?.data,
+      });
       alert("Lỗi thêm: " + (err.response?.data?.message || err.message));
     }
   };
@@ -58,22 +86,19 @@ export function Farms() {
     }
   };
 
-const deleteFarm = async (id) => {
-  if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
-  console.log("Xoá farm với id:", id);
-  try {
-    const token = localStorage.getItem("token");
-    await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("Xoá thành công");
-    // Xoá trực tiếp khỏi danh sách đã hiển thị
-    setFarms((prevFarms) => prevFarms.filter((farm) => farm._id !== id));
-  } catch (err) {
-    console.error("Lỗi xoá:", err);
-    alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
-  }
-};
+  const deleteFarm = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xoá không?")) return;
+    console.log("🗑️ Xoá farm với id:", id);
+    try {
+      const token = localStorage.getItem("token");
+      await axios.delete(`https://api-ndolv2.nongdanonline.vn/adminfarms/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setFarms((prevFarms) => prevFarms.filter((farm) => farm._id !== id));
+    } catch (err) {
+      alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
+    }
+  };
 
   const handleAddClick = () => {
     setEditingFarm(null);
@@ -131,14 +156,26 @@ const deleteFarm = async (id) => {
                     <td className="px-4 py-4">{farm.area} m²</td>
                     <td className="px-4 py-4">{farm.pricePerMonth?.toLocaleString("vi-VN") || "0"} đ</td>
                     <td className="px-4 py-4">
-                      <Chip value={farm.status === "pending" ? "Chờ duyệt" : farm.status} color={farm.status === "pending" ? "amber" : "teal"} size="sm" />
+                      <Chip
+                        value={farm.status === "pending" ? "Chờ duyệt" : farm.status}
+                        color={farm.status === "pending" ? "amber" : "teal"}
+                        size="sm"
+                      />
                     </td>
                     <td className="px-4 py-4">
                       <div className="flex gap-2">
-                        <Button size="sm" onClick={() => handleEditClick(farm)} className="bg-indigo-500 text-white hover:bg-indigo-600">
+                        <Button
+                          size="sm"
+                          onClick={() => handleEditClick(farm)}
+                          className="bg-indigo-500 text-white hover:bg-indigo-600"
+                        >
                           <PencilSquareIcon className="h-4 w-4" /> Sửa
                         </Button>
-                        <Button size="sm" onClick={() => deleteFarm(farm._id)} className="bg-rose-100 text-rose-600 hover:bg-rose-200">
+                        <Button
+                          size="sm"
+                          onClick={() => deleteFarm(farm._id)}
+                          className="bg-rose-100 text-rose-600 hover:bg-rose-200"
+                        >
                           <TrashIcon className="h-4 w-4" /> Xoá
                         </Button>
                       </div>
