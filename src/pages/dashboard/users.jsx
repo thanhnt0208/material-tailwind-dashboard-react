@@ -7,9 +7,10 @@ import {
 import { Link } from "react-router-dom";
 export function Users() {
   const [users, setUsers] = useState([]);
+  const tokenUser= localStorage.getItem("token")
   useEffect(() => {
-    axios.get("https://api-ndolv2.nongdanonline.vn/users/my", {
-      headers: { Authorization: "Bearer YOUR_TOKEN" }
+    axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
+      headers: { Authorization: `Bearer ${tokenUser}` }
     })
     .then(res => setUsers(res.data))
     .catch(err => console.error("Lỗi:", err));
