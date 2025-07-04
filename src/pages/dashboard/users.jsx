@@ -15,20 +15,29 @@ export function Users() {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: 'customer' });
+  const [roles, setRoles] = useState([]);
+
+  const getAccessToken = () => localStorage.getItem("accessToken");
 
   useEffect(() => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (!token) {
       setError("Không tìm thấy access token!");
       setLoading(false);
       return;
     }
     axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw` }
+      headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
     .catch(() => setError("Lỗi khi tải danh sách người dùng."))
     .finally(() => setLoading(false));
+
+    axios.get("https://api-ndolv2.nongdanonline.vn/admin-users/roles", {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => setRoles(Array.isArray(res.data) ? res.data : []))
+    .catch(() => setRoles(["customer", "admin", "farmer"]));
   }, []);
 
   const openEdit = (user) => {
@@ -43,7 +52,7 @@ export function Users() {
   };
 
   const handleUpdate = () => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (!token || !selectedUser) return;
 
     axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
@@ -61,12 +70,12 @@ export function Users() {
   };
 
   const handleDelete = (userId) => {
-    const token = localStorage.getItem("accessToken");
+    const token = getAccessToken();
     if (!token) return;
     if (!window.confirm("Bạn có chắc muốn xoá người dùng này?")) return;
 
     axios.delete(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`, {
-      headers: { Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4NjU0YTMxNjRmMTRjZWVlN2JlNTRjYSIsInJvbGUiOlsiQ3VzdG9tZXIiLCJBZG1pbiJdLCJpYXQiOjE3NTE2MjQwMTYsImV4cCI6MTc1MTg4MzIxNn0.ID50CEtfWiVEMZ2p3_vwARX5FqC4QLMflLbZkFBbvJw` },
+      headers: { Authorization: `Bearer ${token}` },
     })
     .then(() => {
       alert("Xoá người dùng thành công!");
@@ -114,9 +123,7 @@ export function Users() {
             <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
             <Select label="Role" value={formData.role} onChange={val => setFormData({ ...formData, role: val })}>
-              <Option value="customer">Customer</Option>
-              <Option value="admin">Admin</Option>
-              <Option value="farmer">Farmer</Option>
+              {roles.map(role => <Option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</Option>)}
             </Select>
           </div>
         </DialogBody>
