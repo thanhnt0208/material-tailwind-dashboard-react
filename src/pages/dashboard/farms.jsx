@@ -166,7 +166,7 @@ export function Farms() {
               <thead>
                 <tr className="bg-indigo-50 text-indigo-600 text-left">
                   <th className="w-10 px-4"><Checkbox ripple={false} /></th>
-                  {["Tên", "Mã", "Chủ sở hữu", "SĐT", "Địa chỉ", "Diện tích", "Giá", "Trạng thái", "Thao tác"].map((head) => (
+                  {["Tên", "Mã", "Chủ sở hữu", "SĐT", "Địa chỉ", "Diện tích", "Trạng thái", "Thao tác"].map((head) => (
                     <th key={head} className="px-4 py-3 text-xs font-bold uppercase">{head}</th>
                   ))}
                 </tr>
@@ -179,10 +179,9 @@ export function Farms() {
                     <td className="px-4 py-4">{farm.name}</td>
                     <td className="px-4 py-4">{farm.code}</td>
                     <td className="px-4 py-4">{farm.ownerInfo?.name || "—"}</td>
-                    <td className="px-4 py-4">{farm.ownerInfo?.phone || "—"}</td>
+                    <td className="px-4 py-4">{farm.phone || "—"}</td>
                     <td className="px-4 py-4">{farm.location}</td>
                     <td className="px-4 py-4">{farm.area} m²</td>
-                    <td className="px-4 py-4">{farm.pricePerMonth?.toLocaleString("vi-VN") || "0"} đ</td>
                     <td className="px-4 py-4">
                       <Chip
                         value={farm.status === "pending" ? "Chờ duyệt" : farm.status === "active" ? "Đang hoạt động" : "Đã khóa"}
@@ -268,10 +267,9 @@ export function Farms() {
               <Typography variant="h6">Tên: {selectedFarm.name}</Typography>
               <Typography>Mã: {selectedFarm.code}</Typography>
               <Typography>Chủ sở hữu: {selectedFarm.ownerInfo.name}</Typography>
-              <Typography>SĐT: {selectedFarm.ownerInfo?.phone}</Typography>
+              <Typography>SĐT: {selectedFarm.phone}</Typography>
               <Typography>Địa chỉ: {selectedFarm.location}</Typography>
               <Typography>Diện tích: {selectedFarm.area} m²</Typography>
-              <Typography>Giá: {selectedFarm.pricePerMonth?.toLocaleString("vi-VN")} đ</Typography>
               <Typography>Mô tả: {selectedFarm.description || "Không có"}</Typography>
 
               {/* Dịch vụ */}
