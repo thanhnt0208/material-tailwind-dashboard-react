@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  Card, CardBody, Input, Button, Typography, Checkbox, Chip, Tabs, TabsHeader, Tab
+  Card, CardBody, Input, Button, Typography, Checkbox, Chip, Tabs, TabsHeader, Tab,
+  Dialog,
+  DialogHeader,
+  DialogBody
 } from "@material-tailwind/react";
 import {
   PencilSquareIcon, TrashIcon, PlusIcon,
@@ -12,6 +15,7 @@ const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
+
 
 export function Farms() {
   const [farms, setFarms] = useState([]);
@@ -24,6 +28,9 @@ export function Farms() {
   const [openForm, setOpenForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState(null);
 
+  const [selectedFarm, setSelectedFarm] = useState(null);
+  const [openDetail, setOpenDetail] = useState(false);
+
   const fetchFarms = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms`, getOpts());
@@ -32,6 +39,16 @@ export function Farms() {
       setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const getFarmDetail = async (id) => {
+    try {
+      const res = await axios.get(`${BASE_URL}/adminfarms/${id}`, getOpts());
+      setSelectedFarm(res.data);
+      setOpenDetail(true);
+    }catch (err) {
+      alert("Lỗi lấy chi tiết: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -156,7 +173,8 @@ export function Farms() {
               </thead>
               <tbody>
                 {displayedFarms.map((farm) => (
-                  <tr key={farm._id} className="border-b hover:bg-indigo-50 transition">
+                  <tr key={farm._id} className="border-b hover:bg-indigo-50 transition"
+                  onClick={() => getFarmDetail(farm._id)}>
                     <td className="px-4 py-4"><Checkbox ripple={false} /></td>
                     <td className="px-4 py-4">{farm.name}</td>
                     <td className="px-4 py-4">{farm.code}</td>
@@ -178,7 +196,7 @@ export function Farms() {
                         {/* Sửa */}
                         <Button
                           size="sm"
-                          onClick={() => { setEditingFarm(farm); setOpenForm(true); }}
+                          onClick={(e) => { e.stopPropagation(); setEditingFarm(farm); setOpenForm(true); }}
                           className="bg-blue-600 text-white px-3 py-1 rounded-md shadow-md hover:bg-blue-700"
                         >
                           <PencilSquareIcon className="h-4 w-4 mr-1" /> Sửa
@@ -187,7 +205,7 @@ export function Farms() {
                         {/* Xoá */}
                         <Button
                           size="sm"
-                          onClick={() => deleteFarm(farm._id)}
+                          onClick={(e) =>{e.stopPropagation(); deleteFarm(farm._id);}}
                           className="bg-gray-200 text-gray-800 px-3 py-1 rounded-md shadow-md hover:bg-gray-300"
                         >
                           <TrashIcon className="h-4 w-4 mr-1" /> Xoá
@@ -241,6 +259,80 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
+
+      <Dialog open={openDetail} handler={() => setOpenDetail(false)} size="lg" className="max-w-screen-md mx-auto">
+        <DialogHeader>Chi tiết nông trại</DialogHeader> 
+        <DialogBody>
+          {selectedFarm ? (
+            <div className="space-y-3">
+              <Typography variant="h6">Tên: {selectedFarm.name}</Typography>
+              <Typography>Mã: {selectedFarm.code}</Typography>
+              <Typography>Chủ sở hữu: {selectedFarm.ownerInfo.name}</Typography>
+              <Typography>SĐT: {selectedFarm.ownerInfo?.phone}</Typography>
+              <Typography>Địa chỉ: {selectedFarm.location}</Typography>
+              <Typography>Diện tích: {selectedFarm.area} m²</Typography>
+              <Typography>Giá: {selectedFarm.pricePerMonth?.toLocaleString("vi-VN")} đ</Typography>
+              <Typography>Mô tả: {selectedFarm.description || "Không có"}</Typography>
+
+              {/* Dịch vụ */}
+              <div className="flex flex-col gap-3">
+                <Typography variant="h6" className="mt-4">Dịch vụ</Typography>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "direct_selling",
+                    "feed_selling",
+                    "custom_feed_blending",
+                    "processing_service",
+                    "storage_service",
+                    "transport_service",
+                    "other_services",
+                  ]. map((service) => (
+                    <Chip key={service} value={service.replace(/_/g, " ")}
+                    color={selectedFarm.service?.includes(service) ? "green" : "gray"}
+                    variant={selectedFarm.service?.includes(service) ? "filled" : "outlined"}
+                    size="sm"
+                    ></Chip>
+                  ))}
+                </div>
+              </div>
+              {/* Tính năng */}
+              <div className="flex flex-col gap-3">
+                <Typography variant="h6" className="mt-4"> Tính năng</Typography>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "aquaponic_model",
+                    "ras_ready",
+                    "hydroponic",
+                    "greenhouse",
+                    "vertical_farming",
+                    "viet_gap_cert",
+                    "organic_cert",
+                    "global_gap_cert",
+                    "haccp_cert",
+                    "camera_online",
+                    "drone_monitoring",
+                    "automated_pest_detection",
+                    "precision_irrigation",
+                    "auto_irrigation",
+                    "soil_based_irrigation",
+                    "iot_sensors",
+                    "soil_moisture_monitoring",
+                    "air_quality_sensor",
+                  ].map((feature) => (
+                    <Chip key={feature} value={feature.replace(/_/g, "")}
+                    color={selectedFarm.feature?.includes(feature) ? "teal" : "gray"}
+                    variant={selectedFarm.feature?.includes(feature) ? "filled" : "outlined"}
+                    size="sm"
+                    ></Chip>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <Typography>Đang tải chi tiết...</Typography>
+          )}  
+        </DialogBody>  
+      </Dialog>
 
       <FarmForm
         open={openForm}
