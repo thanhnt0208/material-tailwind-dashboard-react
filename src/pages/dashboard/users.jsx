@@ -6,7 +6,7 @@ import {
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
 
-export default function Users() {
+export function Users() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -233,3 +233,5 @@ export default function Users() {
     </div>
   );
 }
+
+export default Users;
