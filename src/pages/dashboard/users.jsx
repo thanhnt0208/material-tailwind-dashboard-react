@@ -92,7 +92,7 @@ export function Users() {
   const handleAddRole = (userId, role) => {
     if (!token) return;
     axios.patch(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-role`, {
-      role
+      role : role.trim()
     }, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -189,7 +189,7 @@ export function Users() {
       </div>
 
       {/* Dialog chỉnh sửa */}
-      <Dialog open={editOpen} handler={setEditOpen} size="sm">
+      <Dialog open={editOpen} onClick={() => setEditOpen(false)} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4">
@@ -213,7 +213,7 @@ export function Users() {
       <Dialog open={viewOpen} handler={setViewOpen} size="sm">
         <DialogHeader>Thông tin chi tiết</DialogHeader>
         <DialogBody>
-          {viewUser && (
+          {viewUser ? (
             <div className="space-y-2">
               <Typography variant="h6" className="font-bold">{viewUser.fullName}</Typography>
               <Typography>Email: {viewUser.email}</Typography>
@@ -224,6 +224,8 @@ export function Users() {
               <Typography variant="small">Created At: {new Date(viewUser.createdAt).toLocaleString()}</Typography>
               <Typography variant="small">Last Login: {viewUser.lastLogin ? new Date(viewUser.lastLogin).toLocaleString() : "N/A"}</Typography>
             </div>
+          ) : (
+            <Typography variant="small" color="gray">Không có dữ liệu</Typography>
           )}
         </DialogBody>
         <DialogFooter>
