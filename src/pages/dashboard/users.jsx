@@ -6,17 +6,21 @@ import {
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
 
-export function Users() {
+export default function Users() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({ fullName: '', email: '', phone: '', role: '' });
+
   const [viewOpen, setViewOpen] = useState(false);
   const [viewUser, setViewUser] = useState(null);
-  const [selectedRoles, setSelectedRoles] = useState({});
+  const [addresses, setAddresses] = useState([]);
+
+  const [selectedRole, setSelectedRole] = useState("farmer");
 
   const token = localStorage.getItem("token");
 
@@ -42,7 +46,7 @@ export function Users() {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(res => setRoles(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setRoles(["customer", "admin", "farmer", "staff"]));
+      .catch(() => setRoles(["customer", "admin", "farmer"]));
   }, []);
 
   const openEdit = (user) => {
@@ -56,9 +60,18 @@ export function Users() {
     setEditOpen(true);
   };
 
-  const handleView = (user) => {
+  const handleView = async (user) => {
     setViewUser(user);
     setViewOpen(true);
+    try {
+      const res = await axios.get("https://api-ndolv2.nongdanonline.vn/user-addresses", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const userAddresses = res.data.filter(addr => addr.userid === user.id);
+      setAddresses(userAddresses);
+    } catch (err) {
+      setAddresses([]);
+    }
   };
 
   const handleUpdate = () => {
@@ -89,40 +102,30 @@ export function Users() {
       .catch(() => alert("Xoá thất bại!"));
   };
 
-  const handleAddRole = (userId, role) => {
-    if (!token) return;
-    axios.patch(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-role`, {
-      role : role.trim()
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(() => {
-      setUsers(users.map(u => {
-        if (u.id === userId && !u.role.includes(role)) {
-          return { ...u, role: [...u.role, role] };
-        }
-        return u;
-      }));
-    })
-    .catch(() => alert("Thêm vai trò thất bại"));
+  const handleAddRole = async (userId, role) => {
+    try {
+      await axios.patch(
+        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-roles`,
+        { roles: [role] },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Đã thêm role thành công!");
+    } catch (e) {
+      alert("Không thể thêm role!");
+    }
   };
 
-  const handleRemoveRole = (userId, role) => {
-    if (!token) return;
-    axios.patch(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/remove-role`, {
-      role
-    }, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(() => {
-      setUsers(users.map(u => {
-        if (u.id === userId) {
-          return { ...u, role: u.role.filter(r => r !== role) };
-        }
-        return u;
-      }));
-    })
-    .catch(() => alert("Xoá vai trò thất bại"));
+  const handleRemoveRole = async (userId, role) => {
+    try {
+      await axios.patch(
+        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/remove-roles`,
+        { roles: [role] },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Đã xoá role thành công!");
+    } catch (e) {
+      alert("Không thể xoá role!");
+    }
   };
 
   return (
@@ -159,37 +162,26 @@ export function Users() {
                 <Typography variant="small">Role: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
                 <Typography variant="small">Active: {user.isActive ? "Yes" : "No"}</Typography>
               </CardBody>
-              <CardFooter className="mt-6 flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2">
+              <CardFooter className="mt-4 flex flex-col gap-2 px-1">
+                <div className="flex justify-between">
+                  <Button variant="outlined" size="sm" onClick={() => handleView(user)}>View</Button>
                   <Button variant="outlined" size="sm" onClick={() => openEdit(user)}>Edit</Button>
                   <Button variant="outlined" color="red" size="sm" onClick={() => handleDelete(user.id)}>Delete</Button>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Select
-                    label="Thêm Role"
-                    value={selectedRoles[user.id] || ""}
-                    onChange={(val) => setSelectedRoles(prev => ({ ...prev, [user.id]: val }))}
-                  >
-                    {roles.map(role => (
-                      <Option key={role} value={role}>{role}</Option>
-                    ))}
+                <div className="flex items-center gap-2 mt-2">
+                  <Select value={selectedRole} onChange={setSelectedRole} label="Chọn Role">
+                    {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
                   </Select>
-                  <Button size="sm" onClick={() => handleAddRole(user.id, selectedRoles[user.id])}>+ ROLE</Button>
+                  <Button size="sm" onClick={() => handleAddRole(user.id, selectedRole)}>+</Button>
+                  <Button size="sm" color="red" onClick={() => handleRemoveRole(user.id, selectedRole)}>-</Button>
                 </div>
-                {Array.isArray(user.role) && user.role.map(r => (
-                  <div key={r} className="flex justify-between items-center">
-                    <Typography variant="small" className="text-xs">{r}</Typography>
-                    <Button size="sm" color="red" onClick={() => handleRemoveRole(user.id, r)}>- REMOVE</Button>
-                  </div>
-                ))}
               </CardFooter>
             </Card>
           </div>
         ))}
       </div>
 
-      {/* Dialog chỉnh sửa */}
-      <Dialog open={editOpen} onClick={() => setEditOpen(false)} size="sm">
+      <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody>
           <div className="flex flex-col gap-4">
@@ -209,11 +201,10 @@ export function Users() {
         </DialogFooter>
       </Dialog>
 
-      {/* Dialog xem chi tiết */}
       <Dialog open={viewOpen} handler={setViewOpen} size="sm">
         <DialogHeader>Thông tin chi tiết</DialogHeader>
         <DialogBody>
-          {viewUser ? (
+          {viewUser && (
             <div className="space-y-2">
               <Typography variant="h6" className="font-bold">{viewUser.fullName}</Typography>
               <Typography>Email: {viewUser.email}</Typography>
@@ -223,9 +214,13 @@ export function Users() {
               <Typography>ID: {viewUser.id}</Typography>
               <Typography variant="small">Created At: {new Date(viewUser.createdAt).toLocaleString()}</Typography>
               <Typography variant="small">Last Login: {viewUser.lastLogin ? new Date(viewUser.lastLogin).toLocaleString() : "N/A"}</Typography>
+              <Typography className="mt-2 font-bold">Addresses:</Typography>
+              {addresses.length > 0 ? addresses.map((addr, i) => (
+                <div key={i} className="text-sm text-gray-600">
+                  {addr.address} - {addr.ward}, {addr.district}, {addr.province}
+                </div>
+              )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
             </div>
-          ) : (
-            <Typography variant="small" color="gray">Không có dữ liệu</Typography>
           )}
         </DialogBody>
         <DialogFooter>
@@ -235,5 +230,3 @@ export function Users() {
     </div>
   );
 }
-
-export default Users;
