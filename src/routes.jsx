@@ -7,6 +7,7 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 import { Home, Users, Tables, AcceptFarm } from "@/pages/dashboard";
+import UserDetail from "@/pages/dashboard/UserDetail";
 
 import { SignIn, SignUp } from "@/pages/auth";
 
