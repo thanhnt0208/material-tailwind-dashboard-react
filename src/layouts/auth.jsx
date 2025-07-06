@@ -16,7 +16,11 @@ export function Auth() {
       icon: ChartPieIcon,
     },
     {
+<<<<<<< HEAD
       name: "User",
+=======
+      name: "Users",
+>>>>>>> tien
       path: "/dashboard/home",
       icon: UserIcon,
     },

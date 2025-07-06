@@ -6,9 +6,14 @@ import {
   ServerStackIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
+<<<<<<< HEAD
 
 import { Home, Users , Farms, Questions } from "@/pages/dashboard";
 
+=======
+import { Home, Users, Tables, AcceptFarm } from "@/pages/dashboard";
+import UserDetail from "@/pages/dashboard/UserDetail";
+>>>>>>> tien
 
 import { SignIn, SignUp } from "@/pages/auth";
 
@@ -28,8 +33,13 @@ export const routes = [
       },
       {
         icon: <UserCircleIcon {...icon} />,
+<<<<<<< HEAD
         name: "Users",
         path: "/Users",
+=======
+        name: "users",
+        path: "/users",
+>>>>>>> tien
         element: <Users />,
       },
       {
