@@ -243,7 +243,11 @@ export function Farms() {
         onClose={() => setOpenForm(false)}
         initialData={editingFarm}
         onSubmit={(data) => {
-          editingFarm ? editFarm(editingFarm._id, data) : addFarm(data);
+          if (editingFarm) {
+            editingFarm(editingFarm._id, data);
+          } else {
+          addFarm(data);
+        }
         }}
       />
 

@@ -6,107 +6,79 @@ import {
   DialogFooter,
   Input,
   Button,
+  Checkbox,
 } from "@material-tailwind/react";
 
+
 const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     name: "",
     code: "",
     location: "",
-    area: "",
-    pricePerMonth: "",
+    area: 0,
+    cultivatedArea: 0,
+    services: [],
+    features: [],
+    tags: [],
+    phone: "",
+    zalo: "",
+    province: "",
+    district: "",
+    ward: "",
+    street: "",
+    isAvailable: true,
     status: "pending",
-    ownerName: "",
-    ownerPhone: "",
+    ownerId: "",
   });
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        name: initialData.name || "",
-        code: initialData.code || "",
-        location: initialData.location || "",
-        area: initialData.area?.toString() || "",
-        pricePerMonth: initialData.pricePerMonth?.toString() || "",
-        status: initialData.status || "pending",
-        ownerName: initialData.ownerInfo?.name || "",
-        ownerPhone: initialData.ownerInfo?.phone || "",
-      });
-    } else {
-      setFormData({
-        name: "",
-        code: "",
-        location: "",
-        area: "",
-        pricePerMonth: "",
-        status: "pending",
-        ownerName: "",
-        ownerPhone: "",
-      });
+      setForm(initialData);
     }
   }, [initialData]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value}));
+  };
+
+  const handleArrayChange = (filed, value) => {
+    setForm((prev) => ({
+      ... prev, [filed]:value.split(",").map((s) => s.trim()),
     }));
   };
 
-  const handleSubmit = () => {
-    if (!formData.name || !formData.code) {
-      return alert("Vui lòng nhập đầy đủ thông tin.");
-    }
-
-    const parsedData = {
-      name: formData.name,
-      code: formData.code,
-      location: formData.location,
-      area: formData.area === "" ? 0 : parseFloat(formData.area),
-      pricePerMonth:
-        formData.pricePerMonth === "" ? 0 : parseFloat(formData.pricePerMonth),
-      status: formData.status || "pending",
-
-      ownerInfo: {
-        name: formData.ownerName || "Chưa rõ",
-        phone: formData.ownerPhone || "",
-        email: "", // Optional, bạn có thể thêm input nếu muốn
-      },
-      coordinates: {
-        lat: 0,
-        lng: 0,
-      },
-      features: [],
-      phone: "",
-      zalo: "",
-      operationTime: "",
-      defaultImage: "",
-      services: [],
-    };
-
-    console.log("parsedData gửi về:", parsedData);
-
-    onSubmit(parsedData);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(form);
     onClose();
-  };
+
+  }
 
   return (
-    <Dialog open={open} handler={onClose}>
+    <Dialog open={open} handler={onClose} size="lg">
       <DialogHeader>{initialData ? "Chỉnh sửa" : "Thêm"} nông trại</DialogHeader>
-      <DialogBody className="flex flex-col gap-4">
-        <Input label="Tên nông trại" name="name" value={formData.name} onChange={handleChange} />
-        <Input label="Mã" name="code" value={formData.code} onChange={handleChange} />
-        <Input label="Chủ sở hữu" name="ownerName" value={formData.ownerName} onChange={handleChange} />
-        <Input label="Số điện thoại" name="ownerPhone" value={formData.ownerPhone} onChange={handleChange} />
-        <Input label="Địa chỉ" name="location" value={formData.location} onChange={handleChange} />
-<Input label="Diện tích (m²)" name="area" type="number" value={formData.area} onChange={handleChange} />
-        <Input label="Giá mỗi tháng (VNĐ)" name="pricePerMonth" type="number" value={formData.pricePerMonth} onChange={handleChange} />
+      <DialogBody className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Input label="Mã" value={form.code} onChange={(e) => handleChange ("code", e.target.value)} />
+        <Input label="Tên nông trại" value={form.name} onChange={(e) => handleChange ("name", e.target.value)} />
+        <Input label="Vị trí" value={form.location} onChange={(e) => handleChange ("location", e.target.value)} />
+        <Input label="Diện tích (m²)" type="number" value={form.area} onChange={(e) => handleChange ("area", e.target.value)} />
+        <Input label="Diện tích đất canh tác (m²)" type="number" value={form.cultivatedArea} onChange={(e) => handleChange ("cultivatedArea", e.target.value)} />
+        <Input label="Dịch vụ (cách nhau bằng dấu phẩy)" value={form.services.join(', ')} onChange={(e) => handleArrayChange ("services", e.target.value)} />
+        <Input label="Tính năng (cách nhau bằng dấu phẩy)" value={form.features.join(', ')} onChange={(e) => handleArrayChange ("features", e.target.value)} />
+        <Input label="Tags (cách nhau bằng dấu phẩy)" value={form.tags.join(', ')} onChange={(e) => handleArrayChange ("tags", e.target.value)} />
+        <Input label="Số điện thoại" value={form.phone} onChange={(e) => handleChange('phone', e.target.value)} />
+        <Input label="Zalo" value={form.zalo} onChange={(e) => handleChange('zalo', e.target.value)} />
+        <Input label="Tỉnh/Thành phố" value={form.province} onChange={(e) => handleChange("province", e.target.value)} />
+        <Input label="Quận/Huyện" value={form.district} onChange={(e) => handleChange("district", e.target.value)} />
+        <Input label="Phường/Xã" value={form.ward} onChange={(e) => handleChange("ward", e.target.value)} />
+        <Input label="Đường" value={form.street} onChange={(e) => handleChange("street", e.target.value)} />
+        <Input label="ID Chủ sở hữu" value={form.ownerId} onChange={(e) => handleChange("ownerId", e.target.value)} />
+        <Checkbox label="Farm đang sẵn sàng" checked={form.isAvailable} onChange={(e) => handleChange("isAvailable", e.target.checked)} />
       </DialogBody>
       <DialogFooter>
         <Button variant="text" onClick={onClose}>Huỷ</Button>
-        <Button color="indigo" onClick={handleSubmit}>
-          {initialData ? "Lưu" : "Thêm"}
+        <Button color="green" onClick={handleSubmit}>
+          {initialData ? "Cập nhật" : "Thêm"}
         </Button>
       </DialogFooter>
     </Dialog>
