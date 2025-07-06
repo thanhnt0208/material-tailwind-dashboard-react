@@ -195,7 +195,7 @@ export function Farms() {
                                 onClick={(e) => { e.stopPropagation(); activateFarm(farm._id, "duyệt"); }}
                                 className="flex gap-1"
                               >
-                                ✓ Duyệt
+                                Duyệt
                               </Button>
                               <Button
                                 size="sm"
@@ -203,7 +203,7 @@ export function Farms() {
                                 onClick={(e) => { e.stopPropagation(); deactivateFarm(farm._id, "từ chối"); }}
                                 className="flex gap-1"
                               >
-                                ✗ Từ chối
+                                Từ chối
                               </Button>
                             </>
                           )}
