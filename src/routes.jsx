@@ -8,11 +8,14 @@ import {
 } from "@heroicons/react/24/solid";
 
 
-import { Home, Users , Farms, Questions, AnswersTable } from "@/pages/dashboard";
+
+import { Home, Users , Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
+
 
 
 
 import { SignIn, SignUp } from "@/pages/auth";
+import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -47,11 +50,19 @@ export const routes = [
         path: "/Questions",
       element: <Questions />,
       },
+
       {
         icon: <InformationCircleIcon {...icon} />,
         name: "AnswersTable",
         path: "/AnswersTable",
       element: <AnswersTable />,
+      },
+        {
+        icon: <ViewfinderCircleIcon {...icon} />,
+        name: "VideoFarms",
+        path: "/VideoFarms",
+        element: <VideoFarms />,
+
       },
     ],
   },
