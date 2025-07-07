@@ -9,7 +9,7 @@ export const Questions = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editData, setEditData] = useState(null);
   const [editValue, setEditValue] = useState({ options: [] });
-console.log(editValue)
+
   const [addDialog, setAddDialog] = useState(false);
   const [addValue, setAddValue] = useState({ text: '', options: [''], type: 'option', link: '' });
 
