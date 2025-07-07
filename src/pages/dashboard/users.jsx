@@ -6,7 +6,7 @@ import {
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
 
-export default function Users() {
+export function Users() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,30 +24,32 @@ export default function Users() {
 
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    if (!token) {
-      setError("Không tìm thấy access token!");
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUsers(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      setError("Lỗi khi tải danh sách người dùng.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => setUsers(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setError("Lỗi khi tải danh sách người dùng."))
-      .finally(() => setLoading(false));
-  }, [token]);
-
+  };
+  
   useEffect(() => {
-    if (!token) return;
+      if (!token) {
+        setError("Không tìm thấy access token!");
+        setLoading(false);
+        return;
+      }
+      fetchUsers();
+    }, [token]);
 
-    axios.get("https://api-ndolv2.nongdanonline.vn/admin-users/roles", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => setRoles(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setRoles(["customer", "admin", "farmer"]));
-  }, []);
+      useEffect(() => {
+      setRoles(["Customer", "Admin", "Farmer"]); 
+    }, []);
 
   const openEdit = (user) => {
     setSelectedUser(user);
@@ -105,11 +107,12 @@ export default function Users() {
   const handleAddRole = async (userId, role) => {
     try {
       await axios.patch(
-        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-roles`,
-        { roles: [role] },
+        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-role`,
+        { role: role.charAt(0).toUpperCase() + role.slice(1) }, 
         { headers: { Authorization: `Bearer ${token}` } }
-      );
+    );
       alert("Đã thêm role thành công!");
+      fetchUsers();
     } catch (e) {
       alert("Không thể thêm role!");
     }
@@ -119,10 +122,11 @@ export default function Users() {
     try {
       await axios.patch(
         `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/remove-roles`,
-        { roles: [role] },
+        { roles: [role.charAt(0).toUpperCase() + role.slice(1)] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Đã xoá role thành công!");
+      fetchUsers();
     } catch (e) {
       alert("Không thể xoá role!");
     }
@@ -204,7 +208,7 @@ export default function Users() {
       <Dialog open={viewOpen} handler={setViewOpen} size="sm">
         <DialogHeader>Thông tin chi tiết</DialogHeader>
         <DialogBody>
-          {viewUser && (
+          {viewUser ? (
             <div className="space-y-2">
               <Typography variant="h6" className="font-bold">{viewUser.fullName}</Typography>
               <Typography>Email: {viewUser.email}</Typography>
@@ -221,6 +225,8 @@ export default function Users() {
                 </div>
               )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
             </div>
+          ) : (
+              <Typography className="text-gray-500 text-center">Đang tải dữ liệu...</Typography>
           )}
         </DialogBody>
         <DialogFooter>
@@ -228,5 +234,7 @@ export default function Users() {
         </DialogFooter>
       </Dialog>
     </div>
-  );
+  ) 
 }
+
+export default Users
