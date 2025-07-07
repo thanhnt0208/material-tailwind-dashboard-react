@@ -8,7 +8,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 
-import { Home, Users , Farms, Questions } from "@/pages/dashboard";
+import { Home, Users , Farms, Questions, AnswersTable } from "@/pages/dashboard";
 
 
 
@@ -46,6 +46,12 @@ export const routes = [
         name: "Questions",
         path: "/Questions",
       element: <Questions />,
+      },
+      {
+        icon: <InformationCircleIcon {...icon} />,
+        name: "AnswersTable",
+        path: "/AnswersTable",
+      element: <AnswersTable />,
       },
     ],
   },

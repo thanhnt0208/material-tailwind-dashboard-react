@@ -10,9 +10,9 @@ import {
 } from "@material-tailwind/react";
 
 const API_URL = "https://api-ndolv2.nongdanonline.vn/answers";
-const token = localStorage.getItem("accessToken");
+const token = localStorage.getItem("token");
 
-const AnswersTable = () => {
+export function AnswersTable  ()  {
   const [answers, setAnswers] = useState([]);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -23,14 +23,21 @@ const AnswersTable = () => {
     otherText: "",
     uploadedFiles: [],
   });
+  const [uploading, setUploading] = useState(false);
 
+  // Fetch all answers
   const fetchAnswers = async () => {
     try {
       const res = await fetch(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      setAnswers(data);
+      if (Array.isArray(data)) {
+        setAnswers(data);
+      } else {
+        console.error("API không trả về danh sách");
+        setAnswers([]);
+      }
     } catch (err) {
       console.error("Lỗi khi tải dữ liệu:", err);
     }
@@ -40,6 +47,7 @@ const AnswersTable = () => {
     fetchAnswers();
   }, []);
 
+  // Open form for add/edit
   const openForm = (data = null) => {
     if (data) {
       setForm({
@@ -63,37 +71,63 @@ const AnswersTable = () => {
     setOpen(true);
   };
 
-  const handleSubmit = async () => {
-    const url = editData ? `${API_URL}/${editData._id}` : API_URL;
-    const method = editData ? "PUT" : "POST";
+  // Save data (create or update)
+ const handleSubmit = async () => {
+  const url = editData ? `${API_URL}/${editData._id}` : `${API_URL}/batch`;
+  const method = editData ? "PUT" : "POST";
 
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
+  const body = editData
+    ? {
+        farmId: form.farmId,
+        questionId: form.questionId,
+        selectedOptions: form.selectedOptions,
+        otherText: form.otherText,
+        uploadedFiles: form.uploadedFiles
+      }
+    : {
+        farmId: form.farmId,
+        answers: [
+          {
+            questionId: form.questionId,
+            selectedOptions: form.selectedOptions,
+            otherText: form.otherText,
+            uploadedFiles: form.uploadedFiles
+          }
+        ]
+      };
 
-      if (!res.ok) throw new Error("Không thể lưu dữ liệu");
-      setOpen(false);
-      setEditData(null);
-      fetchAnswers();
-    } catch (err) {
-      alert(err.message);
+  try {
+    const res = await fetch(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error("Error response:", errorData);
+      throw new Error(errorData.message || "Không thể lưu dữ liệu");
     }
-  };
 
+    setOpen(false);
+    setEditData(null);
+    fetchAnswers();
+  } catch (err) {
+    alert(`Lỗi: ${err.message}`);
+  }
+};
+
+
+  // Delete an answer
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xoá?")) return;
     try {
       const res = await fetch(`${API_URL}/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Không thể xoá dữ liệu");
       fetchAnswers();
@@ -101,6 +135,37 @@ const AnswersTable = () => {
       alert(err.message);
     }
   };
+
+  // Upload image
+  const handleUploadImage = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  setUploading(true);
+  try {
+    const res = await fetch(`${API_URL}/upload-image`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) throw new Error("Không thể upload hình ảnh");
+    const data = await res.json();
+    setForm({
+      ...form,
+      uploadedFiles: [...form.uploadedFiles, data.path],
+    });
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   return (
     <div className="p-6">
@@ -112,28 +177,28 @@ const AnswersTable = () => {
       </div>
 
       <table className="min-w-full bg-white border">
-        <thead className="bg-gray-100">
+        <thead className="bg-blue-500 text-white">
           <tr>
-            <th className="border px-4 py-2">#</th>
-            <th className="border px-4 py-2">Farm ID</th>
-            <th className="border px-4 py-2">Question ID</th>
-            <th className="border px-4 py-2">Đáp án chọn</th>
-            <th className="border px-4 py-2">Khác</th>
-            <th className="border px-4 py-2">Tệp đính kèm</th>
-            <th className="border px-4 py-2">Hành động</th>
+            <th className="border px-2 py-2 w-12">#</th>
+            <th className="border px-2 py-2 w-40">Farm ID</th>
+            <th className="border px-2 py-2 w-40">Question ID</th>
+            <th className="border px-2 py-2 w-[300px]">Đáp án chọn</th>
+            <th className="border px-2 py-2 w-28">Khác</th>
+            <th className="border px-2 py-2 w-[250px]">Tệp đính kèm</th>
+            <th className="border px-2 py-2 w-40">Hành động</th>
           </tr>
         </thead>
         <tbody>
           {answers.map((item, index) => (
             <tr key={item._id}>
-              <td className="border px-4 py-2">{index + 1}</td>
-              <td className="border px-4 py-2">{item.farmId}</td>
-              <td className="border px-4 py-2">{item.questionId}</td>
-              <td className="border px-4 py-2">
-                {item.selectedOptions?.filter(Boolean).join(", ") || "—"}
+              <td className="border px-2 py-2">{index + 1}</td>
+              <td className="border px-2 py-2 truncate">{item.farmId}</td>
+              <td className="border px-2 py-2 truncate">{item.questionId}</td>
+              <td className="border px-2 py-2 whitespace-normal">
+                {item.selectedOptions?.join(", ") || "—"}
               </td>
-              <td className="border px-4 py-2">{item.otherText || "—"}</td>
-              <td className="border px-4 py-2">
+              <td className="border px-2 py-2 truncate">{item.otherText || "—"}</td>
+              <td className="border px-2 py-2 whitespace-normal">
                 {item.uploadedFiles?.length > 0
                   ? item.uploadedFiles.map((file, i) => (
                       <a
@@ -148,68 +213,104 @@ const AnswersTable = () => {
                     ))
                   : "—"}
               </td>
-              <td className="border px-4 py-2">
-                <Button size="sm" onClick={() => openForm(item)}>
-                  Sửa
-                </Button>
-                <Button
-                  size="sm"
-                  color="red"
-                  onClick={() => handleDelete(item._id)}
-                  className="ml-2"
-                >
-                  Xoá
-                </Button>
+              <td className="border px-2 py-2">
+                <div className="flex gap-2">
+                  <Button size="sm" color="blue" onClick={() => openForm(item)}>
+                    Sửa
+                  </Button>
+                  <Button
+                    size="sm"
+                    color="red"
+                    onClick={() => handleDelete(item._id)}
+                  >
+                    Xoá
+                  </Button>
+                </div>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
+
+
+      {/* Dialog form */}
       <Dialog open={open} handler={() => setOpen(!open)}>
         <DialogHeader>{editData ? "Chỉnh sửa" : "Thêm mới"} câu trả lời</DialogHeader>
-        <DialogBody>
-          <Input
-            label="Farm ID"
-            value={form.farmId}
-            onChange={(e) => setForm({ ...form, farmId: e.target.value })}
-            className="mb-4"
-          />
-          <Input
-            label="Question ID"
-            value={form.questionId}
-            onChange={(e) => setForm({ ...form, questionId: e.target.value })}
-            className="mb-4"
-          />
-          <Input
-            label="Selected Options (ngăn cách bởi dấu phẩy)"
-            value={form.selectedOptions.join(", ")}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                selectedOptions: e.target.value
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              })
-            }
-            className="mb-4"
-          />
-          <Input
-            label="Other Text"
-            value={form.otherText}
-            onChange={(e) => setForm({ ...form, otherText: e.target.value })}
-            className="mb-4"
-          />
+        <DialogBody className="space-y-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Farm ID</label>
+            <Input
+              value={form.farmId}
+              onChange={(e) => setForm({ ...form, farmId: e.target.value })}
+              className="rounded-lg shadow-sm"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Question ID</label>
+            <Input
+              value={form.questionId}
+              onChange={(e) => setForm({ ...form, questionId: e.target.value })}
+              className="rounded-lg shadow-sm"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">
+              Selected Options <span className="text-gray-500 text-xs">(ngăn cách dấu phẩy)</span>
+            </label>
+            <Input
+              value={form.selectedOptions.join(", ")}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  selectedOptions: e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                })
+              }
+              className="rounded-lg shadow-sm"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Other Text</label>
+            <Input
+              value={form.otherText}
+              onChange={(e) => setForm({ ...form, otherText: e.target.value })}
+              className="rounded-lg shadow-sm"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-700">Upload file</label>
+            <Input
+              type="file"
+              onChange={handleUploadImage}
+              className="rounded-lg shadow-sm"
+            />
+          </div>
         </DialogBody>
-        <DialogFooter>
-          <Button variant="text" onClick={() => setOpen(false)} className="mr-2">
+        <DialogFooter className="flex justify-end gap-3">
+          <Button
+            variant="outlined"
+            color="gray"
+            onClick={() => setOpen(false)}
+            className="rounded-full px-5 py-2"
+          >
             Huỷ
           </Button>
-          <Button color="blue" onClick={handleSubmit}>
+          <Button
+            color="blue"
+            onClick={handleSubmit}
+            className="rounded-full px-5 py-2 shadow-md hover:shadow-lg transition"
+          >
             {editData ? "Cập nhật" : "Tạo mới"}
           </Button>
         </DialogFooter>
+
       </Dialog>
     </div>
   );
