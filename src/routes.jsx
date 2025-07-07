@@ -7,10 +7,11 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 
-import { Home, Users , Farms,Questions } from "@/pages/dashboard";
+import { Home, Users , Farms,Questions, VideoFarms } from "@/pages/dashboard";
 
 
 import { SignIn, SignUp } from "@/pages/auth";
+import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -44,6 +45,12 @@ export const routes = [
         name: "Questions",
         path: "/Questions",
       element: <Questions />,
+      },
+        {
+        icon: <ViewfinderCircleIcon {...icon} />,
+        name: "VideoFarms",
+        path: "/VideoFarms",
+        element: <VideoFarms />,
       },
     ],
   },

@@ -1,11 +1,13 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
+import VideoFarmById from "./pages/dashboard/VideoFarms/VideoFarmById";
 function App() {
   return (
     <Routes>
       <Route path="/dashboard/*" element={<Dashboard />} />
       <Route path="/auth/*" element={<Auth />} />
-  <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
+<Route path="/dashboard/VideoFarmById/:farmId" element={<VideoFarmById />} />
+      <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
     </Routes>
   );
 }
