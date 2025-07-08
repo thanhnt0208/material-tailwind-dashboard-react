@@ -12,6 +12,7 @@ import {
   Button,
 } from '@material-tailwind/react';
 
+import EditQuestion from './EditQuestion';
 export const Questions = () => {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
@@ -44,7 +45,6 @@ export const Questions = () => {
   useEffect(() => {
     getData();
   }, []);
-
   const handleOpenDialog = (item) => {
     setEditData(item);
     setEditValue({
@@ -268,7 +268,16 @@ export const Questions = () => {
             </div>
           </div>
         ))
-      )}
+)}
+<EditQuestion
+setEditValue={setEditValue}
+editData={editData}
+editValue={editValue}
+handleCloseDialog={handleCloseDialog}
+handleEditChange={handleEditChange}
+handleSave={handleSave}
+openDialog={openDialog}
+/>  
     </div>
   );
 };
