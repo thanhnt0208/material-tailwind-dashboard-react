@@ -3,6 +3,7 @@ import axios from 'axios'
 import { BaseUrl } from '@/ipconfig'
 import { useParams } from 'react-router-dom'
 import { Audio } from 'react-loader-spinner'
+import DialogVideoDetail from './DialogVideoDetail'
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -12,7 +13,6 @@ export const VideoFarmById = () => {
   const [videoDetail,setVideoDetail]=useState([])
   const tokenUser = localStorage.getItem('token');
   const {farmId}=useParams()
-  console.log(videoDetail)
   const getDetailVideo = async () => {
     try {
           setLoading(true)
@@ -33,16 +33,29 @@ const handleOpenDialog =(item)=>{
 setEditData(item)
  setIdVideo(item._id)
   setEditValue({
-  title:item.title,
-  youtubeLink:item.youtubeLink,
-  playlistName:item.playlistName,
-  status:item.status,
-  uploadedBy:item.uploadedBy.fullName,
-  createdAt:item.createdAt,
+    title: item.title,
+    youtubeLink: item.youtubeLink,
+    playlistName: item.playlistName,
+    status: item.status, 
+    uploadedBy: item.uploadedBy?.fullName,
+    createdAt: item.createdAt,
+    // localFilePath: item.localFilePath,
 
   })
 
 setOpenDialog(true)
+}
+const deletevideo = async()=>{
+      if (!window.confirm('Bạn có chắc muốn xóa video này?')) return;
+  try {
+    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete/${idVideo}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
+if(res.status===200){
+await getDetailVideo()
+alert("Xóa thành công")
+}
+  } catch (error) {
+    console.log("Lỗi nè:",error)
+  }
 }
 
 const handleCloseDialog =(item)=>{
@@ -50,24 +63,23 @@ const handleCloseDialog =(item)=>{
   setEditValue({})
 setOpenDialog(false)
 }
-// const handleSaveEdit = async()=>{
-// try {
-  
-// const res= await axios.post(`${BaseUrl}/admin-video-farm/upload-youtube/${idVideo}`, editValue,{
-//         headers: { Authorization: `Bearer ${tokenUser}` }})
-// if(res.status===200){
-//   alert("Cập nhật thành công")
-//     setTimeout(() => {
-//         getDetailVideo();
-//       }, 500);
-//       console.log(res)
-//   handleCloseDialog()
-// }
-// } catch (error) {
-//   console.log("Lỗi nè",error)
-// }
-// }
-
+const handleSaveEdit = async()=>{
+try {
+      const updatedValue = { status: "uploaded" }; 
+    const res= await axios.post(`${BaseUrl}/admin-video-farm/upload-youtube/${idVideo}`, updatedValue,{
+        headers: { Authorization: `Bearer ${tokenUser}` }})
+if(res.status===200){
+  console.log("data nè:",res.data)
+  alert("Cập nhật thành công")
+    await  getDetailVideo();     
+  handleCloseDialog()
+}else {
+      alert("Có lỗi trong lúc duyệt")
+    }
+} catch (error) {
+  console.log("Lỗi nè",error)
+}
+}
   useEffect(()=>{
 getDetailVideo()
   },[])
@@ -89,38 +101,52 @@ return (
     ) : (
       videoDetail.map((item) => (
         <div
-                      onClick={() => handleOpenDialog(item)}
-
           key={item.id}
-          className="cursor-ponter bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
+          className=" cursor-ponter bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
         >
           <span className="font-bold text-lg mb-1">{item.title}</span>
           <div className="flex flex-row justify-end gap-3 mt-2">
+   
             <button
-              onClick={() => handleOpenDialog(item)}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition"
-            >
-Chi tiết            </button>
-            <button
+            onClick={deletevideo}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
             >
               Xóa
             </button>
           </div>
-          {item.youtubeLink ? (
-            <a
-              href={item.youtubeLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 underline break-all mb-1"
-            >
-              ▶ Xem video
-            </a>
-
-          ) : (
-            <span className="italic text-gray-400 mb-1">Chưa có video</span>
-          )
-          }
+          
+      {item.status === "pending" && item.localFilePath ? (
+  <video
+    width="100%"
+    height="360"
+    src={
+      item.localFilePath.startsWith('http')
+        ? item.localFilePath
+        : `${BaseUrl}${item.localFilePath}`
+    }
+    controls
+    className="w-full rounded shadow"
+  >
+    Trình duyệt của bạn không hỗ trợ video
+  </video>
+) : item.youtubeLink && item.status === "uploaded" ? (
+  <iframe
+    width="100%"
+    height="360"
+    src={
+      "https://www.youtube.com/embed/" +
+      (item.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+    }
+    title="YouTube video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    className="rounded shadow"
+  ></iframe>
+) : (
+  <div className="flex items-center justify-center h-56 text-red-500 font-semibold">
+    Video không tồn tại
+  </div>
+)}
           <span className="text-sm text-gray-600 cursor-pointer">
             Danh sách phát: <span className="font-medium">{item.playlistName}</span>
           </span>
@@ -130,63 +156,27 @@ Chi tiết            </button>
           <span className="text-sm text-gray-600">
             Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span>
           </span>
+            <span className="text-sm text-gray-600">
+            Trạng thái: <span className="font-medium">{item.status}</span>
+          </span>
+              <button
+            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition w-full font-semibold"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOpenDialog(item);
+            }}
+          >
+            Xem chi tiết
+          </button>
         </div>
       ))
     )}
-
- 
- {openDialog && (
-  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-    <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-blue-200 animate-fadeIn">
-      <div className="flex items-center mb-6">
-        <div className="w-2 h-8 bg-blue-500 rounded-r mr-3"></div>
-        <h2 className="text-2xl font-bold text-blue-700">Thông tin video</h2>
-      </div>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Tiêu đề</label>
-          <input
-            name="title"
-            value={editValue.title || ""}
-            className="border border-blue-200 px-3 py-2 rounded w-full bg-gray-50 text-gray-800 font-medium"
-            disabled
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">YouTube Link</label>
-          <input
-            name="youtubeLink"
-            value={editValue.youtubeLink || ""}
-            className="border border-blue-200 px-3 py-2 rounded w-full bg-gray-50 text-blue-700 font-medium"
-            disabled
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Playlist Name</label>
-          <input
-            name="playlistName"
-            value={editValue.playlistName || ""}
-            className="border border-blue-200 px-3 py-2 rounded w-full bg-gray-50 text-gray-800 font-medium"
-            disabled
-          />
-        </div>
-        <div className="flex flex-col gap-1 mt-2 text-gray-600 text-sm">
-          <span><span className="font-semibold">Trạng thái:</span> {editValue.status}</span>
-          <span><span className="font-semibold">Người đăng:</span> {editValue.uploadedBy}</span>
-          <span><span className="font-semibold">Ngày tạo:</span> {editValue.createdAt && new Date(editValue.createdAt).toLocaleString()}</span>
-        </div>
-      </div>
-      <div className="flex justify-end gap-2 mt-8">
-        <button
-          className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow font-semibold transition"
-          onClick={handleCloseDialog}
-        >
-          Đóng
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+<DialogVideoDetail editData={editData} 
+handleCloseDialog={handleCloseDialog}
+ handleSaveEdit={handleSaveEdit}
+ editValue={editValue}
+ openDialog={openDialog}
+ />
   </div>
 )
 }
