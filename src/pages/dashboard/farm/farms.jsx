@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
   Card, CardBody, Input, Button, Typography, Checkbox, Chip, Tabs, TabsHeader, Tab,
 } from "@material-tailwind/react";
 import {
-  PencilSquareIcon, TrashIcon, PlusIcon,
+  PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
 } from "@heroicons/react/24/solid";
 import FarmForm from "./FarmForm";
 import FarmDetail from "./FarmDetail";
@@ -165,69 +166,93 @@ export function Farms() {
                         size="sm"
                       />
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex flex-col gap-2">
-                        
-                        <div className="flex gap-2 justify-start items-center">
-                          <Button
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); setEditingFarm(farm); setOpenForm(true); }}
-                            className="bg-blue-600 text-white px-3 py-1 rounded-md shadow-md hover:bg-blue-700"
-                          >
-                            <PencilSquareIcon className="h-4 w-4 mr-1" /> Sửa
-                          </Button>
-                          <Button
-                            size="sm"
-                            onClick={(e) => { e.stopPropagation(); deleteFarm(farm._id); }}
-                            className="bg-gray-200 text-gray-800 px-3 py-1 rounded-md shadow-md hover:bg-gray-300"
-                          >
-                            <TrashIcon className="h-4 w-4 mr-1" /> Xoá
-                          </Button>
-                        </div>
+                   <td className="px-4 py-4">
+  <div className="flex flex-col gap-2">
+    {/* Nhóm nút Sửa & Xoá */}
+    <div className="flex gap-2">
+  <Button
+    size="sm"
+    onClick={(e) => {
+      e.stopPropagation();
+      setEditingFarm(farm);
+      setOpenForm(true);
+    }}
+    className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1 shadow-md"
+  >
+    Sửa
+  </Button>
 
-                        
-                        <div className="flex flex-wrap gap-2 justify-start items-center mt-1">
-                          {farm.status === "pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                color="green"
-                                onClick={(e) => { e.stopPropagation(); activateFarm(farm._id, "duyệt"); }}
-                                className="flex gap-1"
-                              >
-                                Duyệt
-                              </Button>
-                              <Button
-                                size="sm"
-                                color="red"
-                                onClick={(e) => { e.stopPropagation(); deactivateFarm(farm._id, "từ chối"); }}
-                                className="flex gap-1"
-                              >
-                                Từ chối
-                              </Button>
-                            </>
-                          )}
-                          {farm.status === "active" && (
-                            <Button
-                              size="sm"
-                              color="red"
-                              onClick={(e) => { e.stopPropagation(); deactivateFarm(farm._id, "khóa"); }}
-                            >
-                              Khóa
-                            </Button>
-                          )}
-                          {farm.status === "inactive" && (
-                            <Button
-                              size="sm"
-                              color="green"
-                              onClick={(e) => { e.stopPropagation(); activateFarm(farm._id, "mở khóa"); }}
-                            >
-                              Mở khóa
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+  <Button
+    size="sm"
+    onClick={(e) => {
+      e.stopPropagation();
+      deleteFarm(farm._id);
+    }}
+    className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 shadow-md"
+  >
+    Xoá
+  </Button>
+</div>
+
+
+    {/* Nhóm nút trạng thái */}
+    <div className="flex gap-2 mt-1">
+      {farm.status === "pending" && (
+  <>
+    <Button
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation();
+        activateFarm(farm._id, "duyệt");
+      }}
+      className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
+    >
+      Duyệt
+    </Button>
+
+    <Button
+      size="sm"
+      onClick={(e) => {
+        e.stopPropagation();
+        deactivateFarm(farm._id, "từ chối");
+      }}
+      className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
+    >
+      Từ chối
+    </Button>
+  </>
+)}
+
+{farm.status === "active" && (
+  <Button
+    size="sm"
+    onClick={(e) => {
+      e.stopPropagation();
+      deactivateFarm(farm._id, "khóa");
+    }}
+    className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
+  >
+    Khóa
+  </Button>
+)}
+
+{farm.status === "inactive" && (
+  <Button
+    size="sm"
+    onClick={(e) => {
+      e.stopPropagation();
+      activateFarm(farm._id, "mở khóa");
+    }}
+    className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
+  >
+    Mở khóa
+  </Button>
+)}
+
+    </div>
+  </div>
+</td>
+
 
                   </tr>
                 ))}
@@ -244,7 +269,7 @@ export function Farms() {
         initialData={editingFarm}
         onSubmit={(data) => {
           if (editingFarm) {
-            editingFarm(editingFarm._id, data);
+            editFarm(editingFarm._id, data);
           } else {
           addFarm(data);
         }
