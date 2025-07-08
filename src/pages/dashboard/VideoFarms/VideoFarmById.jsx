@@ -25,7 +25,7 @@ export const VideoFarmById = () => {
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
       if (res.status === 200) {
-        setVideoDetail(res.data);
+        setVideoList(res.data);
       }
     } catch (error) {
       console.log("Lỗi nè:", error);
