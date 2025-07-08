@@ -3,7 +3,8 @@ import axios from 'axios'
 import { BaseUrl } from '@/ipconfig'
 import { useParams } from 'react-router-dom'
 import { Audio } from 'react-loader-spinner'
-import CommentVideo from '../commentvideo'
+import CommentVideo from "./commentVideo";
+
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editData, setEditData] = useState(null);
