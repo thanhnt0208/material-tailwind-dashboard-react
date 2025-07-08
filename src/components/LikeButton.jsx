@@ -40,6 +40,9 @@ export default function LikeButton({ videoId }) {
 
       setLiked(!liked);
       onLikeChange?.(); // gọi callback reload danh sách user
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     } catch (error) {
       console.error('Lỗi khi Like/Unlike video:', error);
