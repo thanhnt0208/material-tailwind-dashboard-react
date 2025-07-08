@@ -19,7 +19,6 @@ export default function LikeButton({ videoId }) {
 
       console.log("API trả về:", res.data);
 
-      // Nếu API trả về { users: [...] } hoặc trực tiếp là mảng
       const likedUsers = res.data.users || res.data || [];
 
       const isLiked = likedUsers.some((u) => u._id === userId || u.id === userId);
@@ -35,8 +34,6 @@ export default function LikeButton({ videoId }) {
 
   const handleLikeToggle = async () => {
     if (!videoId || !token) return;
-
-    // Tạm thời đảo trạng thái để UI phản hồi nhanh
     const previousLiked = liked;
     setLiked(!liked);
     setLoading(true);
@@ -55,7 +52,6 @@ export default function LikeButton({ videoId }) {
       console.error('Lỗi khi Like/Unlike video:', error.response?.data || error);
       alert('Không thể Like/Unlike video.');
 
-      // Nếu lỗi thì đảo lại trạng thái
       setLiked(previousLiked);
     } finally {
       setLoading(false);
