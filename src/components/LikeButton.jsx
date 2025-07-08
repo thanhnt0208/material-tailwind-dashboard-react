@@ -1,4 +1,8 @@
 // src/components/LikeButton.jsx
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 import React, { useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
@@ -26,6 +30,7 @@ export default function LikeButton({ videoId }) {
 
       setLiked(!liked);
       if (liked) {
+<<<<<<< Updated upstream
         // Unlike
         await axios.post(`${BaseUrl}/video-like/${videoId}/unlike`, {}, {
           headers: { Authorization: `Bearer ${token}` },
@@ -35,10 +40,29 @@ export default function LikeButton({ videoId }) {
         await axios.post(`${BaseUrl}/video-like/${videoId}`, {}, {
           headers: { Authorization: `Bearer ${token}` },
         });
+=======
+        // ✅ GỌI API UNLIKE CHUẨN BE
+        await axios.post(
+          `${BaseUrl}/video-like/${videoId}/unlike`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+        // ✅ GỌI API LIKE CHUẨN BE
+        await axios.post(
+          `${BaseUrl}/video-like/${videoId}/like`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+>>>>>>> Stashed changes
       }
 
+      // Toggle trạng thái
       setLiked(!liked);
+<<<<<<< Updated upstream
       onLikeChange?.(); // gọi callback reload danh sách user
+=======
+>>>>>>> Stashed changes
     } catch (error) {
       console.error('Lỗi khi Like/Unlike video:', error);
     } finally {
@@ -47,6 +71,10 @@ export default function LikeButton({ videoId }) {
   };
 
   const handleViewLikes = () => {
+<<<<<<< Updated upstream
+=======
+    // Điều hướng đến trang hiển thị danh sách users đã Like
+>>>>>>> Stashed changes
     navigate(`/dashboard/video-like/${videoId}`);
   };
 
