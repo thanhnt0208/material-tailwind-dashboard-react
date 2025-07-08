@@ -1,6 +1,4 @@
 
-
-import CommentVideo from '../commentVideo'
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
@@ -8,11 +6,14 @@ import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
 import VideoDetail from './VideoDetail';
 import LikeButton from '@/components/LikeButton';
+import CommentVideo from '../commentVideo';
 
 
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const [openComment, setOpenComment] = useState(false);
+  const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [loading, setLoading] = useState(true);
   const tokenUser = localStorage.getItem('token');
@@ -51,6 +52,16 @@ export const VideoFarmById = () => {
     setOpenDialog(false);
   };
 
+const handleOpenComment = (e, videoId) => {
+  e.stopPropagation(); 
+  setSelectedVideoId(videoId);
+  setOpenComment(true);
+};
+  const handleCloseComment = () => {
+    setSelectedVideoId(null); 
+    setOpenComment(false);
+  };
+
   useEffect(() => {
     getDetailVideo();
   }, []);
@@ -67,13 +78,13 @@ export const VideoFarmById = () => {
         videoList.map((item) => (
           <div
             key={item._id}
-            onClick={() => handleOpenDialog(item)}
+            onClick={(e) => {  e.stopPropagation(); handleOpenDialog(item)}}
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
             <span className="font-bold text-lg mb-1">{item.title}</span>
 
             {/* ✅ Thêm LikeButton với danh sách like*/}
-            <div className="flex justify-start">
+            <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
               <LikeButton videoId={item._id} />
             </div>
             <div className="flex justify-end gap-3 mt-2">
@@ -87,6 +98,12 @@ export const VideoFarmById = () => {
                 className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow"
               >
                 Xóa
+              </button>
+              <button
+                onClick={(e) =>{ handleOpenComment(e, item._id)}} 
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow"
+              >
+                Bình luận
               </button>
             </div>
 
@@ -132,6 +149,13 @@ export const VideoFarmById = () => {
             </div>
           </div>
         </div>
+      )}
+      {openComment && (
+        <CommentVideo
+          open={openComment}
+          onClose={handleCloseComment}
+          videoId={selectedVideoId}
+        />
       )}
     </div>
   );
