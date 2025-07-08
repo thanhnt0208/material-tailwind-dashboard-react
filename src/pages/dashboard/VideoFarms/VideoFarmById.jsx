@@ -3,6 +3,7 @@ import axios from 'axios'
 import { BaseUrl } from '@/ipconfig'
 import { useParams } from 'react-router-dom'
 import { Audio } from 'react-loader-spinner'
+import CommentVideo from '../commentVideo'
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -20,7 +21,7 @@ export const VideoFarmById = () => {
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
       if (res.status === 200) {
-        setVideoList(res.data);
+        setVideoDetail(res.data);
       }
     } catch (error) {
       console.log("Lỗi nè:", error);
