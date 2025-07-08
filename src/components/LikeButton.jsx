@@ -41,6 +41,9 @@ export default function LikeButton({ videoId }) {
       setLiked(!liked);
       onLikeChange?.(); // gọi callback reload danh sách user
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
