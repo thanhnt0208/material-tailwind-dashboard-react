@@ -5,6 +5,7 @@ import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
 import VideoDetail from './VideoDetail';
 import LikeButton from '@/components/LikeButton';
+import VideoLikeBox from '@/components/VideoLikeBox';
 
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -18,13 +19,13 @@ export const VideoFarmById = () => {
     try {
       setLoading(true);
       const res = await axios.get(`${BaseUrl}/admin-video-farm/farm/${farmId}`, {
-        headers: { Authorization: `Bearer ${tokenUser}` }
+        headers: { Authorization: `Bearer ${tokenUser}` },
       });
       if (res.status === 200) {
         setVideoList(res.data);
       }
     } catch (error) {
-      console.log("Lỗi nè:", error);
+      console.log("Lỗi:", error);
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,7 @@ export const VideoFarmById = () => {
       playlistName: item.playlistName,
       status: item.status,
       uploadedBy: item.uploadedBy?.fullName,
-      createdAt: item.createdAt
+      createdAt: item.createdAt,
     });
     setOpenDialog(true);
   };
@@ -68,21 +69,23 @@ export const VideoFarmById = () => {
           >
             <span className="font-bold text-lg mb-1">{item.title}</span>
 
-            {/* ✅ Thêm LikeButton với danh sách like*/}
-            <div className="flex justify-start">
-              <LikeButton videoId={item._id} />
+            <div className="flex justify-start items-center gap-4">
+              <LikeButton videoId={item._id} onLikeChange={getDetailVideo} />
             </div>
+
+            <VideoLikeBox videoId={item._id} />
 
             <div className="flex justify-end gap-3 mt-2">
               <button
-                onClick={(e) => { e.stopPropagation(); handleOpenDialog(item); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenDialog(item);
+                }}
                 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow"
               >
                 Chi tiết
               </button>
-              <button
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow"
-              >
+              <button className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow">
                 Xóa
               </button>
             </div>
@@ -100,20 +103,32 @@ export const VideoFarmById = () => {
             ) : (
               <span className="italic text-gray-400 mb-1">Chưa có video</span>
             )}
-            <span className="text-sm text-gray-600">Danh sách phát: <span className="font-medium">{item.playlistName}</span></span>
-            <span className="text-sm text-gray-600">Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span></span>
-            <span className="text-sm text-gray-600">Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span></span>
+            <span className="text-sm text-gray-600">
+              Danh sách phát:{' '}
+              <span className="font-medium">{item.playlistName}</span>
+            </span>
+            <span className="text-sm text-gray-600">
+              Ngày đăng:{' '}
+              <span className="font-medium">
+                {new Date(item.createdAt).toLocaleDateString()}
+              </span>
+            </span>
+            <span className="text-sm text-gray-600">
+              Người đăng:{' '}
+              <span className="font-medium">{item.uploadedBy?.fullName}</span>
+            </span>
           </div>
         ))
       )}
 
-      {/* Dialog chi tiết video */}
       {openDialog && selectedVideo && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-blue-200 animate-fadeIn">
             <div className="flex items-center mb-6">
               <div className="w-2 h-8 bg-blue-500 rounded-r mr-3"></div>
-              <h2 className="text-2xl font-bold text-blue-700">Thông tin video</h2>
+              <h2 className="text-2xl font-bold text-blue-700">
+                Thông tin video
+              </h2>
             </div>
 
             <VideoDetail getDetailVideoInformation={selectedVideo} />
