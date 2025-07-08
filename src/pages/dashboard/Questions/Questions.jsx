@@ -11,7 +11,6 @@ import {
   DialogFooter,
   Button,
 } from '@material-tailwind/react';
-
 import EditQuestion from './EditQuestion';
 export const Questions = () => {
   const [loading, setLoading] = useState(true);
