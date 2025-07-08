@@ -2,7 +2,16 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { Oval } from 'react-loader-spinner';
-import AddQuestion from "./AddQuestion"
+import AddQuestion from './AddQuestion';
+import AnswersTable from './answerstable';
+import {
+  Dialog,
+  DialogBody,
+  DialogHeader,
+  DialogFooter,
+  Button,
+} from '@material-tailwind/react';
+
 export const Questions = () => {
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
@@ -12,6 +21,8 @@ export const Questions = () => {
 
   const [addDialog, setAddDialog] = useState(false);
   const [addValue, setAddValue] = useState({ text: '', options: [''], type: 'option', link: '' });
+
+  const [showAnswersDialog, setShowAnswersDialog] = useState(false);
 
   const tokenUser = localStorage.getItem('token');
 
@@ -71,7 +82,7 @@ export const Questions = () => {
       Array.isArray(editValue.options) &&
       editValue.options.some(opt => !opt || opt.trim() === '')
     ) {
-      alert('Vui lòng điền đầy đủ tất cả các đáp án!');
+      alert('Vui lòng điền đủ tất cả các đáp án!');
       return;
     } else if (!editValue.text || editValue.text.trim() === '') {
       alert('Vui lòng nhập nội dung câu hỏi!');
@@ -85,7 +96,7 @@ export const Questions = () => {
           headers: { Authorization: `Bearer ${tokenUser}` },
         }
       );
-      alert("Lưu thành công")
+      alert("Lưu thành công");
       handleCloseDialog();
       getData();
     } catch (error) {
@@ -111,10 +122,12 @@ export const Questions = () => {
     setAddValue({ text: '', options: [''], type: 'option', link: '' });
     setAddDialog(true);
   };
+
   const handleCloseAddDialog = () => {
     setAddDialog(false);
     setAddValue({ text: '', options: [''], type: 'option', link: '' });
   };
+
   const handleAddChange = (e, idx) => {
     if (["option", "single-choice", "multiple-choice", "multi-choice"].includes(addValue.type) && typeof idx === "number") {
       const newOptions = [...addValue.options];
@@ -124,17 +137,16 @@ export const Questions = () => {
       setAddValue({ ...addValue, [e.target.name]: e.target.value });
     }
   };
+
   const handleAddSave = async () => {
     if (!addValue.text || addValue.text.trim() === '') {
       alert('Vui lòng nhập nội dung câu hỏi!');
       return;
     }
     if (["option", "single-choice", "multiple-choice", "multi-choice"].includes(addValue.type) && addValue.options.some(opt => !opt || opt.trim() === '')) {
-      alert('Vui lòng điền đầy đủ tất cả các đáp án!');
+      alert('Vui lòng điền đủ tất cả các đáp án!');
       return;
     }
-   
-
     try {
       await axios.post(`${BaseUrl}/admin-questions`, addValue, {
         headers: { Authorization: `Bearer ${tokenUser}` },
@@ -147,19 +159,39 @@ export const Questions = () => {
       console.log('Lỗi khi thêm:', error);
     }
   };
+
   return (
     <div>
-      <div className="flex justify-end mb-4">
-     <AddQuestion handleAddChange={handleAddChange} 
-handleAddSave={handleAddSave} 
-handleCloseAddDialog={handleCloseAddDialog} 
-handleOpenAddDialog={handleOpenAddDialog} 
-addDialog={addDialog}
-addValue={addValue}
-setAddValue={setAddValue}
-/>
+      <div className="flex justify-between mb-4">
+        <AddQuestion
+          handleAddChange={handleAddChange}
+          handleAddSave={handleAddSave}
+          handleCloseAddDialog={handleCloseAddDialog}
+          handleOpenAddDialog={handleOpenAddDialog}
+          addDialog={addDialog}
+          addValue={addValue}
+          setAddValue={setAddValue}
+        />
+
+        <Button
+          color="blue"
+          onClick={() => setShowAnswersDialog(true)}
+        >
+          Danh sách câu trả lời
+        </Button>
       </div>
 
+      <Dialog open={showAnswersDialog} handler={() => setShowAnswersDialog(false)} size="xl">
+        <DialogHeader>Danh sách câu trả lời</DialogHeader>
+        <DialogBody className="max-h-[70vh] overflow-y-auto">
+          <AnswersTable />
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="text" onClick={() => setShowAnswersDialog(false)}>
+            Đóng
+          </Button>
+        </DialogFooter>
+      </Dialog>
 
       {loading ? (
         <div className="flex justify-center items-center h-40">
@@ -179,9 +211,7 @@ setAddValue={setAddValue}
           Không có câu hỏi nào.
         </div>
       ) : (
-        
         questions.map((item) => (
-          
           <div
             key={item._id}
             className="mb-6 p-4 border rounded-lg bg-white shadow"
@@ -204,139 +234,40 @@ setAddValue={setAddValue}
               </div>
             </div>
             <div className="flex gap-4 mt-8">
-  {[ "single-choice", "multiple-choice", "multi-choice"].includes(item.type) && Array.isArray(item.options) && item.options.length > 0 ? (
-    item.options.map((opt, idx) => (
-      <button
-        key={idx}
-        className="px-4 py-2 bg-blue-400 hover:bg-blue-600 text-white rounded"
-      >
-        {opt}
-      </button>
-    ))
-  ) : item.type === 'upload' ? (
-    <input
-      type="file"
-      accept="image/*"
-      className="border px-3 py-2 rounded w-full max-w-xs"
-      disabled
-    />
-  ) : item.type === 'link' ? (
-    <input
-      type="url"
-      className="border px-3 py-2 rounded w-full max-w-xs"
-      placeholder="Nhập đường dẫn..."
-      disabled
-    />
-  ) : item.type === 'text' ? (
-    <input
-      type="text"
-      className="border px-3 py-2 rounded w-full max-w-xs"
-      placeholder="Nhập câu trả lời..."
-      disabled
-    />
-  ) : null}
-</div>
+              {["single-choice", "multiple-choice", "multi-choice"].includes(item.type) && Array.isArray(item.options) && item.options.length > 0 ? (
+                item.options.map((opt, idx) => (
+                  <button
+                    key={idx}
+                    className="px-4 py-2 bg-blue-400 hover:bg-blue-600 text-white rounded"
+                  >
+                    {opt}
+                  </button>
+                ))
+              ) : item.type === 'upload' ? (
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="border px-3 py-2 rounded w-full max-w-xs"
+                  disabled
+                />
+              ) : item.type === 'link' ? (
+                <input
+                  type="url"
+                  className="border px-3 py-2 rounded w-full max-w-xs"
+                  placeholder="Nhập đường dẫn..."
+                  disabled
+                />
+              ) : item.type === 'text' ? (
+                <input
+                  type="text"
+                  className="border px-3 py-2 rounded w-full max-w-xs"
+                  placeholder="Nhập câu trả lời..."
+                  disabled
+                />
+              ) : null}
+            </div>
           </div>
         ))
-)}
-
-      {openDialog && editData && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 min-w-[350px] max-w-[90vw]">
-            <div className="font-bold text-lg mb-4">Sửa câu hỏi</div>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">
-                Nội dung câu hỏi
-              </label>
-              <input
-                name="text"
-                value={editValue.text}
-                onChange={handleEditChange}
-                className="border px-3 py-2 rounded w-full"
-              />
-            </div>
-            {[ 'single-choice', 'multiple-choice', 'multi-choice'].includes(
-              editData.type
-            ) && Array.isArray(editValue.options) && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">
-                  Tùy chọn đáp án
-                </label>
-                {editValue.options.length === 0 && (
-                  <div className="text-gray-400 italic mb-2">
-                    Chưa có đáp án nào, hãy thêm đáp án mới.
-                  </div>
-                )}
-                {editValue.options.map((opt, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2 items-center">
-                    <span className="w-6 text-gray-500 font-semibold">
-                      {String.fromCharCode(65 + idx)}.
-                    </span> 
-                    <input
-                      value={opt}
-                      onChange={(e) => handleEditChange(e, idx)} 
-                      className="border px-3 py-2 rounded w-full"
-                      placeholder={`Đáp án ${String.fromCharCode(65 + idx)}`}
-                    />
-                    <button
-                      type="button"
-                      className="px-2 py-1 bg-red-400 text-white rounded hover:bg-red-600"
-                      onClick={() => {
-                        const newOptions = editValue.options.filter((_, i) => i !== idx);
-                        setEditValue({ ...editValue, options: newOptions });
-                      }}
-                      disabled={editValue.options.length <= 1}
-                      title={
-                        editValue.options.length <= 1
-                          ? 'Phải có ít nhất 1 đáp án'
-                          : 'Xóa đáp án'
-                      }
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 mt-2"
-                  onClick={() =>
-                    setEditValue({
-                      ...editValue,
-                      options: [...editValue.options, ''],
-                    })
-                  }
-                >
-                  Thêm đáp án
-                </button>
-              </div>
-            )}
-            {editData.type === 'link' && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Link</label>
-                <input
-                  name="link"
-                  value={editValue.link}
-                  onChange={handleEditChange}
-                  className="border px-3 py-2 rounded w-full"
-                />
-              </div>
-            )}
-            <div className="flex justify-end gap-2 mt-6">
-              <button
-                className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-                onClick={handleCloseDialog}
-              >
-                Hủy
-              </button>
-              <button
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                onClick={handleSave}
-              >
-                Lưu
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
