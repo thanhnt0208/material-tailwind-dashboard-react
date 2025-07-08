@@ -37,8 +37,6 @@ export const VideoFarms = () => {
   });
   const farmList = Object.values(farmMap);
 
-
-
 const gotoVideoById=(farmId)=>{
   navigate(`/dashboard/VideoFarmById/${farmId}`);
 }
