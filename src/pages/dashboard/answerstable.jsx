@@ -10,9 +10,51 @@ import {
 } from "@material-tailwind/react";
 
 const API_URL = "https://api-ndolv2.nongdanonline.vn/answers";
-const token = localStorage.getItem("token");
 
-export function AnswersTable  ()  {
+// Hàm fetch có auto-refresh token
+const fetchWithAuth = async (url, options = {}) => {
+  let token = localStorage.getItem("token");
+
+  let res = await fetch(url, {
+    ...options,
+    headers: {
+      ...(options.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (res.status === 401 || res.status === 403) {
+    console.warn("⚠ Token hết hạn, đang làm mới...");
+    const refreshToken = localStorage.getItem("refreshToken");
+    const refreshRes = await fetch("https://api-ndolv2.nongdanonline.vn/auth/refresh-token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (refreshRes.ok) {
+      const refreshData = await refreshRes.json();
+      localStorage.setItem("token", refreshData.accessToken);
+      token = refreshData.accessToken;
+
+      // Gọi lại API với token mới
+      res = await fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${token}`,
+        },
+      });
+    } else {
+      console.error("❌ Refresh token thất bại");
+      throw new Error("Vui lòng đăng nhập lại!");
+    }
+  }
+
+  return res;
+};
+
+export function AnswersTable() {
   const [answers, setAnswers] = useState([]);
   const [open, setOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -28,9 +70,7 @@ export function AnswersTable  ()  {
   // Fetch all answers
   const fetchAnswers = async () => {
     try {
-      const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetchWithAuth(API_URL);
       const data = await res.json();
       if (Array.isArray(data)) {
         setAnswers(data);
@@ -72,62 +112,64 @@ export function AnswersTable  ()  {
   };
 
   // Save data (create or update)
- const handleSubmit = async () => {
-  const url = editData ? `${API_URL}/${editData._id}` : `${API_URL}/batch`;
-  const method = editData ? "PUT" : "POST";
-
-  const body = editData
-    ? {
-        farmId: form.farmId,
-        questionId: form.questionId,
-        selectedOptions: form.selectedOptions,
-        otherText: form.otherText,
-        uploadedFiles: form.uploadedFiles
-      }
-    : {
-        farmId: form.farmId,
-        answers: [
-          {
-            questionId: form.questionId,
-            selectedOptions: form.selectedOptions,
-            otherText: form.otherText,
-            uploadedFiles: form.uploadedFiles
-          }
-        ]
-      };
-
-  try {
-    const res = await fetch(url, {
-      method,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      console.error("Error response:", errorData);
-      throw new Error(errorData.message || "Không thể lưu dữ liệu");
+  const handleSubmit = async () => {
+    if (!form.farmId || !form.questionId) {
+      alert("Vui lòng nhập đủ Farm ID và Question ID");
+      return;
     }
 
-    setOpen(false);
-    setEditData(null);
-    fetchAnswers();
-  } catch (err) {
-    alert(`Lỗi: ${err.message}`);
-  }
-};
+    const url = editData ? `${API_URL}/${editData._id}` : `${API_URL}/batch`;
+    const method = editData ? "PUT" : "POST";
 
+    const body = editData
+      ? {
+          farmId: form.farmId,
+          questionId: form.questionId,
+          selectedOptions: form.selectedOptions,
+          otherText: form.otherText,
+          uploadedFiles: form.uploadedFiles,
+        }
+      : {
+          farmId: form.farmId,
+          answers: [
+            {
+              questionId: form.questionId,
+              selectedOptions: form.selectedOptions,
+              otherText: form.otherText,
+              uploadedFiles: form.uploadedFiles,
+            },
+          ],
+        };
+
+    try {
+      const res = await fetchWithAuth(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        console.error("Error response:", errorData);
+        throw new Error(errorData.message || "Không thể lưu dữ liệu");
+      }
+
+      setOpen(false);
+      setEditData(null);
+      fetchAnswers();
+    } catch (err) {
+      alert(`Lỗi: ${err.message}`);
+    }
+  };
 
   // Delete an answer
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xoá?")) return;
     try {
-      const res = await fetch(`${API_URL}/${id}`, {
+      const res = await fetchWithAuth(`${API_URL}/${id}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error("Không thể xoá dữ liệu");
       fetchAnswers();
@@ -138,34 +180,36 @@ export function AnswersTable  ()  {
 
   // Upload image
   const handleUploadImage = async (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const formData = new FormData();
-  formData.append("file", file);
+    const formData = new FormData();
+    formData.append("file", file);
 
-  setUploading(true);
-  try {
-    const res = await fetch(`${API_URL}/upload-image`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-    if (!res.ok) throw new Error("Không thể upload hình ảnh");
-    const data = await res.json();
-    setForm({
-      ...form,
-      uploadedFiles: [...form.uploadedFiles, data.path],
-    });
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    setUploading(false);
-  }
-};
+    setUploading(true);
+    try {
+      const res = await fetchWithAuth(`${API_URL}/upload-image`, {
+        method: "POST",
+        body: formData,
+      });
 
+      const result = await res.json();
+
+      if (!res.ok) {
+        console.error("Upload lỗi:", result);
+        throw new Error(result.message || "Không thể upload hình ảnh");
+      }
+
+      setForm((prevForm) => ({
+        ...prevForm,
+        uploadedFiles: [...prevForm.uploadedFiles, result.path],
+      }));
+    } catch (err) {
+      alert(`Upload lỗi: ${err.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="p-6">
@@ -231,8 +275,6 @@ export function AnswersTable  ()  {
           ))}
         </tbody>
       </table>
-
-
 
       {/* Dialog form */}
       <Dialog open={open} handler={() => setOpen(!open)}>
@@ -310,10 +352,9 @@ export function AnswersTable  ()  {
             {editData ? "Cập nhật" : "Tạo mới"}
           </Button>
         </DialogFooter>
-
       </Dialog>
     </div>
   );
-};
+}
 
 export default AnswersTable;

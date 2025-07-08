@@ -30,7 +30,9 @@ export function Users() {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      const active = (Array.isArray(res.data) ? res.data : [])
+                    .filter(u => u.isActive);         
+      setUsers(active);
     } catch (err) {
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
@@ -90,19 +92,22 @@ export function Users() {
       .catch(() => alert("Cập nhật thất bại!"));
   };
 
-  const handleDelete = (userId) => {
+  const handleDelete = async (userId) => {
     if (!token) return;
     if (!window.confirm("Bạn có chắc muốn xoá người dùng này?")) return;
 
-    axios.delete(`https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(() => {
-        alert("Xoá người dùng thành công!");
-        setUsers(users.filter(user => user.id !== userId));
-      })
-      .catch(() => alert("Xoá thất bại!"));
+    try {
+      await axios.delete(
+        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      alert("Xoá người dùng thành công!");
+      await fetchUsers();        
+    } catch (e) {
+      alert("Xoá thất bại!");
+    }
   };
+
 
   const handleAddRole = async (userId, role) => {
     try {

@@ -244,7 +244,7 @@ export function Farms() {
         initialData={editingFarm}
         onSubmit={(data) => {
           if (editingFarm) {
-            editingFarm(editingFarm._id, data);
+            editFarm(editingFarm._id, data);
           } else {
           addFarm(data);
         }
