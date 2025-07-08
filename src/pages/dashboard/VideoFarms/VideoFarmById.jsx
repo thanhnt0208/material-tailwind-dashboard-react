@@ -3,7 +3,10 @@ import axios from 'axios'
 import { BaseUrl } from '@/ipconfig'
 import { useParams } from 'react-router-dom'
 import { Audio } from 'react-loader-spinner'
+
 import CommentVideo from "./commentVideo";
+
+
 
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -12,26 +15,22 @@ export const VideoFarmById = () => {
   const [loading, setLoading] = useState(true)
   const [idVideo, setIdVideo] = useState([])
   const [videoDetail,setVideoDetail]=useState([])
-
-  const [openComment, setOpenComment] = useState(null)
-
   const tokenUser = localStorage.getItem('token');
-  const {farmId}=useParams()
-  console.log(videoDetail)
+  const { farmId } = useParams();
+
   const getDetailVideo = async () => {
     try {
-          setLoading(true)
+      setLoading(true);
       const res = await axios.get(`${BaseUrl}/admin-video-farm/farm/${farmId}`, {
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
       if (res.status === 200) {
-        setVideoDetail(res.data)
-        setLoading(false)
+        setVideoList(res.data);
       }
     } catch (error) {
-      console.log("Lỗi nè:", error)
-        setLoading(false)
-
+      console.log("Lỗi nè:", error);
+    } finally {
+      setLoading(false);
     }
   }
 const handleOpenDialog =(item)=>{
@@ -49,10 +48,6 @@ setEditData(item)
 
 setOpenDialog(true)
 }
-
-const toggleComment = (videoId) => {
-    setOpenComment((prev) => (prev === videoId ? null : videoId));
-  };
 
 const handleCloseDialog =(item)=>{
   setEditData(null)
@@ -82,7 +77,6 @@ getDetailVideo()
   },[])
 
 return (
-  <>
   <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     {loading ? (
       <div className="flex justify-center items-center w-full col-span-3">
@@ -99,6 +93,8 @@ return (
     ) : (
       videoDetail.map((item) => (
         <div
+                      onClick={() => handleOpenDialog(item)}
+
           key={item.id}
           className="cursor-ponter bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
         >
@@ -108,18 +104,11 @@ return (
               onClick={() => handleOpenDialog(item)}
               className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition"
             >
-            Chi tiết            
-            </button>
+Chi tiết            </button>
             <button
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
             >
               Xóa
-            </button>
-            <button
-              onClick={() => toggleComment(item._id)}
-              className="px-4 py-2 border border-blue-500 text-blue-500 rounded shadow transition hover:bg-blue-50"
-            >
-              Bình luận
             </button>
           </div>
           {item.youtubeLink ? (
@@ -142,7 +131,6 @@ return (
           <span className="text-sm text-gray-600">
             Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span>
           </span>
-          
           <span className="text-sm text-gray-600">
             Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span>
           </span>
@@ -204,14 +192,7 @@ return (
   </div>
 )}
   </div>
-
-  <CommentVideo
-  open={Boolean(openComment)}
-  onClose={() => setOpenComment(null)}
-  videoId={openComment}
-/>
-</>
 )
 }
 
-export default VideoFarmById
+export default VideoFarmById;
