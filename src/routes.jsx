@@ -64,11 +64,6 @@ export const routes = [
         element: <VideoFarms />,
 
       },
-      {  // bạn dùng icon tuỳ ý
-  name: "Video Likes",
-  path: "/video-like/:videoId",
-  element: <VideoLikeList />,
-},
     ],
   },
   {
