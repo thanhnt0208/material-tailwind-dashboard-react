@@ -19,9 +19,10 @@ export const VideoFarmById = () => {
       const res = await axios.get(`${BaseUrl}/admin-video-farm/farm/${farmId}`, {
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
-      if (res.status === 200) {
+      if (res.status === 200) { 
         setVideoDetail(res.data)
         setLoading(false)
+        
       }
     } catch (error) {
       console.log("Lỗi nè:", error)
