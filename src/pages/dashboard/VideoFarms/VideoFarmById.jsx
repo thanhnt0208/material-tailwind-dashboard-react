@@ -106,6 +106,12 @@ Chi tiết            </button>
             >
               Xóa
             </button>
+            <button
+                onClick={() => handleOpenComment(item._id)} 
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow transition"
+              >
+                Bình luận
+              </button>
           </div>
           {item.youtubeLink ? (
             <a
