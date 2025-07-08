@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-import React, { useEffect, useState } from 'react'
-import axios from 'axios'
-import { BaseUrl } from '@/ipconfig'
-import { useParams } from 'react-router-dom'
-import { Audio } from 'react-loader-spinner'
+
+
 import CommentVideo from '../commentVideo'
-=======
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
@@ -14,7 +9,7 @@ import { Audio } from 'react-loader-spinner';
 import VideoDetail from './VideoDetail';
 import LikeButton from '@/components/LikeButton';
 
->>>>>>> tien
+
 export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
@@ -81,30 +76,6 @@ export const VideoFarmById = () => {
             <div className="flex justify-start">
               <LikeButton videoId={item._id} />
             </div>
-
-<<<<<<< HEAD
-          key={item.id}
-          className="cursor-ponter bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
-        >
-          <span className="font-bold text-lg mb-1">{item.title}</span>
-          <div className="flex flex-row justify-end gap-3 mt-2">
-            <button
-              onClick={() => handleOpenDialog(item)}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition"
-            >
-Chi tiết            </button>
-            <button
-              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
-            >
-              Xóa
-            </button>
-            <button
-                onClick={() => handleOpenComment(item._id)} 
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow transition"
-              >
-                Bình luận
-              </button>
-=======
             <div className="flex justify-end gap-3 mt-2">
               <button
                 onClick={(e) => { e.stopPropagation(); handleOpenDialog(item); }}
@@ -135,7 +106,7 @@ Chi tiết            </button>
             <span className="text-sm text-gray-600">Danh sách phát: <span className="font-medium">{item.playlistName}</span></span>
             <span className="text-sm text-gray-600">Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span></span>
             <span className="text-sm text-gray-600">Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span></span>
->>>>>>> tien
+
           </div>
         ))
       )}
