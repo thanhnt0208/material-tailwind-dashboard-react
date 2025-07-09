@@ -9,6 +9,7 @@ import {
   DocumentDuplicateIcon, // icon mới cho AdminReports
 } from "@heroicons/react/24/solid";
 
+<<<<<<< HEAD
 import {
   Home,
   Users,
@@ -19,6 +20,10 @@ import {
   AdminReports, // import thêm
 } from "@/pages/dashboard";
 
+=======
+import VideoLikeList from "@/pages/dashboard/VideoLikeList";
+import { Home, Users, Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
+>>>>>>> test
 import { SignIn, SignUp } from "@/pages/auth";
 
 const icon = {
@@ -64,13 +69,17 @@ export const routes = [
         name: "Video Farms",
         path: "/VideoFarms",
         element: <VideoFarms />,
+<<<<<<< HEAD
       },
       {
         icon: <DocumentDuplicateIcon {...icon} />,
         name: "Admin Reports",          // tên hiển thị
         path: "/AdminReports",          // URL
         element: <AdminReports />,      // component
+=======
+>>>>>>> test
       },
+  
     ],
   },
   {
