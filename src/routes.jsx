@@ -5,15 +5,21 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
+  ViewfinderCircleIcon,
+  DocumentDuplicateIcon, // icon mới cho AdminReports
 } from "@heroicons/react/24/solid";
 
-import { Home, Users , Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
-
-
-
+import {
+  Home,
+  Users,
+  Farms,
+  Questions,
+  AnswersTable,
+  VideoFarms,
+  AdminReports, // import thêm
+} from "@/pages/dashboard";
 
 import { SignIn, SignUp } from "@/pages/auth";
-import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -25,7 +31,7 @@ export const routes = [
     pages: [
       {
         icon: <HomeIcon {...icon} />,
-        name: "dashboard",
+        name: "Dashboard",
         path: "/home",
         element: <Home />,
       },
@@ -41,26 +47,29 @@ export const routes = [
         path: "/Farms",
         element: <Farms />,
       },
-      
-       {
+      {
         icon: <InformationCircleIcon {...icon} />,
         name: "Questions",
         path: "/Questions",
-      element: <Questions />,
+        element: <Questions />,
       },
-
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "AnswersTable",
+        name: "Answers Table",
         path: "/AnswersTable",
-      element: <AnswersTable />,
+        element: <AnswersTable />,
       },
-        {
+      {
         icon: <ViewfinderCircleIcon {...icon} />,
-        name: "VideoFarms",
+        name: "Video Farms",
         path: "/VideoFarms",
         element: <VideoFarms />,
-
+      },
+      {
+        icon: <DocumentDuplicateIcon {...icon} />,
+        name: "Admin Reports",          // tên hiển thị
+        path: "/AdminReports",          // URL
+        element: <AdminReports />,      // component
       },
     ],
   },
@@ -70,13 +79,13 @@ export const routes = [
     pages: [
       {
         icon: <ServerStackIcon {...icon} />,
-        name: "sign in",
+        name: "Sign in",
         path: "/sign-in",
         element: <SignIn />,
       },
       {
         icon: <RectangleStackIcon {...icon} />,
-        name: "sign up",
+        name: "Sign up",
         path: "/sign-up",
         element: <SignUp />,
       },
