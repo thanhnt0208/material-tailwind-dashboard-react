@@ -16,7 +16,7 @@ const fetchAllVideos = async () => {
     const res = await axios.get(`${BaseUrl}/video-farm/new`, {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
-    console.log("Dữ liệu video:", res.data)
+    console.log("Dữ liệu video:", videos)
     if (res.status === 200) {
       const videoArray = res.data.videos || [] 
       setVideos(videoArray)
@@ -54,6 +54,7 @@ const fetchAllVideos = async () => {
         <span className="col-span-3 text-center">Không có video nào.</span>
       ) : (
         videos.map((item) => (
+          
           <div
             key={item._id}
             onClick={() => handleClickFarm(item.farmId?.id)}

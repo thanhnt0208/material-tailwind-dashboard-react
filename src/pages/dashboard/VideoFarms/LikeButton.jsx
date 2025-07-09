@@ -63,12 +63,6 @@ export default function LikeButton({ videoId }) {
 
       setLiked(!liked);
       onLikeChange?.(); // gọi callback reload danh sách user
-
-    } catch (error) {
-      console.error('Lỗi khi Like/Unlike video:', error);
-
-
-      setLiked(!liked); 
     } catch (err) {
       console.error(' Lỗi khi Like/Unlike video:', err.response?.data || err);
       alert('Không thể Like/Unlike video.');
