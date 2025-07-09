@@ -15,7 +15,6 @@ export default function LikeButton({ videoId }) {
     setLoading(true);
 
     try {
-<<<<<<< Updated upstream
       const url = liked
         ? `${BaseUrl}/video-like/${videoId}/unlike`
         : `${BaseUrl}/video-like/${videoId}/like`;
@@ -25,7 +24,6 @@ export default function LikeButton({ videoId }) {
       });
 
       setLiked(!liked);
-=======
       if (liked) {
         // Unlike
         await axios.post(`${BaseUrl}/video-like/${videoId}/unlike`, {}, {
@@ -40,13 +38,7 @@ export default function LikeButton({ videoId }) {
 
       setLiked(!liked);
       onLikeChange?.(); // gọi callback reload danh sách user
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
+
     } catch (error) {
       console.error('Lỗi khi Like/Unlike video:', error);
     } finally {
