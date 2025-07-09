@@ -5,7 +5,7 @@ import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
 import VideoDetail from './VideoDetail';
-import LikeButton from '@/components/LikeButton';
+import LikeButton from './LikeButton';
 import CommentVideo from '../commentVideo';
 
 
@@ -83,7 +83,6 @@ const handleOpenComment = (e, videoId) => {
           >
             <span className="font-bold text-lg mb-1">{item.title}</span>
 
-            {/* ✅ Thêm LikeButton với danh sách like*/}
             <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
               <LikeButton videoId={item._id} />
             </div>
