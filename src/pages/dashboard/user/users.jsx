@@ -5,6 +5,7 @@ import {
   Typography, Button, Dialog, DialogHeader,
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
+import FarmForm from "./FarmForm";
 
 export function Users() {
   const [users, setUsers] = useState([]);
@@ -22,6 +23,9 @@ export function Users() {
 
   const [selectedRole, setSelectedRole] = useState("farmer");
 
+  const [openFarmForm, setOpenFarmForm] = useState(false);
+  const [farmFormData, setFarmFormData] = useState(null);
+
   const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
@@ -30,8 +34,7 @@ export function Users() {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const active = (Array.isArray(res.data) ? res.data : [])
-                    .filter(u => u.isActive);         
+      const active = (Array.isArray(res.data) ? res.data : []).filter(u => u.isActive);
       setUsers(active);
     } catch (err) {
       setError("Lỗi khi tải danh sách người dùng.");
@@ -39,19 +42,19 @@ export function Users() {
       setLoading(false);
     }
   };
-  
-  useEffect(() => {
-      if (!token) {
-        setError("Không tìm thấy access token!");
-        setLoading(false);
-        return;
-      }
-      fetchUsers();
-    }, [token]);
 
-      useEffect(() => {
-      setRoles(["Customer", "Admin", "Farmer"]); 
-    }, []);
+  useEffect(() => {
+    if (!token) {
+      setError("Không tìm thấy access token!");
+      setLoading(false);
+      return;
+    }
+    fetchUsers();
+  }, [token]);
+
+  useEffect(() => {
+    setRoles(["Customer", "Admin", "Farmer"]);
+  }, []);
 
   const openEdit = (user) => {
     setSelectedUser(user);
@@ -102,20 +105,19 @@ export function Users() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Xoá người dùng thành công!");
-      await fetchUsers();        
+      await fetchUsers();
     } catch (e) {
       alert("Xoá thất bại!");
     }
   };
 
-
   const handleAddRole = async (userId, role) => {
     try {
       await axios.patch(
         `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}/add-role`,
-        { role: role.charAt(0).toUpperCase() + role.slice(1) }, 
+        { role: role.charAt(0).toUpperCase() + role.slice(1) },
         { headers: { Authorization: `Bearer ${token}` } }
-    );
+      );
       alert("Đã thêm role thành công!");
       fetchUsers();
     } catch (e) {
@@ -140,6 +142,7 @@ export function Users() {
   return (
     <div className="px-4 pb-4">
       <Typography variant="h6" color="blue-gray" className="mb-2">Users Management</Typography>
+
       {loading && (
         <div className="flex justify-center py-4">
           <Spinner className="h-8 w-8" color="blue" />
@@ -190,26 +193,6 @@ export function Users() {
         ))}
       </div>
 
-      <Dialog open={editOpen} handler={setEditOpen} size="sm">
-        <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
-        <DialogBody>
-          <div className="flex flex-col gap-4">
-            <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-            <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-            <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-            <Select label="Role" value={formData.role} onChange={val => setFormData({ ...formData, role: val })}>
-              {roles.map(role => (
-                <Option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1)}</Option>
-              ))}
-            </Select>
-          </div>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="text" onClick={() => setEditOpen(false)}>Hủy</Button>
-          <Button variant="gradient" color="green" onClick={handleUpdate}>Lưu</Button>
-        </DialogFooter>
-      </Dialog>
-
       <Dialog open={viewOpen} handler={setViewOpen} size="sm">
         <DialogHeader>Thông tin chi tiết</DialogHeader>
         <DialogBody>
@@ -229,17 +212,47 @@ export function Users() {
                   {addr.address} - {addr.ward}, {addr.district}, {addr.province}
                 </div>
               )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
+
+              <Button
+                color="green"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  setFarmFormData({ ownerId: viewUser.id });
+                  setOpenFarmForm(true);
+                }}
+              >
+                Thêm nông trại cho người dùng này
+              </Button>
             </div>
           ) : (
-              <Typography className="text-gray-500 text-center">Đang tải dữ liệu...</Typography>
+            <Typography className="text-gray-500 text-center">Đang tải dữ liệu...</Typography>
           )}
         </DialogBody>
         <DialogFooter>
           <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
         </DialogFooter>
       </Dialog>
+
+      <FarmForm
+        open={openFarmForm}
+        onClose={() => setOpenFarmForm(false)}
+        initialData={farmFormData}
+        onSubmit={async (data) => {
+          try {
+            const payload = { ...data, ownerId: farmFormData.ownerId };
+            await axios.post("https://api-ndolv2.nongdanonline.vn/adminfarms", payload, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            alert("Tạo farm thành công!");
+            setOpenFarmForm(false);
+          } catch (err) {
+            alert("Lỗi khi thêm farm: " + (err.response?.data?.message || err.message));
+          }
+        }}
+      />
     </div>
-  ) 
+  );
 }
 
-export default Users
+export default Users;

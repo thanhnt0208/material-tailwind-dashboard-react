@@ -19,9 +19,13 @@ export function Sidenav({ brandImg, brandName, routes }) {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    setAuthStatus(dispatch, false);     
-    navigate("/auth/sign-in");          
+    const confirmLogout = window.confirm("Bạn có chắc muốn đăng xuất?")
+    if (confirmLogout) {
+      localStorage.removeItem("token");
+      setAuthStatus(dispatch, false);     
+      navigate("/auth/sign-in");
+    }
+              
   };
 
   const sidenavTypes = {
