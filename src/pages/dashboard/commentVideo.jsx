@@ -152,7 +152,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
                     <Button
                       size="sm"
                       variant="text"
-                      onClick={() => setReplyBox({ commentIndex: i, text: "" })} 
+                      onClick={() => setReplyBox({ commentIndex: c.index, text: "" })} 
                     >
                       Trả lời
                     </Button>
@@ -160,14 +160,14 @@ export default function CommentVideo({ open, onClose, videoId }) {
                       size="sm"
                       variant="text"
                       color="red"
-                      onClick={() => handleHideComment(i)} 
+                      onClick={() =>{console.log("Hide comment index:", i, "Comment:", c); handleHideComment(c.index)}} 
                     >
                       Ẩn
                     </Button>
                   </div>
                 </div>
 
-                {replyBox.commentIndex === i && ( 
+                {replyBox.commentIndex === c.index && ( 
                   <form onSubmit={handleReply} className="flex gap-2 mt-2">
                     <Input
                       size="sm"
@@ -206,7 +206,8 @@ export default function CommentVideo({ open, onClose, videoId }) {
                           size="sm"
                           variant="text"
                           color="red"
-                          onClick={() => handleHideReply(i, j)} 
+                          onClick={() => {console.log("Hide reply index (backend):", c.index, "reply index (backend):", r.index);
+                            handleHideReply(c.index, r.index)}} 
                         >
                           Ẩn
                         </Button>
