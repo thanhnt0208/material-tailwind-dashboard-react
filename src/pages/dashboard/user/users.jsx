@@ -15,7 +15,7 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
   const [selectedRole, setSelectedRole] = useState("Farmer");
 
   const [viewOpen, setViewOpen] = useState(false);
@@ -31,7 +31,7 @@ export function Users() {
     setLoading(true);
     try {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const activeUsers = (Array.isArray(res.data) ? res.data : []).filter(u => u.isActive);
       setUsers(activeUsers);
@@ -56,7 +56,7 @@ export function Users() {
     setFormData({
       fullName: user.fullName,
       email: user.email,
-      phone: user.phone || ''
+      phone: user.phone || "",
     });
     setEditOpen(true);
   };
@@ -65,7 +65,10 @@ export function Users() {
     if (!token || !selectedUser) return;
     try {
       await axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
       alert("Cập nhật thành công!");
       fetchUsers();
@@ -110,7 +113,7 @@ export function Users() {
     setViewOpen(true);
     try {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/user-addresses", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const userAddresses = res.data.filter(addr => addr.userid === user.id);
       setAddresses(userAddresses);
@@ -135,7 +138,10 @@ export function Users() {
 
   return (
     <div className="px-4 pb-4">
-      <Typography variant="h6" color="blue-gray" className="mb-2">Quản lý người dùng</Typography>
+      <Typography variant="h6" color="blue-gray" className="mb-2">
+        Quản lý người dùng
+      </Typography>
+
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
 
