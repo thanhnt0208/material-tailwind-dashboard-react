@@ -48,11 +48,24 @@ export default function LikeButton({ videoId }) {
       });
 
 
-      setLiked(!liked); 
+      setLiked(!liked);
+      if (liked) {
+        // Unlike
+        await axios.post(`${BaseUrl}/video-like/${videoId}/unlike`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      } else {
+        // Like
+        await axios.post(`${BaseUrl}/video-like/${videoId}`, {}, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+
+      setLiked(!liked);
+      onLikeChange?.(); // gọi callback reload danh sách user
     } catch (err) {
       console.error(' Lỗi khi Like/Unlike video:', err.response?.data || err);
       alert('Không thể Like/Unlike video.');
-
     } finally {
       setLoading(false);
     }

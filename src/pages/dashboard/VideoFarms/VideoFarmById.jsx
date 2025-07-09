@@ -4,7 +4,6 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-import VideoDetail from './VideoDetail';
 import LikeButton from './LikeButton';
 import CommentVideo from '../commentVideo';
 import DialogVideoDetail from './DialogVideoDetail'
@@ -88,7 +87,7 @@ setEditData(item)
     status: item.status, 
     uploadedBy: item.uploadedBy?.fullName,
     createdAt: item.createdAt,
-    // localFilePath: item.localFilePath,
+    localFilePath: item.localFilePath,
 
   })
 
@@ -138,6 +137,9 @@ const handleOpenComment = (e, videoId) => {
       ) : (
         videoDetail.map((item) => (
           <div
+            onClick={(e) => {
+              handleOpenDialogInforvideo(item);
+            }}
             key={item._id}
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
@@ -151,31 +153,32 @@ const handleOpenComment = (e, videoId) => {
            <div className="flex flex-row justify-end gap-3 mt-2">
    
             <button
-            onClick={deletevideo}
+            onClick={(e)=>{
+                e.stopPropagation();
+              deletevideo()}}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
             >
               Xóa
             </button>
           </div>
           
-      {item.status === "pending" && item.localFilePath ? (
+      {item.status === "pending" && item.localFilePath ?
+      
+      (
   <video
-    width="100%"
-    height="360"
-    src={
-      item.localFilePath.startsWith('http')
-        ? item.localFilePath
-        : `${BaseUrl}${item.localFilePath}`
-    }
+  
+ src={
+    item.localFilePath.startsWith('http')
+      ? item.localFilePath
+      : `${BaseUrl}${item.localFilePath}`
+  }
     controls
-    className="w-full rounded shadow"
+    className=" h-[360px]  w-full rounded shadow"
   >
     Trình duyệt của bạn không hỗ trợ video
   </video>
 ) : item.youtubeLink && item.status === "uploaded" ? (
-  <iframe
-    width="100%"
-    height="360"
+  <iframe 
     src={
       "https://www.youtube.com/embed/" +
       (item.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
@@ -183,10 +186,10 @@ const handleOpenComment = (e, videoId) => {
     title="YouTube video"
     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
     allowFullScreen
-    className="rounded shadow"
+    className="h-[360px] rounded shadow w-full"
   ></iframe>
 ) : (
-  <div className="flex items-center justify-center h-56 text-red-500 font-semibold">
+  <div className="flex items-center justify-center h-56 text-red-500 font-semibold w-full h-[360px] rounded shadow bg-gray-100"  >
     Video không tồn tại
   </div>
 
@@ -215,15 +218,6 @@ const handleOpenComment = (e, videoId) => {
             <span className="text-sm text-gray-600">
             Trạng thái: <span className="font-medium">{item.status}</span>
           </span>
-              <button
-            className="mt-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition w-full font-semibold"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenDialogInforvideo(item);
-            }}
-          >
-            Xem chi tiết
-          </button>
           </div>
         ))
       )}
@@ -235,27 +229,6 @@ handleCloseDialogInforVideo={handleCloseDialogInforVideo}
  editValue={editValue}
  openDialogInforVideo={openDialogInforVideo}
  />  
-     {/* {openDialog && selectedVideo && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-blue-200 animate-fadeIn">
-            <div className="flex items-center mb-6">
-              <div className="w-2 h-8 bg-blue-500 rounded-r mr-3"></div>
-              <h2 className="text-2xl font-bold text-blue-700">Thông tin video</h2>
-            </div>
-
-            <VideoDetail getDetailVideoInformation={selectedVideo} />
-
-            <div className="flex justify-end gap-2 mt-8">
-              <button
-                className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow font-semibold transition"
-                onClick={handleCloseDialog}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
       {openComment && (
         <CommentVideo
           open={openComment}
