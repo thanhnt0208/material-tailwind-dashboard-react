@@ -4,7 +4,7 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-import LikeButton from '@/components/LikeButton';
+import LikeButton from './LikeButton';
 import CommentVideo from '../commentVideo';
 import DialogVideoDetail from './DialogVideoDetail'
 
@@ -144,7 +144,9 @@ const handleOpenComment = (e, videoId) => {
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
 
+
            <span className="font-bold text-lg mb-1">{item.title}</span>
+
             <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
               <LikeButton videoId={item._id} />
             </div>
