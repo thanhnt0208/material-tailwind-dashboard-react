@@ -81,7 +81,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
       return;
     }
     try {
-      await replyComment(videoId, replyBox.idx, { comment: replyBox.text });
+      await replyComment(videoId, replyBox.commentId, { comment: replyBox.text });
       setReplyBox({ idx: null, text: "" });
       load();
     } catch (err) {
@@ -90,7 +90,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
     }
   };
 
-  const handleHideComment = async (idx) => {
+  const handleHideComment = async (commentId) => {
     if (!window.confirm("Bạn có chắc muốn ẩn bình luận này?")) return;
     try {
       await hideComment(videoId, idx);
@@ -156,7 +156,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
                     <Button
                       size="sm"
                       variant="text"
-                      onClick={() => setReplyBox({ idx: i, text: "" })}
+                      onClick={() => setReplyBox({ idx: i, commentId: c._id, text: "" })}
                     >
                       Trả lời
                     </Button>
@@ -164,7 +164,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
                       size="sm"
                       variant="text"
                       color="red"
-                      onClick={() => handleHideComment(i)}
+                      onClick={() => handleHideComment(c._id)}
                     >
                       Ẩn
                     </Button>

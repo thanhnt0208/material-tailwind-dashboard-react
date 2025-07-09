@@ -58,62 +58,6 @@ export function SignIn() {
     }
   };
 
-  // Làm mới token
-  const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) return null;
-
-    try {
-      const res = await fetch("https://api-ndolv2.nongdanonline.vn/auth/refresh-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        localStorage.setItem("token", data.accessToken);
-        console.log("✅ Access token đã được làm mới");
-        return data.accessToken;
-      } else {
-        console.error("❌ Làm mới token thất bại:", data.message);
-        return null;
-      }
-    } catch (error) {
-      console.error("❌ Lỗi khi gọi refresh-token:", error);
-      return null;
-    }
-  };
-
-  // Hàm fetch có auto-refresh
-  const fetchWithAuth = async (url, options = {}) => {
-    let token = localStorage.getItem("token");
-    let res = await fetch(url, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (res.status === 401 || res.status === 403) {
-      console.warn("⚠ Token hết hạn, đang làm mới...");
-      const newToken = await refreshAccessToken();
-      if (newToken) {
-        res = await fetch(url, {
-          ...options,
-          headers: {
-            ...(options.headers || {}),
-            Authorization: `Bearer ${newToken}`,
-          },
-        });
-      } else {
-        console.error("⚠ Không thể làm mới token");
-      }
-    }
-
-    return res;
-  };
 
   return (
     <section className="m-8 flex gap-4">
