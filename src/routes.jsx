@@ -5,9 +5,10 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
+  NewspaperIcon,
 } from "@heroicons/react/24/solid";
 
-import { Home, Users , Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
+import { Home, Users , Farms, Questions, AnswersTable, VideoFarms, PostList } from "@/pages/dashboard";
 
 
 
@@ -60,6 +61,13 @@ export const routes = [
         name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
+
+      },
+      {
+        icon: <NewspaperIcon  {...icon} />,
+        name: "PostList",
+        path: "/PostList",
+        element: <PostList />,
 
       },
     ],

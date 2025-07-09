@@ -5,7 +5,7 @@ import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
 import LikeButton from './LikeButton';
-import CommentVideo from '../commentVideo';
+import CommentVideo from './commentVideo';
 import DialogVideoDetail from './DialogVideoDetail'
 
 export const VideoFarmById = () => {
