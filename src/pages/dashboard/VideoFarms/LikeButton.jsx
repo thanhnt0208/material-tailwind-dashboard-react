@@ -3,13 +3,12 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useNavigate } from 'react-router-dom';
 
-export default function LikeButton({ videoId }) {
+export default function LikeButton({ videoId, onLikeChange }) {
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem('token');
   const userId = JSON.parse(localStorage.getItem('user'))?.id;
   const navigate = useNavigate();
-
 
   useEffect(() => {
     const fetchLikedStatus = async () => {
@@ -19,16 +18,13 @@ export default function LikeButton({ videoId }) {
         const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        console.log(' Danh sách người đã like:', res.data.users);
-
         const likedUsers = res.data.users || [];
         const isLiked = likedUsers.some(
           (u) => String(u._id ?? u.id) === String(userId)
         );
-
-        setLiked(isLiked); 
+        setLiked(isLiked);
       } catch (err) {
-        console.error(' Lỗi khi check trạng thái Like:', err.response?.data || err);
+        console.error('Lỗi khi check trạng thái Like:', err.response?.data || err);
       }
     };
 
@@ -43,12 +39,15 @@ export default function LikeButton({ videoId }) {
       const url = liked
         ? `${BaseUrl}/video-like/${videoId}/unlike`
         : `${BaseUrl}/video-like/${videoId}/like`;
+
       await axios.post(url, {}, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-
       setLiked(!liked);
+
+      onLikeChange?.(); // gọi callback nếu có
+
       if (liked) {
         // Unlike
         await axios.post(`${BaseUrl}/video-like/${videoId}/unlike`, {}, {
@@ -63,8 +62,9 @@ export default function LikeButton({ videoId }) {
 
       setLiked(!liked);
       onLikeChange?.(); // gọi callback reload danh sách user
+
     } catch (err) {
-      console.error(' Lỗi khi Like/Unlike video:', err.response?.data || err);
+      console.error('Lỗi khi Like/Unlike video:', err.response?.data || err);
       alert('Không thể Like/Unlike video.');
     } finally {
       setLoading(false);

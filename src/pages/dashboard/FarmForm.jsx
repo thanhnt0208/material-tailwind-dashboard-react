@@ -1,16 +1,10 @@
 import React, { useState, useEffect } from "react";
 import {
-  Dialog,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
-  Input,
-  Button,
-  Checkbox,
+  Dialog, DialogHeader, DialogBody, DialogFooter,
+  Input, Button, Checkbox,
 } from "@material-tailwind/react";
 import Select from "react-select";
 
-// Tùy chọn dịch vụ
 const serviceOptions = [
   { value: "direct_selling", label: "Bán hàng trực tiếp" },
   { value: "feed_selling", label: "Bán thức ăn chăn nuôi" },
@@ -21,7 +15,6 @@ const serviceOptions = [
   { value: "other_services", label: "Dịch vụ khác" },
 ];
 
-// Tùy chọn tính năng
 const featureOptions = [
   { value: "aquaponic_model", label: "Mô hình Aquaponic" },
   { value: "ras_ready", label: "Hệ thống RAS" },
@@ -43,14 +36,13 @@ const featureOptions = [
   { value: "air_quality_sensor", label: "Cảm biến chất lượng không khí" },
 ];
 
-// Tags
 const tagOptions = [
   { value: "nông sản", label: "nông sản" },
   { value: "hữu cơ", label: "hữu cơ" },
   { value: "mùa vụ", label: "mùa vụ" },
 ];
 
-const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
+const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
   const [form, setForm] = useState({
     name: "",
     code: "",
@@ -72,7 +64,9 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
   });
 
   useEffect(() => {
-    if (initialData) setForm(initialData);
+    if (initialData) {
+      setForm({ ...form, ...initialData });
+    }
   }, [initialData]);
 
   const handleChange = (field, value) => {
@@ -91,7 +85,9 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
 
   return (
     <Dialog open={open} handler={onClose} size="lg">
-      <DialogHeader className="text-lg">{initialData ? "Chỉnh sửa" : "Thêm"} nông trại</DialogHeader>
+      <DialogHeader className="text-lg">
+        {initialData?._id ? "Chỉnh sửa" : "Thêm"} nông trại
+      </DialogHeader>
 
       <DialogBody className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 px-4 text-sm">
         <Input label="Tên nông trại" value={form.name} onChange={(e) => handleChange("name", e.target.value)} />
@@ -105,7 +101,11 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
             isMulti
             options={serviceOptions}
             classNamePrefix="select-sm"
-            value={form.services.map(val => serviceOptions.find(opt => opt.value === val))}
+            value={
+              Array.isArray(form.services)
+                ? form.services.map(val => serviceOptions.find(opt => opt.value === val)).filter(Boolean)
+                : []
+            }
             onChange={(selected) => handleArrayChange("services", selected.map(s => s.value))}
           />
         </div>
@@ -116,7 +116,11 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
             isMulti
             options={featureOptions}
             classNamePrefix="select-sm"
-            value={form.features.map(val => featureOptions.find(opt => opt.value === val))}
+            value={
+              Array.isArray(form.features)
+                ? form.features.map(val => featureOptions.find(opt => opt.value === val)).filter(Boolean)
+                : []
+            }
             onChange={(selected) => handleArrayChange("features", selected.map(s => s.value))}
           />
         </div>
@@ -127,7 +131,11 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
             isMulti
             options={tagOptions}
             classNamePrefix="select-sm"
-            value={form.tags.map((val) => ({ value: val, label: val }))}
+            value={
+              Array.isArray(form.tags)
+                ? form.tags.map((val) => ({ value: val, label: val }))
+                : []
+            }
             onChange={(selected) => handleArrayChange("tags", selected.map((s) => s.value))}
           />
         </div>
@@ -143,11 +151,9 @@ const FarmForm = ({ open, onClose, initialData, onSubmit }) => {
       </DialogBody>
 
       <DialogFooter className="flex justify-end gap-2 px-4 py-3">
-        <Button variant="text" onClick={onClose} className="px-4 py-1 text-sm">
-          Huỷ
-        </Button>
-        <Button color="green" onClick={handleSubmit} className="px-4 py-1 text-sm">
-          {initialData ? "Cập nhật" : "Thêm"}
+        <Button variant="text" onClick={onClose}>Huỷ</Button>
+        <Button color="green" onClick={handleSubmit}>
+          {initialData?._id ? "Cập nhật" : "Thêm"}
         </Button>
       </DialogFooter>
     </Dialog>

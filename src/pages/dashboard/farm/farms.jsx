@@ -7,7 +7,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
 } from "@heroicons/react/24/solid";
-import FarmForm from "./FarmForm";
+import FarmForm from "../FarmForm";
 import FarmDetail from "./FarmDetail";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
@@ -113,14 +113,6 @@ export function Farms() {
               <Tab value="inactive" onClick={() => setTab("inactive")}>Đã khoá</Tab>
             </TabsHeader>
           </Tabs>
-
-          <Button
-            onClick={() => { setEditingFarm(null); setOpenForm(true); }}
-            color="indigo"
-            className="flex items-center gap-2"
-          >
-            <PlusIcon className="h-5 w-5" /> Thêm nông trại
-          </Button>
         </div>
 
         <Input
