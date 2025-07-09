@@ -4,8 +4,8 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-import VideoDetail from './VideoDetail';
-import LikeButton from '@/components/LikeButton';
+import VideoDetail from "./DialogVideoDetail";
+import LikeButton from '@/pages/dashboard/VideoFarms/LikeButton';
 import CommentVideo from '../commentVideo';
 
 
@@ -199,7 +199,6 @@ handleCloseDialogInforVideo={handleCloseDialogInforVideo}
             </div>
 
             <VideoDetail getDetailVideoInformation={selectedVideo} />
-
             <div className="flex justify-end gap-2 mt-8">
               <button
                 className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow font-semibold transition"

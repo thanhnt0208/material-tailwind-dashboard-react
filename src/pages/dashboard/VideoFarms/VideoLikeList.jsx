@@ -18,10 +18,10 @@ export default function VideoLikeList() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        console.log('✅ Danh sách người đã like:', res.data.users);
+        console.log('Danh sách người đã like:', res.data.users);
         setUsers(res.data.users || []);
       } catch (err) {
-        console.error('❌ Lỗi khi lấy danh sách người đã Like:', err.response?.data || err);
+        console.error('Lỗi khi lấy danh sách người đã Like:', err.response?.data || err);
       } finally {
         setLoading(false);
       }

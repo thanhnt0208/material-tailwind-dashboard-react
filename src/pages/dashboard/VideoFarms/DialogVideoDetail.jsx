@@ -29,6 +29,15 @@ export  const DialogVideoDetail = ({openDialogInforVideo,editData,editValue,hand
             disabled
           />
         </div>
+            <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">LocalFilePath</label>
+          <input
+            name="localFilepath"
+            value={editValue.localFilePath || ""}
+            className="border border-blue-200 px-3 py-2 rounded w-full bg-gray-50 text-blue-700 font-medium"
+            disabled
+          />
+        </div>
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Playlist Name</label>
           <input

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import axios from "axios";
 import {
@@ -8,7 +7,6 @@ import {
 
 const BASE = "https://api-ndolv2.nongdanonline.vn/video-comment";
 const token = () => localStorage.getItem("token");
-
 
 const fetchComments = (videoId) =>
   axios
@@ -37,14 +35,12 @@ const hideReply = (videoId, commentIndex, replyIndex) =>
     headers: { Authorization: `Bearer ${token()}` },
   });
 
-
 export default function CommentVideo({ open, onClose, videoId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const [newComment, setNewComment] = useState("");
-  const [replyBox, setReplyBox] = useState({ idx: null, text: "" });
-
+  const [replyBox, setReplyBox] = useState({ commentIndex: null, text: "" }); 
   const load = () => {
     if (!videoId) return;
     setLoading(true);
@@ -81,8 +77,8 @@ export default function CommentVideo({ open, onClose, videoId }) {
       return;
     }
     try {
-      await replyComment(videoId, replyBox.idx, { comment: replyBox.text });
-      setReplyBox({ idx: null, text: "" });
+      await replyComment(videoId, replyBox.commentIndex, { comment: replyBox.text }); 
+      setReplyBox({ commentIndex: null, text: "" });
       load();
     } catch (err) {
       console.error("Lỗi khi gửi phản hồi:", err.response?.data || err);
@@ -90,10 +86,10 @@ export default function CommentVideo({ open, onClose, videoId }) {
     }
   };
 
-  const handleHideComment = async (idx) => {
+  const handleHideComment = async (commentIndex) => { 
     if (!window.confirm("Bạn có chắc muốn ẩn bình luận này?")) return;
     try {
-      await hideComment(videoId, idx);
+      await hideComment(videoId, commentIndex);
       load();
     } catch (err) {
       console.error("Lỗi khi ẩn bình luận:", err.response?.data || err);
@@ -101,10 +97,10 @@ export default function CommentVideo({ open, onClose, videoId }) {
     }
   };
 
-  const handleHideReply = async (cIdx, rIdx) => {
+  const handleHideReply = async (commentIndex, replyIndex) => { 
     if (!window.confirm("Bạn có chắc muốn ẩn phản hồi này?")) return;
     try {
-      await hideReply(videoId, cIdx, rIdx);
+      await hideReply(videoId, commentIndex, replyIndex);
       load();
     } catch (err) {
       console.error("Lỗi khi ẩn phản hồi:", err.response?.data || err);
@@ -156,7 +152,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
                     <Button
                       size="sm"
                       variant="text"
-                      onClick={() => setReplyBox({ idx: i, text: "" })}
+                      onClick={() => setReplyBox({ commentIndex: c.index, text: "" })} 
                     >
                       Trả lời
                     </Button>
@@ -164,14 +160,14 @@ export default function CommentVideo({ open, onClose, videoId }) {
                       size="sm"
                       variant="text"
                       color="red"
-                      onClick={() => handleHideComment(i)}
+                      onClick={() =>{console.log("Hide comment index:", i, "Comment:", c); handleHideComment(c.index)}} 
                     >
                       Ẩn
                     </Button>
                   </div>
                 </div>
 
-                {replyBox.idx === i && (
+                {replyBox.commentIndex === c.index && ( 
                   <form onSubmit={handleReply} className="flex gap-2 mt-2">
                     <Input
                       size="sm"
@@ -202,7 +198,7 @@ export default function CommentVideo({ open, onClose, videoId }) {
                         <Button
                           size="sm"
                           variant="text"
-                          onClick={() => setReplyBox({ idx: i, text: "" })}
+                          onClick={() => setReplyBox({ commentIndex: i, text: "" })} 
                         >
                           Trả lời
                         </Button>
@@ -210,7 +206,8 @@ export default function CommentVideo({ open, onClose, videoId }) {
                           size="sm"
                           variant="text"
                           color="red"
-                          onClick={() => handleHideReply(i, j)}
+                          onClick={() => {console.log("Hide reply index (backend):", c.index, "reply index (backend):", r.index);
+                            handleHideReply(c.index, r.index)}} 
                         >
                           Ẩn
                         </Button>
