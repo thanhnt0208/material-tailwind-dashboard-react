@@ -13,13 +13,13 @@ export const VideoFarms = () => {
 const fetchAllVideos = async () => {
   try {
     setLoading(true)
-    const res = await axios.get(`${BaseUrl}/video-farm/new`, {
+    const res = await axios.get(`${BaseUrl}/admin-video-farm`, {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
-    console.log("Dữ liệu video:", res.data)
+    console.log("Dữ liệu video:", videos)
     if (res.status === 200) {
-      const videoArray = res.data.videos || [] 
-      setVideos(videoArray)
+     console.log(res.data)
+      setVideos(res.data)
     }
   } catch (error) {
     console.error("Lỗi khi lấy video:", error.response?.data || error.message)
@@ -54,6 +54,7 @@ const fetchAllVideos = async () => {
         <span className="col-span-3 text-center">Không có video nào.</span>
       ) : (
         videos.map((item) => (
+          
           <div
             key={item._id}
             onClick={() => handleClickFarm(item.farmId?.id)}
