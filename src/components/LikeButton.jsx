@@ -11,52 +11,52 @@ export default function LikeButton({ videoId }) {
   const userId = JSON.parse(localStorage.getItem('user'))?.id;
 
   const checkLikedStatus = async () => {
-    if (!videoId || !token) return;
-    try {
-      const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  if (!videoId || !token) return;
+  try {
+    const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      console.log("API trả về:", res.data);
+    console.log("Danh sách user đã like:", res.data.users);
 
-      const likedUsers = res.data.users || res.data || [];
+    const likedUsers = res.data.users || [];
+    const isLiked = likedUsers.some((u) => u._id === userId);
+    setLiked(isLiked);
+  } catch (error) {
+    console.error('Lỗi khi check trạng thái Like:', error.response?.data || error);
+  }
+};
 
-      const isLiked = likedUsers.some((u) => u._id === userId || u.id === userId);
-      setLiked(isLiked);
-    } catch (error) {
-      console.error('Lỗi khi check trạng thái Like:', error.response?.data || error);
-    }
-  };
 
   useEffect(() => {
     checkLikedStatus();
   }, [videoId]);
 
   const handleLikeToggle = async () => {
-    if (!videoId || !token) return;
-    const previousLiked = liked;
-    setLiked(!liked);
-    setLoading(true);
+  if (!videoId || !token) return;
+  setLoading(true);
 
-    try {
-      const url = previousLiked
-        ? `${BaseUrl}/video-like/${videoId}/unlike`
-        : `${BaseUrl}/video-like/${videoId}/like`;
+  try {
+    const url = liked
+      ? `${BaseUrl}/video-like/${videoId}/unlike`
+      : `${BaseUrl}/video-like/${videoId}/like`;
 
-      console.log("Gọi API:", url);
+    console.log("Gọi API:", url);
 
-      await axios.post(url, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-    } catch (error) {
-      console.error('Lỗi khi Like/Unlike video:', error.response?.data || error);
-      alert('Không thể Like/Unlike video.');
+    await axios.post(url, {}, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-      setLiked(previousLiked);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Sau khi like/unlike -> cập nhật trạng thái từ server
+    await checkLikedStatus();
+  } catch (error) {
+    console.error('Lỗi khi Like/Unlike video:', error.response?.data || error);
+    alert('Không thể Like/Unlike video.');
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleViewLikes = () => {
     navigate(`/dashboard/video-like/${videoId}`);

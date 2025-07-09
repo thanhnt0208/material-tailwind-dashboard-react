@@ -1,65 +1,92 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
+import { useNavigate } from 'react-router-dom';
 
-export default function VideoLikeBox({ videoId }) {
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+export default function LikeButton({ videoId }) {
+  const [liked, setLiked] = useState(false); 
+  const [loading, setLoading] = useState(false); 
   const token = localStorage.getItem('token');
+  const navigate = useNavigate();
+  const userId = JSON.parse(localStorage.getItem('user'))?.id;
+
+  // ✅ Hàm kiểm tra trạng thái Like
+  const checkLikedStatus = async () => {
+    if (!videoId || !token) return;
+    try {
+      const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log("Danh sách user đã like:", res.data.users);
+
+      const likedUsers = res.data.users || [];
+      // ✅ So sánh userId đảm bảo kiểu dữ liệu
+      const isLiked = likedUsers.some(
+        (u) => String(u._id ?? u.id) === String(userId)
+      );
+      setLiked(isLiked); 
+    } catch (error) {
+      console.error('Lỗi khi check trạng thái Like:', error.response?.data || error);
+    }
+  };
 
   useEffect(() => {
-    const fetchLikes = async () => {
-      if (!videoId || videoId === ':videoId') {
-        console.warn('videoId không hợp lệ:', videoId);
-        setLoading(false);
-        setError('Video ID không hợp lệ.');
-        return;
-      }
+    checkLikedStatus(); 
+  }, [videoId]);
 
-      setLoading(true);
-      setError('');
-      try {
-        const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+  // ✅ Hàm xử lý Like/Unlike
+  const handleLikeToggle = async () => {
+    if (!videoId || !token) return;
+    setLoading(true);
 
-        // Dữ liệu có thể là res.data.users hoặc res.data trực tiếp là mảng
-        const usersList = Array.isArray(res.data)
-          ? res.data
-          : res.data?.users || [];
+    try {
+      const url = liked
+        ? `${BaseUrl}/video-like/${videoId}/unlike`
+        : `${BaseUrl}/video-like/${videoId}/like`;
 
-        setUsers(usersList);
-      } catch (err) {
-        console.error('Lỗi khi lấy danh sách like:', err);
-        setError('Không thể lấy danh sách người like. Vui lòng thử lại sau.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      console.log("Gọi API:", url);
 
-    fetchLikes();
-  }, [videoId, token]);
+      await axios.post(url, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // ✅ Cập nhật trạng thái ngay lập tức
+      setLiked(!liked);
+
+      // 🔄 Gọi lại API check trạng thái để đồng bộ dữ liệu
+      await checkLikedStatus();
+    } catch (error) {
+      console.error('Lỗi khi Like/Unlike video:', error.response?.data || error);
+      alert('Không thể Like/Unlike video.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ Xem danh sách người Like
+  const handleViewLikes = () => {
+    navigate(`/dashboard/video-like/${videoId}`);
+  };
 
   return (
-    <div className="mt-4 p-4 bg-gray-50 rounded border border-blue-200">
-      <h3 className="font-semibold mb-2 text-gray-700">Người đã like video:</h3>
+    <div className="flex gap-2">
+      <button
+        onClick={handleLikeToggle}
+        disabled={loading}
+        className={`px-3 py-1 rounded text-white text-sm font-semibold shadow ${
+          liked ? 'bg-red-500 hover:bg-red-600' : 'bg-gray-600 hover:bg-gray-700'
+        }`}
+      >
+        {loading ? '...' : liked ? 'Bỏ Like' : 'Like'}
+      </button>
 
-      {loading ? (
-        <span className="italic text-gray-400">Đang tải...</span>
-      ) : error ? (
-        <span className="text-red-500 text-sm">{error}</span>
-      ) : users.length === 0 ? (
-        <span className="italic text-gray-400">Chưa có ai like</span>
-      ) : (
-        <ul className="list-disc pl-5 text-gray-700">
-          {users.map((user, idx) => (
-            <li key={idx}>
-              {user.fullName || user.username || 'Ẩn danh'}
-            </li>
-          ))}
-        </ul>
-      )}
+      <button
+        onClick={handleViewLikes}
+        className="px-3 py-1 rounded text-blue-700 bg-blue-100 hover:bg-blue-200 text-sm font-semibold shadow"
+      >
+        👥 Xem Like
+      </button>
     </div>
   );
 }
