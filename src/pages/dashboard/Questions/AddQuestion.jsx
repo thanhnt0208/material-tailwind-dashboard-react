@@ -1,6 +1,6 @@
 import React from 'react'
 
-const AddQuestion = ({
+export const AddQuestion = ({
   handleAddChange,
   handleAddSave,
   handleCloseAddDialog,

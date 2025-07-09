@@ -47,10 +47,12 @@ export default function LikeButton({ videoId }) {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+
       setLiked(!liked); 
     } catch (err) {
       console.error(' Lỗi khi Like/Unlike video:', err.response?.data || err);
       alert('Không thể Like/Unlike video.');
+
     } finally {
       setLoading(false);
     }
