@@ -1,13 +1,19 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import VideoLikeBox from '@/components/VideoLikeBox';
 =======
+=======
+>>>>>>> Stashed changes
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 export default function VideoLikeList() {
@@ -17,6 +23,7 @@ export default function VideoLikeList() {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
   return (
     <div className="p-4">
@@ -42,6 +49,27 @@ export default function VideoLikeList() {
   }, []);
 
   return (
+=======
+  const getLikes = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(`${BaseUrl}/video-like/${videoId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLikes(res.data?.data || []);
+    } catch (error) {
+      console.error('Lỗi lấy danh sách Like:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getLikes();
+  }, []);
+
+  return (
+>>>>>>> Stashed changes
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4 text-blue-700">Danh sách người đã Like</h1>
 
@@ -67,6 +95,9 @@ export default function VideoLikeList() {
       >
         Quay lại
       </button>
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
     </div>
   );

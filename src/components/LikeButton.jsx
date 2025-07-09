@@ -1,5 +1,9 @@
 // src/components/LikeButton.jsx
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+
+>>>>>>> Stashed changes
 =======
 
 >>>>>>> Stashed changes
@@ -31,6 +35,7 @@ export default function LikeButton({ videoId }) {
       setLiked(!liked);
       if (liked) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
         // Unlike
         await axios.post(`${BaseUrl}/video-like/${videoId}/unlike`, {}, {
           headers: { Authorization: `Bearer ${token}` },
@@ -48,19 +53,34 @@ export default function LikeButton({ videoId }) {
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
+=======
+        // ✅ GỌI API UNLIKE CHUẨN BE
+        await axios.post(
+          `${BaseUrl}/video-like/${videoId}/unlike`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      } else {
+>>>>>>> Stashed changes
         // ✅ GỌI API LIKE CHUẨN BE
         await axios.post(
           `${BaseUrl}/video-like/${videoId}/like`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
       }
 
       // Toggle trạng thái
       setLiked(!liked);
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       onLikeChange?.(); // gọi callback reload danh sách user
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
     } catch (error) {
@@ -72,6 +92,10 @@ export default function LikeButton({ videoId }) {
 
   const handleViewLikes = () => {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    // Điều hướng đến trang hiển thị danh sách users đã Like
+>>>>>>> Stashed changes
 =======
     // Điều hướng đến trang hiển thị danh sách users đã Like
 >>>>>>> Stashed changes
