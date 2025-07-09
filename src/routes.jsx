@@ -5,14 +5,10 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
-  NewspaperIcon,
 } from "@heroicons/react/24/solid";
 
-import { Home, Users , Farms, Questions, AnswersTable, VideoFarms, PostList } from "@/pages/dashboard";
-
-
-
-
+import VideoLikeList from "@/pages/dashboard/VideoLikeList";
+import { Home, Users, Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
@@ -42,34 +38,25 @@ export const routes = [
         path: "/Farms",
         element: <Farms />,
       },
-      
-       {
+      {
         icon: <InformationCircleIcon {...icon} />,
         name: "Questions",
         path: "/Questions",
-      element: <Questions />,
+        element: <Questions />,
       },
-
       {
         icon: <InformationCircleIcon {...icon} />,
         name: "AnswersTable",
         path: "/AnswersTable",
-      element: <AnswersTable />,
+        element: <AnswersTable />,
       },
-        {
+      {
         icon: <ViewfinderCircleIcon {...icon} />,
         name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
-
       },
-      {
-        icon: <NewspaperIcon  {...icon} />,
-        name: "PostList",
-        path: "/PostList",
-        element: <PostList />,
-
-      },
+  
     ],
   },
   {
