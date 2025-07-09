@@ -5,7 +5,7 @@ import {
   Typography, Button, Dialog, DialogHeader,
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
-import FarmForm from "./FarmForm";
+import FarmForm from "../farm/FarmForm";
 
 export function Users() {
   const [users, setUsers] = useState([]);
