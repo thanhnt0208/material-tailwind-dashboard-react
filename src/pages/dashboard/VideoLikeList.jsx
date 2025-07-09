@@ -1,21 +1,32 @@
-<<<<<<< HEAD
-
-=======
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 import React from 'react';
 import { useParams } from 'react-router-dom';
 import VideoLikeBox from '@/components/VideoLikeBox';
 =======
->>>>>>> test
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-<<<<<<< HEAD
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
->>>>>>> test
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
 
 export default function VideoLikeList() {
   const { videoId } = useParams();
@@ -23,32 +34,12 @@ export default function VideoLikeList() {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
-<<<<<<< HEAD
-
-  const getLikes = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.post(`${BaseUrl}/video-like/${videoId}/like`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setLikes(res.data?.data || []);
-    } catch (error) {
-      console.error('Lỗi lấy danh sách Like:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getLikes();
-  }, []);
-=======
->>>>>>> test
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
   return (
-<<<<<<< HEAD
-=======
     <div className="p-4">
       <h1 className="text-xl font-bold mb-4 text-blue-700">Danh sách người đã like video</h1>
       <VideoLikeBox videoId={videoId} />
@@ -72,7 +63,69 @@ export default function VideoLikeList() {
   }, []);
 
   return (
->>>>>>> test
+=======
+  const getLikes = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(`${BaseUrl}/video-like/${videoId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLikes(res.data?.data || []);
+    } catch (error) {
+      console.error('Lỗi lấy danh sách Like:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getLikes();
+  }, []);
+
+  return (
+>>>>>>> Stashed changes
+=======
+  const getLikes = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(`${BaseUrl}/video-like/${videoId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLikes(res.data?.data || []);
+    } catch (error) {
+      console.error('Lỗi lấy danh sách Like:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getLikes();
+  }, []);
+
+  return (
+>>>>>>> Stashed changes
+=======
+  const getLikes = async () => {
+    try {
+      setLoading(true);
+      const res = await axios.post(`${BaseUrl}/video-like/${videoId}/like`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setLikes(res.data?.data || []);
+    } catch (error) {
+      console.error('Lỗi lấy danh sách Like:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    getLikes();
+  }, []);
+
+  return (
+>>>>>>> Stashed changes
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4 text-blue-700">Danh sách người đã Like</h1>
 
@@ -98,10 +151,16 @@ export default function VideoLikeList() {
       >
         Quay lại
       </button>
-<<<<<<< HEAD
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
->>>>>>> test
+=======
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     </div>
   );
 }

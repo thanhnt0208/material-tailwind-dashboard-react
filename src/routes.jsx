@@ -5,26 +5,12 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
-  ViewfinderCircleIcon,
-  DocumentDuplicateIcon, // icon mới cho AdminReports
 } from "@heroicons/react/24/solid";
 
-<<<<<<< HEAD
-import {
-  Home,
-  Users,
-  Farms,
-  Questions,
-  AnswersTable,
-  VideoFarms,
-  AdminReports, // import thêm
-} from "@/pages/dashboard";
-
-=======
 import VideoLikeList from "@/pages/dashboard/VideoLikeList";
 import { Home, Users, Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
->>>>>>> test
 import { SignIn, SignUp } from "@/pages/auth";
+import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -36,7 +22,7 @@ export const routes = [
     pages: [
       {
         icon: <HomeIcon {...icon} />,
-        name: "Dashboard",
+        name: "dashboard",
         path: "/home",
         element: <Home />,
       },
@@ -60,24 +46,15 @@ export const routes = [
       },
       {
         icon: <InformationCircleIcon {...icon} />,
-        name: "Answers Table",
+        name: "AnswersTable",
         path: "/AnswersTable",
         element: <AnswersTable />,
       },
       {
         icon: <ViewfinderCircleIcon {...icon} />,
-        name: "Video Farms",
+        name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
-<<<<<<< HEAD
-      },
-      {
-        icon: <DocumentDuplicateIcon {...icon} />,
-        name: "Admin Reports",          // tên hiển thị
-        path: "/AdminReports",          // URL
-        element: <AdminReports />,      // component
-=======
->>>>>>> test
       },
   
     ],
@@ -88,13 +65,13 @@ export const routes = [
     pages: [
       {
         icon: <ServerStackIcon {...icon} />,
-        name: "Sign in",
+        name: "sign in",
         path: "/sign-in",
         element: <SignIn />,
       },
       {
         icon: <RectangleStackIcon {...icon} />,
-        name: "Sign up",
+        name: "sign up",
         path: "/sign-up",
         element: <SignUp />,
       },

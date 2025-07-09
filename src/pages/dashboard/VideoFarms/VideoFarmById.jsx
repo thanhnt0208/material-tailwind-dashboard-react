@@ -4,10 +4,9 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-import VideoDetail from "./DialogVideoDetail";
-import LikeButton from '@/pages/dashboard/VideoFarms/LikeButton';
-import CommentVideo from '../commentVideo';
-
+import LikeButton from './LikeButton';
+import CommentVideo from './commentVideo';
+import DialogVideoDetail from './DialogVideoDetail'
 
 export const VideoFarmById = () => {
     const [openDialogInforVideo, setOpenDialogInforVideo] = useState(false);
@@ -15,8 +14,9 @@ export const VideoFarmById = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [openComment, setOpenComment] = useState(false);
-  const [selectedVideoId, setSelectedVideoId] = useState(null);
-  const [videoList, setVideoList] = useState([]);
+   const [editData, setEditData] = useState(null);
+  const [selectedVideoId, setSelectedVideoId] = useState(null)
+    const [editValue, setEditValue] = useState({ options: [] });
   const [loading, setLoading] = useState(true);
     const [videoDetail,setVideoDetail]=useState([])
   const tokenUser = localStorage.getItem('token');
@@ -87,7 +87,7 @@ setEditData(item)
     status: item.status, 
     uploadedBy: item.uploadedBy?.fullName,
     createdAt: item.createdAt,
-    // localFilePath: item.localFilePath,
+    localFilePath: item.localFilePath,
 
   })
 
@@ -137,15 +137,64 @@ const handleOpenComment = (e, videoId) => {
       ) : (
         videoDetail.map((item) => (
           <div
+            onClick={(e) => {
+              handleOpenDialogInforvideo(item);
+            }}
             key={item._id}
-            onClick={(e) => {  e.stopPropagation(); handleOpenDialog(item)}}
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
 
-            {/* ✅ Thêm LikeButton với danh sách like*/}
+
+           <span className="font-bold text-lg mb-1">{item.title}</span>
+
             <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
               <LikeButton videoId={item._id} />
             </div>
+           <div className="flex flex-row justify-end gap-3 mt-2">
+   
+            <button
+            onClick={(e)=>{
+                e.stopPropagation();
+              deletevideo()}}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
+            >
+              Xóa
+            </button>
+          </div>
+          
+      {item.status === "pending" && item.localFilePath ?
+      
+      (
+  <video
+  
+ src={
+    item.localFilePath.startsWith('http')
+      ? item.localFilePath
+      : `${BaseUrl}${item.localFilePath}`
+  }
+    controls
+    className=" h-[360px]  w-full rounded shadow"
+  >
+    Trình duyệt của bạn không hỗ trợ video
+  </video>
+) : item.youtubeLink && item.status === "uploaded" ? (
+  <iframe 
+    src={
+      "https://www.youtube.com/embed/" +
+      (item.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+    }
+    title="YouTube video"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowFullScreen
+    className="h-[360px] rounded shadow w-full"
+  ></iframe>
+) : (
+  <div className="flex items-center justify-center h-56 text-red-500 font-semibold w-full h-[360px] rounded shadow bg-gray-100"  >
+    Video không tồn tại
+  </div>
+
+)}
+           
             <div className="flex justify-end gap-3 mt-2">
  
               <button
@@ -154,31 +203,21 @@ const handleOpenComment = (e, videoId) => {
               >
                 Bình luận
               </button>
-              <button
-                onClick={(e) =>{ handleOpenComment(e, item._id)}} 
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow"
-              >
-                Bình luận
-              </button>
             </div>
 
-            {item.youtubeLink ? (
-              <a
-                href={item.youtubeLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline break-all mb-1"
-                onClick={(e) => e.stopPropagation()}
-              >
-                ▶ Xem video
-              </a>
-            ) : (
-              <span className="italic text-gray-400 mb-1">Chưa có video</span>
-            )}
-            <span className="text-sm text-gray-600">Danh sách phát: <span className="font-medium">{item.playlistName}</span></span>
-            <span className="text-sm text-gray-600">Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span></span>
-            <span className="text-sm text-gray-600">Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span></span>
-
+   
+   <span className="text-sm text-gray-600 cursor-pointer">
+            Danh sách phát: <span className="font-medium">{item.playlistName}</span>
+          </span>
+          <span className="text-sm text-gray-600">
+            Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span>
+          </span>
+          <span className="text-sm text-gray-600">
+            Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span>
+          </span>
+            <span className="text-sm text-gray-600">
+            Trạng thái: <span className="font-medium">{item.status}</span>
+          </span>
           </div>
         ))
       )}
@@ -190,33 +229,6 @@ handleCloseDialogInforVideo={handleCloseDialogInforVideo}
  editValue={editValue}
  openDialogInforVideo={openDialogInforVideo}
  />  
-     {/* {openDialog && selectedVideo && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-blue-200 animate-fadeIn">
-            <div className="flex items-center mb-6">
-              <div className="w-2 h-8 bg-blue-500 rounded-r mr-3"></div>
-              <h2 className="text-2xl font-bold text-blue-700">Thông tin video</h2>
-            </div>
-
-            <VideoDetail getDetailVideoInformation={selectedVideo} />
-            <div className="flex justify-end gap-2 mt-8">
-              <button
-                className="px-5 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow font-semibold transition"
-                onClick={handleCloseDialog}
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )} */}
-      {openComment && (
-        <CommentVideo
-          open={openComment}
-          onClose={handleCloseComment}
-          videoId={selectedVideoId}
-        />
-      )}
       {openComment && (
         <CommentVideo
           open={openComment}

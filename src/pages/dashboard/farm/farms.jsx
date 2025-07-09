@@ -7,7 +7,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
 } from "@heroicons/react/24/solid";
-import FarmForm from "./FarmForm";
+import FarmForm from "../FarmForm";
 import FarmDetail from "./FarmDetail";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
@@ -113,14 +113,6 @@ export function Farms() {
               <Tab value="inactive" onClick={() => setTab("inactive")}>Đã khoá</Tab>
             </TabsHeader>
           </Tabs>
-
-          <Button
-            onClick={() => { setEditingFarm(null); setOpenForm(true); }}
-            color="indigo"
-            className="flex items-center gap-2"
-          >
-            <PlusIcon className="h-5 w-5" /> Thêm nông trại
-          </Button>
         </div>
 
         <Input
@@ -167,93 +159,91 @@ export function Farms() {
                       />
                     </td>
                    <td className="px-4 py-4">
-  <div className="flex flex-col gap-2">
-    {/* Nhóm nút Sửa & Xoá */}
-    <div className="flex gap-2">
-  <Button
-    size="sm"
-    onClick={(e) => {
-      e.stopPropagation();
-      setEditingFarm(farm);
-      setOpenForm(true);
-    }}
-    className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1 shadow-md"
-  >
-    Sửa
-  </Button>
+                    <div className="flex flex-col gap-2">
+                      {/* Nhóm nút Sửa & Xoá */}
+                      <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditingFarm(farm);
+                        setOpenForm(true);
+                      }}
+                      className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1 shadow-md"
+                    >
+                      Sửa
+                    </Button>
 
-  <Button
-    size="sm"
-    onClick={(e) => {
-      e.stopPropagation();
-      deleteFarm(farm._id);
-    }}
-    className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 shadow-md"
-  >
-    Xoá
-  </Button>
-</div>
-
-
-    {/* Nhóm nút trạng thái */}
-    <div className="flex gap-2 mt-1">
-      {farm.status === "pending" && (
-  <>
-    <Button
-      size="sm"
-      onClick={(e) => {
-        e.stopPropagation();
-        activateFarm(farm._id, "duyệt");
-      }}
-      className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
-    >
-      Duyệt
-    </Button>
-
-    <Button
-      size="sm"
-      onClick={(e) => {
-        e.stopPropagation();
-        deactivateFarm(farm._id, "từ chối");
-      }}
-      className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
-    >
-      Từ chối
-    </Button>
-  </>
-)}
-
-{farm.status === "active" && (
-  <Button
-    size="sm"
-    onClick={(e) => {
-      e.stopPropagation();
-      deactivateFarm(farm._id, "khóa");
-    }}
-    className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
-  >
-    Khóa
-  </Button>
-)}
-
-{farm.status === "inactive" && (
-  <Button
-    size="sm"
-    onClick={(e) => {
-      e.stopPropagation();
-      activateFarm(farm._id, "mở khóa");
-    }}
-    className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
-  >
-    Mở khóa
-  </Button>
-)}
-
-    </div>
-  </div>
-</td>
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteFarm(farm._id);
+                      }}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 shadow-md"
+                    >
+                      Xoá
+                    </Button>
+                  </div>
 
 
+                      {/* Nhóm nút trạng thái */}
+                      <div className="flex gap-2 mt-1">
+                        {farm.status === "pending" && (
+                    <>
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          activateFarm(farm._id, "duyệt");
+                        }}
+                        className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
+                      >
+                        Duyệt
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deactivateFarm(farm._id, "từ chối");
+                        }}
+                        className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
+                      >
+                        Từ chối
+                      </Button>
+                    </>
+                  )}
+
+                  {farm.status === "active" && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deactivateFarm(farm._id, "khóa");
+                      }}
+                      className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
+                    >
+                      Khóa
+                    </Button>
+                  )}
+
+                  {farm.status === "inactive" && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        activateFarm(farm._id, "mở khóa");
+                      }}
+                      className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
+                    >
+                      Mở khóa
+                    </Button>
+                  )}
+
+                      </div>
+                    </div>
+                  </td>
                   </tr>
                 ))}
               </tbody>
