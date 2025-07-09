@@ -7,8 +7,6 @@ import {
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
 
-import VideoLikeList from "@/pages/dashboard/VideoLikeList";
-
 import { Home, Users , Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
 
 
