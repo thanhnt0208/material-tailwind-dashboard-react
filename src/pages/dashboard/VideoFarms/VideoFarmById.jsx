@@ -10,14 +10,54 @@ import CommentVideo from '../commentVideo';
 
 
 export const VideoFarmById = () => {
+    const [openDialogInforVideo, setOpenDialogInforVideo] = useState(false);
+  const [idVideo, setIdVideo] = useState([])
   const [openDialog, setOpenDialog] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState(null);
   const [openComment, setOpenComment] = useState(false);
   const [selectedVideoId, setSelectedVideoId] = useState(null);
   const [videoList, setVideoList] = useState([]);
   const [loading, setLoading] = useState(true);
+    const [videoDetail,setVideoDetail]=useState([])
   const tokenUser = localStorage.getItem('token');
   const { farmId } = useParams();
+
+const deletevideo = async()=>{
+      if (!window.confirm('Bạn có chắc muốn xóa video này?')) return;
+  try {
+    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete/${idVideo}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
+if(res.status===200){
+await getDetailVideo()
+alert("Xóa thành công")
+}
+  } catch (error) {
+    console.log("Lỗi nè:",error)
+  }
+}
+
+const handleCloseDialogInforVideo =(item)=>{
+  setEditData(null)
+  setEditValue({})
+setOpenDialogInforVideo(false)
+}
+
+const handleSaveEdit = async()=>{
+try {
+      const updatedValue = { status: "uploaded" }; 
+    const res= await axios.post(`${BaseUrl}/admin-video-farm/upload-youtube/${idVideo}`, updatedValue,{
+        headers: { Authorization: `Bearer ${tokenUser}` }})
+if(res.status===200){
+  console.log("data nè:",res.data)
+  alert("Cập nhật thành công")
+    await  getDetailVideo();     
+handleCloseDialogInforVideo()
+  }else {
+      alert("Có lỗi trong lúc duyệt")
+    }
+} catch (error) {
+  console.log("Lỗi nè",error)
+}
+}
 
   const getDetailVideo = async () => {
     try {
@@ -25,15 +65,35 @@ export const VideoFarmById = () => {
       const res = await axios.get(`${BaseUrl}/admin-video-farm/farm/${farmId}`, {
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
-      if (res.status === 200) {
-        setVideoList(res.data);
+      if (res.status === 200) { 
+        setVideoDetail(res.data)
+        setLoading(false)
+        
       }
     } catch (error) {
       console.log("Lỗi nè:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+const handleOpenDialogInforvideo =(item)=>{
+setEditData(item)
+ setIdVideo(item._id)
+  setEditValue({
+    title: item.title,
+    youtubeLink: item.youtubeLink,
+    playlistName: item.playlistName,
+    status: item.status, 
+    uploadedBy: item.uploadedBy?.fullName,
+    createdAt: item.createdAt,
+    // localFilePath: item.localFilePath,
+
+  })
+
+setOpenDialogInforVideo(true)
+}
+
 
   const handleOpenDialog = (item) => {
     setSelectedVideo({
@@ -72,32 +132,27 @@ const handleOpenComment = (e, videoId) => {
         <div className="flex justify-center items-center w-full col-span-3">
           <Audio height="80" width="80" radius="9" color="green" ariaLabel="loading" />
         </div>
-      ) : videoList.length === 0 ? (
+      ) : videoDetail.length === 0 ? (
         <span className="text-gray-500 col-span-3">Không có video nào.</span>
       ) : (
-        videoList.map((item) => (
+        videoDetail.map((item) => (
           <div
             key={item._id}
             onClick={(e) => {  e.stopPropagation(); handleOpenDialog(item)}}
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
-            <span className="font-bold text-lg mb-1">{item.title}</span>
 
             {/* ✅ Thêm LikeButton với danh sách like*/}
             <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
               <LikeButton videoId={item._id} />
             </div>
             <div className="flex justify-end gap-3 mt-2">
+ 
               <button
-                onClick={(e) => { e.stopPropagation(); handleOpenDialog(item); }}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow"
+                onClick={(e) =>{ handleOpenComment(e, item._id)}} 
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow"
               >
-                Chi tiết
-              </button>
-              <button
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow"
-              >
-                Xóa
+                Bình luận
               </button>
               <button
                 onClick={(e) =>{ handleOpenComment(e, item._id)}} 
@@ -128,8 +183,14 @@ const handleOpenComment = (e, videoId) => {
         ))
       )}
 
-      {/* Dialog chi tiết video */}
-      {openDialog && selectedVideo && (
+<DialogVideoDetail 
+editData={editData} 
+handleCloseDialogInforVideo={handleCloseDialogInforVideo}
+ handleSaveEdit={handleSaveEdit}
+ editValue={editValue}
+ openDialogInforVideo={openDialogInforVideo}
+ />  
+     {/* {openDialog && selectedVideo && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
           <div className="bg-white rounded-xl shadow-2xl p-8 w-full max-w-md border border-blue-200 animate-fadeIn">
             <div className="flex items-center mb-6">
@@ -149,6 +210,13 @@ const handleOpenComment = (e, videoId) => {
             </div>
           </div>
         </div>
+      )} */}
+      {openComment && (
+        <CommentVideo
+          open={openComment}
+          onClose={handleCloseComment}
+          videoId={selectedVideoId}
+        />
       )}
       {openComment && (
         <CommentVideo
@@ -162,3 +230,5 @@ const handleOpenComment = (e, videoId) => {
 };
 
 export default VideoFarmById;
+
+
