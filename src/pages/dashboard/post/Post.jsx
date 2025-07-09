@@ -3,7 +3,7 @@ import { Button, Typography, Avatar, Chip } from "@material-tailwind/react";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn"; 
 
-export default function PostList() {
+export function PostList() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -142,3 +142,5 @@ export default function PostList() {
     </div>
   );
 }
+
+export default PostList;

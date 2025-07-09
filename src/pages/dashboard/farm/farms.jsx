@@ -7,7 +7,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
 } from "@heroicons/react/24/solid";
-import FarmForm from "../FarmForm";
+import FarmForm from "./FarmForm";
 import FarmDetail from "./FarmDetail";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
