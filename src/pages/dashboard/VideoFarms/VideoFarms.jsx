@@ -16,10 +16,8 @@ const fetchAllVideos = async () => {
     const res = await axios.get(`${BaseUrl}/admin-video-farm`, {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
-    console.log("Dữ liệu video:", videos)
     if (res.status === 200) {
-     console.log(res.data)
-      setVideos(res.data)
+            setVideos(res.data)
     }
   } catch (error) {
     console.error("Lỗi khi lấy video:", error.response?.data || error.message)

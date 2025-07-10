@@ -5,15 +5,16 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
+  ChatBubbleOvalLeftEllipsisIcon,
+  VideoCameraIcon,
 } from "@heroicons/react/24/solid";
-
-import { Home, Users , Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
-
+import { Home, Users , Farms, Questions, AnswersTable, VideoFarms,CommentPost } from "@/pages/dashboard";
 
 
 
 import { SignIn, SignUp } from "@/pages/auth";
 import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
+import { Comment } from "react-loader-spinner";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -56,10 +57,17 @@ export const routes = [
       element: <AnswersTable />,
       },
         {
-        icon: <ViewfinderCircleIcon {...icon} />,
+        icon: <VideoCameraIcon {...icon} />,
         name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
+
+      },
+        {
+        icon: <ChatBubbleOvalLeftEllipsisIcon {...icon} />,
+        name: "CommentPost",
+        path: "/CommentPost",
+        element: <CommentPost />,
 
       },
     ],
