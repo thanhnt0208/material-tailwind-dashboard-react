@@ -5,6 +5,7 @@ import {
 } from "@material-tailwind/react";
 import Select from "react-select";
 
+// Danh sách dịch vụ
 const serviceOptions = [
   { value: "direct_selling", label: "Bán hàng trực tiếp" },
   { value: "feed_selling", label: "Bán thức ăn chăn nuôi" },
@@ -15,6 +16,7 @@ const serviceOptions = [
   { value: "other_services", label: "Dịch vụ khác" },
 ];
 
+// Danh sách tính năng
 const featureOptions = [
   { value: "aquaponic_model", label: "Mô hình Aquaponic" },
   { value: "ras_ready", label: "Hệ thống RAS" },
@@ -36,6 +38,7 @@ const featureOptions = [
   { value: "air_quality_sensor", label: "Cảm biến chất lượng không khí" },
 ];
 
+// Danh sách tag
 const tagOptions = [
   { value: "nông sản", label: "nông sản" },
   { value: "hữu cơ", label: "hữu cơ" },
@@ -65,7 +68,10 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
 
   useEffect(() => {
     if (initialData) {
-      setForm({ ...form, ...initialData });
+      setForm((prev) => ({
+        ...prev,
+        ...initialData,
+      }));
     }
   }, [initialData]);
 
@@ -79,8 +85,8 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(form);
-    onClose();
+    onSubmit(form);  // Gửi dữ liệu cho component cha
+    onClose();       // Đóng dialog
   };
 
   return (
@@ -101,11 +107,7 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
             isMulti
             options={serviceOptions}
             classNamePrefix="select-sm"
-            value={
-              Array.isArray(form.services)
-                ? form.services.map(val => serviceOptions.find(opt => opt.value === val)).filter(Boolean)
-                : []
-            }
+            value={form.services.map(val => serviceOptions.find(opt => opt.value === val)).filter(Boolean)}
             onChange={(selected) => handleArrayChange("services", selected.map(s => s.value))}
           />
         </div>
@@ -116,11 +118,7 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
             isMulti
             options={featureOptions}
             classNamePrefix="select-sm"
-            value={
-              Array.isArray(form.features)
-                ? form.features.map(val => featureOptions.find(opt => opt.value === val)).filter(Boolean)
-                : []
-            }
+            value={form.features.map(val => featureOptions.find(opt => opt.value === val)).filter(Boolean)}
             onChange={(selected) => handleArrayChange("features", selected.map(s => s.value))}
           />
         </div>
@@ -131,12 +129,8 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
             isMulti
             options={tagOptions}
             classNamePrefix="select-sm"
-            value={
-              Array.isArray(form.tags)
-                ? form.tags.map((val) => ({ value: val, label: val }))
-                : []
-            }
-            onChange={(selected) => handleArrayChange("tags", selected.map((s) => s.value))}
+            value={form.tags.map(val => ({ value: val, label: val }))}
+            onChange={(selected) => handleArrayChange("tags", selected.map(s => s.value))}
           />
         </div>
 
@@ -146,8 +140,15 @@ const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
         <Input label="Quận/Huyện" value={form.district} onChange={(e) => handleChange("district", e.target.value)} />
         <Input label="Phường/Xã" value={form.ward} onChange={(e) => handleChange("ward", e.target.value)} />
         <Input label="Đường" value={form.street} onChange={(e) => handleChange("street", e.target.value)} />
-        <Input label="ID Chủ sở hữu" value={form.ownerId} onChange={(e) => handleChange("ownerId", e.target.value)} />
-        <Checkbox label="Farm đang sẵn sàng" checked={form.isAvailable} onChange={(e) => handleChange("isAvailable", e.target.checked)} />
+
+        {/* Chỉ đọc ID chủ sở hữu */}
+        <Input label="ID Chủ sở hữu" value={form.ownerId} readOnly />
+
+        <Checkbox
+          label="Farm đang sẵn sàng"
+          checked={form.isAvailable}
+          onChange={(e) => handleChange("isAvailable", e.target.checked)}
+        />
       </DialogBody>
 
       <DialogFooter className="flex justify-end gap-2 px-4 py-3">
