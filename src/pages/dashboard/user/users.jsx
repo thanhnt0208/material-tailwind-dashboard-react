@@ -5,6 +5,7 @@ import {
   Typography, Button, Dialog, DialogHeader,
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
+import FarmForm from "./FarmForm";
 
 export function Users() {
   const [users, setUsers] = useState([]);
@@ -20,6 +21,9 @@ export function Users() {
   const [viewOpen, setViewOpen] = useState(false);
   const [viewUser, setViewUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
+
+  const [openFarmForm, setOpenFarmForm] = useState(false);
+  const [farmFormData, setFarmFormData] = useState({ ownerId: null });
 
   const token = localStorage.getItem("token");
 
@@ -129,6 +133,20 @@ export function Users() {
     }
   };
 
+  // ✅ Thêm nông trại
+  const handleCreateFarm = async (farmData) => {
+    try {
+      await axios.post("https://api-ndolv2.nongdanonline.vn/farms", farmData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("Tạo nông trại thành công!");
+      setOpenFarmForm(false);
+    } catch (error) {
+      console.error(error);
+      alert("Tạo nông trại thất bại!");
+    }
+  };
+
   return (
     <div className="px-4 pb-4">
       <Typography variant="h6" color="blue-gray" className="mb-2">Quản lý người dùng</Typography>
@@ -204,6 +222,18 @@ export function Users() {
               {addresses.length ? addresses.map((addr, i) => (
                 <Typography key={`${viewUser.id}-addr-${i}`} className="text-sm">{addr.address} - {addr.ward}, {addr.district}, {addr.province}</Typography>
               )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
+
+              <Button
+                color="green"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  setFarmFormData({ ownerId: viewUser.id });
+                  setOpenFarmForm(true);
+                }}
+              >
+                Thêm nông trại cho người dùng này
+              </Button>
             </>
           ) : <Typography>Đang tải...</Typography>}
         </DialogBody>
@@ -211,6 +241,14 @@ export function Users() {
           <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Dialog Thêm Nông Trại */}
+      <FarmForm
+        open={openFarmForm}
+        onClose={() => setOpenFarmForm(false)}
+        initialData={farmFormData}
+        onSubmit={handleCreateFarm}
+      />
     </div>
   );
 }

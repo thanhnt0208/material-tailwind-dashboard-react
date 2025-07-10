@@ -7,7 +7,7 @@ import {
 import {
   PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
 } from "@heroicons/react/24/solid";
-import FarmForm from "./FarmForm";
+import FarmForm from "../user/FarmForm";
 import FarmDetail from "./FarmDetail";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
@@ -190,30 +190,32 @@ export function Farms() {
                       {/* Nhóm nút trạng thái */}
                       <div className="flex gap-2 mt-1">
                         {farm.status === "pending" && (
-                    <>
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          activateFarm(farm._id, "duyệt");
-                        }}
-                        className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
-                      >
-                        Duyệt
-                      </Button>
+                          <>
+                            <Button
+  size="sm"
+  onClick={(e) => {
+    e.stopPropagation();
+    activateFarm(farm._id, "duyệt");
+  }}
+  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs w-[80px] rounded shadow-md"
+>
+  DUYỆT
+</Button>
 
-                      <Button
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deactivateFarm(farm._id, "từ chối");
-                        }}
-                        className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
-                      >
-                        Từ chối
-                      </Button>
-                    </>
-                  )}
+<Button
+  size="sm"
+  onClick={(e) => {
+    e.stopPropagation();
+    deactivateFarm(farm._id, "từ chối");
+  }}
+  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-xs w-[80px] rounded shadow-md"
+>
+  TỪ CHỐI
+</Button>
+
+                          </>
+)}
+
 
                   {farm.status === "active" && (
                     <Button
