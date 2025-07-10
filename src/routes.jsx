@@ -9,7 +9,7 @@ import {
   ReceiptPercentIcon
 } from "@heroicons/react/24/solid";
 
-import VideoLikeList from "@/pages/dashboard/VideoLikeList";
+import VideoLikeList from "@/pages/dashboard/VideoFarms/VideoLikeList";
 import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList, AdminReports } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
