@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from "react";
 import { Button, Typography, Avatar, Chip } from "@material-tailwind/react";
+import { useNavigate } from "react-router-dom";
+import { Dialog, Input } from "@material-tailwind/react";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.vn"; 
 
 export function PostList() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
-
+  const [openEdit, setOpenEdit] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const navigate = useNavigate();
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -31,6 +35,41 @@ export function PostList() {
     }
     setLoading(false);
   };
+
+  const handleEditClick = (post) => {
+  setSelectedPost(post);
+  setOpenEdit(true);
+  };
+
+  const updatePost = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: selectedPost.title,
+        description: selectedPost.description,
+        status: selectedPost.status,
+      }),
+    });
+
+    const json = await res.json();
+    if (res.ok) {
+      alert("Cập nhật thành công!");
+      setOpenEdit(false);
+      fetchPosts(); // Reload list
+    } else {
+      alert(json.message || "Cập nhật thất bại");
+    }
+  } catch (err) {
+    console.error("PUT error:", err);
+    alert("Lỗi kết nối server khi cập nhật");
+  }
+};
 
 
   const deletePost = async (id) => {
@@ -83,7 +122,10 @@ export function PostList() {
             </thead>
             <tbody>
               {posts.map((post) => (
-                <tr key={post.id} className="hover:bg-gray-50">
+                <tr 
+                key={post.id} 
+                onClick={() => navigate(`/dashboard/post/${post.id}`)}
+                className="hover:bg-gray-50 cursor-pointer transition">
                   <td className="p-2 border">{post.title}</td>
                   <td className="p-2 border line-clamp-2">{post.description}</td>
                   <td className="p-2 border">
@@ -103,12 +145,12 @@ export function PostList() {
                     )}
                   </td>
                   <td className="p-2 border flex items-center gap-2">
-                    <Avatar
+                    {/* <Avatar
                       src={post.authorId?.avatar}
                       alt={post.authorId?.fullName}
                       size="sm"
-                    />
-                    <span>{post.authorId?.fullName}</span>
+                    /> */}
+                    <span>{post.authorId}</span>
                   </td>
                   <td className="p-2 border">{post.like}</td>
                   <td className="p-2 border">
@@ -118,7 +160,19 @@ export function PostList() {
                       size="sm"
                     />
                   </td>
-                  <td className="p-2 border">
+                  <td className="flex gap-2 p-2 border">
+
+                      <Button
+                        color="blue"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(post);
+                        }}
+                      >
+                        Sửa
+                    </Button>
+
                     <Button
                       color="red"
                       size="sm"
@@ -140,6 +194,39 @@ export function PostList() {
           </table>
         </div>
       )}
+      <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
+        <div className="p-4 space-y-4">
+          <Typography variant="h5">Cập nhật bài post</Typography>
+          <Input
+            label="Tiêu đề"
+            value={selectedPost?.title || ""}
+            onChange={(e) => setSelectedPost({ ...selectedPost, title: e.target.value })}
+          />
+          <Input
+            label="Mô tả"
+            value={selectedPost?.description || ""}
+            onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
+          />
+          <select
+            className="border p-2 w-full rounded"
+            value={selectedPost?.status}
+            onChange={(e) =>
+              setSelectedPost({ ...selectedPost, status: e.target.value === "true" })
+            }
+          >
+            <option value="true">Đang hoạt động</option>
+            <option value="false">Đã ẩn</option>
+          </select>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button onClick={() => setOpenEdit(false)} variant="outlined">
+              Hủy
+            </Button>
+            <Button onClick={updatePost} color="green">
+              Lưu thay đổi
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </div>
   );
 }
