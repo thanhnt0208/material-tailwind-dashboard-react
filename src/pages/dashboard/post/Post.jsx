@@ -7,7 +7,7 @@ export function PostList() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Lấy danh sách bài post
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
@@ -19,6 +19,7 @@ export function PostList() {
         },
       });
       const json = await res.json();
+      console.log("POST DATA:", json.data);
       if (res.ok) {
         setPosts(json.data);
       } else {
@@ -31,7 +32,7 @@ export function PostList() {
     setLoading(false);
   };
 
-  // Xoá bài post
+
   const deletePost = async (id) => {
     const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bài post này?");
     if (!confirmDelete) return;
@@ -93,7 +94,7 @@ export function PostList() {
                   <td className="p-2 border">
                     {post.images.length > 0 ? (
                       <img
-                        src={post.images[0]}
+                        src={`${BASE_URL}${post.images[0]}`}
                         alt="Hình ảnh"
                         className="w-12 h-12 object-cover rounded"
                       />
@@ -103,11 +104,11 @@ export function PostList() {
                   </td>
                   <td className="p-2 border flex items-center gap-2">
                     <Avatar
-                      src={post.authorId.avatar}
-                      alt={post.authorId.fullName}
+                      src={post.authorId?.avatar}
+                      alt={post.authorId?.fullName}
                       size="sm"
                     />
-                    <span>{post.authorId.fullName}</span>
+                    <span>{post.authorId?.fullName}</span>
                   </td>
                   <td className="p-2 border">{post.like}</td>
                   <td className="p-2 border">
