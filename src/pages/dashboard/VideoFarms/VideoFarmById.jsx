@@ -7,7 +7,8 @@ import { Audio } from 'react-loader-spinner';
 import LikeButton from './LikeButton';
 import CommentVideo from './commentVideo';
 import DialogVideoDetail from './DialogVideoDetail'
-
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { useNavigate } from "react-router-dom";
 export const VideoFarmById = () => {
     const [openDialogInforVideo, setOpenDialogInforVideo] = useState(false);
   const [idVideo, setIdVideo] = useState([])
@@ -21,11 +22,13 @@ export const VideoFarmById = () => {
     const [videoDetail,setVideoDetail]=useState([])
   const tokenUser = localStorage.getItem('token');
   const { farmId } = useParams();
+  const navigate = useNavigate();
 
 const deletevideo = async()=>{
       if (!window.confirm('Bạn có chắc muốn xóa video này?')) return;
   try {
-    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete/${idVideo}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
+    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete-s3/${idVideo}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
+    console.log(res)
 if(res.status===200){
 await getDetailVideo()
 alert("Xóa thành công")
@@ -35,19 +38,19 @@ alert("Xóa thành công")
   }
 }
 
-const handleCloseDialogInforVideo =(item)=>{
+const handleCloseDialogInforVideo =()=>{
   setEditData(null)
   setEditValue({})
 setOpenDialogInforVideo(false)
 }
-
+console.log(idVideo)
+console.log(videoDetail)
 const handleSaveEdit = async()=>{
 try {
       const updatedValue = { status: "uploaded" }; 
-    const res= await axios.post(`${BaseUrl}/admin-video-farm/upload-youtube/${idVideo}`, updatedValue,{
+    const res= await axios.post(`${BaseUrl}/admin-video-farm/upload-s3/${idVideo}`, updatedValue,{
         headers: { Authorization: `Bearer ${tokenUser}` }})
 if(res.status===200){
-  console.log("data nè:",res.data)
   alert("Cập nhật thành công")
     await  getDetailVideo();     
 handleCloseDialogInforVideo()
@@ -128,7 +131,16 @@ const handleOpenComment = (e, videoId) => {
   }, []);
 
   return (
+      <div className="p-4">
+              <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 px-4 py-2 mb-4 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition"
+      >
+        <ArrowLeftIcon className="w-5 h-sm" />
+        Quay lại
+      </button>
     <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+ 
       {loading ? (
         <div className="flex justify-center items-center w-full col-span-3">
           <Audio height="80" width="80" radius="9" color="green" ariaLabel="loading" />
@@ -164,10 +176,8 @@ const handleOpenComment = (e, videoId) => {
           </div>
           
       {item.status === "pending" && item.localFilePath ?
-      
       (
   <video
-  
  src={
     item.localFilePath.startsWith('http')
       ? item.localFilePath
@@ -178,7 +188,13 @@ const handleOpenComment = (e, videoId) => {
   >
     Trình duyệt của bạn không hỗ trợ video
   </video>
-) : item.youtubeLink && item.status === "uploaded" ? (
+) 
+  : item.youtubeLink && item.status === "uploaded" ? (
+  item.youtubeLink.endsWith('.mp4') ? (
+    <video src={item.youtubeLink} controls   
+    className=" h-[360px]  w-full rounded shadow"
+ />
+  ): (
   <iframe 
     src={
       "https://www.youtube.com/embed/" +
@@ -189,13 +205,13 @@ const handleOpenComment = (e, videoId) => {
     allowFullScreen
     className="h-[360px] rounded shadow w-full"
   ></iframe>
-) : (
+) ): 
+(
   <div className="flex items-center justify-center h-56 text-red-500 font-semibold w-full h-[360px] rounded shadow bg-gray-100"  >
     Video không tồn tại
   </div>
 
-)}
-           
+)} 
             <div className="flex justify-end gap-3 mt-2">
  
               <button
@@ -237,6 +253,7 @@ handleCloseDialogInforVideo={handleCloseDialogInforVideo}
           videoId={selectedVideoId}
         />
       )}
+    </div>
     </div>
   );
 };
