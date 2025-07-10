@@ -6,12 +6,14 @@ import {
   ServerStackIcon,
   RectangleStackIcon,
   NewspaperIcon,
+  ReceiptPercentIcon
 } from "@heroicons/react/24/solid";
 
 import VideoLikeList from "@/pages/dashboard/VideoLikeList";
-import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList } from "@/pages/dashboard";
+import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList, AdminReports } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
+import { element } from "prop-types";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -63,6 +65,12 @@ export const routes = [
         path: "/PostList",
         element: <PostList />,
       },
+      {
+        icon: <ReceiptPercentIcon {...icon} />,
+        name: "AdminReports",
+        path: "/AdminReports",
+        element: <AdminReports />,
+      }
   
     ],
   },
