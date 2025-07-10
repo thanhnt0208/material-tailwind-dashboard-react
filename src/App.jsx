@@ -3,6 +3,9 @@ import { Dashboard, Auth } from "@/layouts";
 import VideoFarmById from "./pages/dashboard/VideoFarms/VideoFarmById";
 import VideoLikeList from "./pages/dashboard/VideoFarms/VideoLikeList";
 import PostDetail from "./pages/dashboard/post/PostDetail";
+import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId";
+import CommentPostbyIdPost from "./pages/dashboard/AdminCommentPost/CommentPostbyIdPost";
+import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostByIdUser";
 function App() {
   return (
     <Routes>
@@ -12,6 +15,10 @@ function App() {
       <Route path="/dashboard/video-like/:videoId" element={<VideoLikeList />} />
       <Route path="/dashboard/post/:id" element={<PostDetail />} />
       <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
+      <Route path="/dashboard/CommentPostbyId/:id" element={<CommentPostbyId />} />
+      <Route path="/dashboard/CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
+      <Route path="/dashboard/CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
+
     </Routes>
   );
 }
