@@ -52,7 +52,7 @@ export function Sidenav({ brandImg, brandName, routes }) {
             variant="h6"
             color={sidenavType === "dark" ? "white" : "blue-gray"}
           >
-            {brandName}
+            Admin Farm
           </Typography>
         </Link>
         <IconButton
