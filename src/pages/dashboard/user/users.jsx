@@ -133,7 +133,7 @@ export function Users() {
     }
   };
 
-  // ✅ Thêm nông trại
+
   const handleCreateFarm = async (farmData) => {
     try {
       await axios.post("https://api-ndolv2.nongdanonline.vn/farms", farmData, {
@@ -165,7 +165,7 @@ export function Users() {
             </CardHeader>
             <CardBody>
               <Typography variant="h6">{user.fullName}</Typography>
-              <Typography variant="small">Email: {user.email}</Typography>
+              <Typography variant="small">Email: {user.email.length > 25 ? user.email.slice(0,20) + "...": user.email}</Typography>
               <Typography variant="small">Phone: {user.phone || "N/A"}</Typography>
               <Typography variant="small">Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
             </CardBody>
