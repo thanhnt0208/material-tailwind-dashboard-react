@@ -10,10 +10,11 @@ import {
 } from "@heroicons/react/24/solid";
 
 import VideoLikeList from "@/pages/dashboard/VideoFarms/VideoLikeList";
-import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList, AdminReports } from "@/pages/dashboard";
+import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList, AdminReports,CommentPost  } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
-import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
-import { element } from "prop-types";
+
+import { ViewfinderCircleIcon,VideoCameraIcon,ChatBubbleOvalLeftEllipsisIcon  } from "@heroicons/react/24/outline";
+import { Comment } from "react-loader-spinner";
 
 const icon = {
   className: "w-5 h-5 text-inherit",
@@ -53,8 +54,8 @@ export const routes = [
         path: "/AnswersTable",
         element: <AnswersTable />,
       },
-      {
-        icon: <ViewfinderCircleIcon {...icon} />,
+        {
+        icon: <VideoCameraIcon {...icon} />,
         name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
@@ -70,8 +71,15 @@ export const routes = [
         name: "AdminReports",
         path: "/AdminReports",
         element: <AdminReports />,
-      }
-  
+      },
+    {
+        icon: <ChatBubbleOvalLeftEllipsisIcon {...icon} />,
+        name: "CommentPost",
+        path: "/CommentPost",
+         element: <CommentPost />,
+
+      }, 
+      
     ],
   },
   {
