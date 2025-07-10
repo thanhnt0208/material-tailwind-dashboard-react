@@ -5,7 +5,6 @@ import {
   Typography, Button, Dialog, DialogHeader,
   DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
-import FarmForm from "../farm/FarmForm";
 
 export function Users() {
   const [users, setUsers] = useState([]);
@@ -15,15 +14,12 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: "", email: "", phone: "" });
+  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
   const [selectedRole, setSelectedRole] = useState("Farmer");
 
   const [viewOpen, setViewOpen] = useState(false);
   const [viewUser, setViewUser] = useState(null);
   const [addresses, setAddresses] = useState([]);
-
-  const [openFarmForm, setOpenFarmForm] = useState(false);
-  const [farmFormData, setFarmFormData] = useState(null);
 
   const token = localStorage.getItem("token");
 
@@ -31,7 +27,7 @@ export function Users() {
     setLoading(true);
     try {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
       const activeUsers = (Array.isArray(res.data) ? res.data : []).filter(u => u.isActive);
       setUsers(activeUsers);
@@ -56,7 +52,7 @@ export function Users() {
     setFormData({
       fullName: user.fullName,
       email: user.email,
-      phone: user.phone || "",
+      phone: user.phone || ''
     });
     setEditOpen(true);
   };
@@ -65,10 +61,7 @@ export function Users() {
     if (!token || !selectedUser) return;
     try {
       await axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
       alert("Cập nhật thành công!");
       fetchUsers();
@@ -113,7 +106,7 @@ export function Users() {
     setViewOpen(true);
     try {
       const res = await axios.get("https://api-ndolv2.nongdanonline.vn/user-addresses", {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
       const userAddresses = res.data.filter(addr => addr.userid === user.id);
       setAddresses(userAddresses);
@@ -138,10 +131,7 @@ export function Users() {
 
   return (
     <div className="px-4 pb-4">
-      <Typography variant="h6" color="blue-gray" className="mb-2">
-        Quản lý người dùng
-      </Typography>
-
+      <Typography variant="h6" color="blue-gray" className="mb-2">Quản lý người dùng</Typography>
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
 
@@ -161,25 +151,16 @@ export function Users() {
               <Typography variant="small">Phone: {user.phone || "N/A"}</Typography>
               <Typography variant="small">Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
             </CardBody>
-            <CardFooter className="flex flex-col gap-2">
-              <div className="flex justify-between">
-                <Button size="sm" variant="outlined" onClick={() => handleView(user)}>XEM</Button>
-                <Button size="sm" variant="outlined" onClick={() => openEdit(user)}>SỬA</Button>
-                <Button size="sm" color="red" variant="outlined" onClick={() => handleDelete(user.id)}>XOÁ</Button>
-              </div>
-              <div className="flex gap-2">
-                <Select label="Chọn role" value={selectedRole} onChange={setSelectedRole}>
-                  {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
-                </Select>
-                <Button size="sm" onClick={() => { setSelectedUser(user); handleAddRole(); }}>+</Button>
-                <Button size="sm" color="red" onClick={() => { setSelectedUser(user); handleRemoveRole(selectedRole); }}>-</Button>
-              </div>
+            <CardFooter className="flex justify-between gap-1">
+              <Button size="sm" variant="outlined" onClick={() => handleView(user)}>XEM</Button>
+              <Button size="sm" variant="outlined" onClick={() => openEdit(user)}>SỬA</Button>
+              <Button size="sm" color="red" variant="outlined" onClick={() => handleDelete(user.id)}>XOÁ</Button>
             </CardFooter>
           </Card>
         ))}
       </div>
 
-      {/* Dialog Edit */}
+      {/* Dialog SỬA */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody>
@@ -187,6 +168,19 @@ export function Users() {
             <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
             <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
             <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+            <Typography className="font-bold mt-2">Quản lý role</Typography>
+            <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
+              {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
+            </Select>
+            <Button size="sm" variant="outlined" onClick={handleAddRole}>+ Thêm Role</Button>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {(Array.isArray(selectedUser?.role) ? selectedUser.role : [selectedUser?.role]).map(role => (
+                <span key={`${selectedUser?.id}-${role}`} className="flex items-center bg-blue-gray-100 rounded-full px-2 py-1 text-xs">
+                  {role}
+                  <button className="ml-1 text-red-500" onClick={() => handleRemoveRole(role)}>×</button>
+                </span>
+              ))}
+            </div>
           </div>
         </DialogBody>
         <DialogFooter>
@@ -195,7 +189,7 @@ export function Users() {
         </DialogFooter>
       </Dialog>
 
-      {/* Dialog View */}
+      {/* Dialog XEM */}
       <Dialog open={viewOpen} handler={setViewOpen} size="sm">
         <DialogHeader>Chi tiết người dùng</DialogHeader>
         <DialogBody>
@@ -210,17 +204,6 @@ export function Users() {
               {addresses.length ? addresses.map((addr, i) => (
                 <Typography key={`${viewUser.id}-addr-${i}`} className="text-sm">{addr.address} - {addr.ward}, {addr.district}, {addr.province}</Typography>
               )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
-              <Button
-                color="green"
-                size="sm"
-                className="mt-4"
-                onClick={() => {
-                  setFarmFormData({ ownerId: viewUser.id });
-                  setOpenFarmForm(true);
-                }}
-              >
-                Thêm nông trại cho người dùng này
-              </Button>
             </>
           ) : <Typography>Đang tải...</Typography>}
         </DialogBody>
@@ -228,25 +211,6 @@ export function Users() {
           <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
         </DialogFooter>
       </Dialog>
-
-      {/* Farm Form */}
-      <FarmForm
-        open={openFarmForm}
-        onClose={() => setOpenFarmForm(false)}
-        initialData={farmFormData}
-        onSubmit={async (data) => {
-          try {
-            const payload = { ...data, ownerId: farmFormData.ownerId };
-            await axios.post("https://api-ndolv2.nongdanonline.vn/adminfarms", payload, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            alert("Tạo farm thành công!");
-            setOpenFarmForm(false);
-          } catch (err) {
-            alert("Lỗi khi thêm farm: " + (err.response?.data?.message || err.message));
-          }
-        }}
-      />
     </div>
   );
 }
