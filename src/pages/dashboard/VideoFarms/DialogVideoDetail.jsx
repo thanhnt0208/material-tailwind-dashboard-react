@@ -65,6 +65,7 @@ export  const DialogVideoDetail = ({openDialogInforVideo,editData,editValue,hand
             disabled
           />
           </div>
+     
            <div>
           <label className="block text-sm font-semibold text-gray-700 mb-1">Ngày đăng</label>
           <input
