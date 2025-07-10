@@ -5,10 +5,11 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
+  NewspaperIcon,
 } from "@heroicons/react/24/solid";
 
 import VideoLikeList from "@/pages/dashboard/VideoLikeList";
-import { Home, Users, Farms, Questions, AnswersTable, VideoFarms } from "@/pages/dashboard";
+import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 import { ViewfinderCircleIcon } from "@heroicons/react/24/outline";
 
@@ -55,6 +56,12 @@ export const routes = [
         name: "VideoFarms",
         path: "/VideoFarms",
         element: <VideoFarms />,
+      },
+      {
+        icon: <NewspaperIcon {...icon} />,
+        name: "PostList",
+        path: "/PostList",
+        element: <PostList />,
       },
   
     ],
