@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
 import VideoFarmById from "./pages/dashboard/VideoFarms/VideoFarmById";
 import VideoLikeList from "./pages/dashboard/VideoFarms/VideoLikeList";
@@ -7,6 +9,13 @@ import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId"
 import CommentPostbyIdPost from "./pages/dashboard/AdminCommentPost/CommentPostbyIdPost";
 import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostByIdUser";
 function App() {
+  const navigate = useNavigate();
+  useEffect(() =>{
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/auth/sign-in")
+    }
+  })
   return (
     <Routes>
       <Route path="/dashboard/*" element={<Dashboard />} />
