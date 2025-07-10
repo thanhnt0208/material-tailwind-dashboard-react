@@ -67,7 +67,6 @@ export function AnswersTable() {
   });
   const [uploading, setUploading] = useState(false);
 
-  // Fetch all answers
   const fetchAnswers = async () => {
     try {
       const res = await fetchWithAuth(API_URL);
@@ -87,7 +86,6 @@ export function AnswersTable() {
     fetchAnswers();
   }, []);
 
-  // Open form for add/edit
   const openForm = (data = null) => {
     if (data) {
       setForm({
@@ -111,60 +109,50 @@ export function AnswersTable() {
     setOpen(true);
   };
 
-  // Save data (create or update)
-  const handleSubmit = async () => {
-    if (!form.farmId || !form.questionId) {
-      alert("Vui lòng nhập đủ Farm ID và Question ID");
-      return;
-    }
+const handleSubmit = async () => {
+  if (!form.farmId || !form.questionId) {
+    alert("Vui lòng nhập đủ Farm ID và Question ID");
+    return;
+  }
 
-    const url = editData ? `${API_URL}/${editData._id}` : `${API_URL}/batch`;
-    const method = editData ? "PUT" : "POST";
+  const url = `${API_URL}/batch`; // luôn dùng /batch
+  const method = "POST";
 
-    const body = editData
-      ? {
-          farmId: form.farmId,
-          questionId: form.questionId,
-          selectedOptions: form.selectedOptions,
-          otherText: form.otherText,
-          uploadedFiles: form.uploadedFiles,
-        }
-      : {
-          farmId: form.farmId,
-          answers: [
-            {
-              questionId: form.questionId,
-              selectedOptions: form.selectedOptions,
-              otherText: form.otherText,
-              uploadedFiles: form.uploadedFiles,
-            },
-          ],
-        };
-
-    try {
-      const res = await fetchWithAuth(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        console.error("Error response:", errorData);
-        throw new Error(errorData.message || "Không thể lưu dữ liệu");
-      }
-
-      setOpen(false);
-      setEditData(null);
-      fetchAnswers();
-    } catch (err) {
-      alert(`Lỗi: ${err.message}`);
-    }
+  const body = {
+    farmId: form.farmId,
+    answers: [
+      {
+        questionId: form.questionId,
+        selectedOptions: form.selectedOptions,
+        otherText: form.otherText,
+        uploadedFiles: form.uploadedFiles,
+      },
+    ],
   };
 
-  // Delete an answer
+  try {
+    const res = await fetchWithAuth(url, {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      console.error("Error response:", errorData);
+      throw new Error(errorData.message || "Không thể lưu dữ liệu");
+    }
+
+    setOpen(false);
+    setEditData(null);
+    fetchAnswers();
+  } catch (err) {
+    alert(`Lỗi: ${err.message}`);
+  }
+};
+
   const handleDelete = async (id) => {
     if (!window.confirm("Bạn có chắc muốn xoá?")) return;
     try {
@@ -178,38 +166,43 @@ export function AnswersTable() {
     }
   };
 
-  // Upload image
-  const handleUploadImage = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+const handleUploadImage = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
 
-    const formData = new FormData();
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("file", file);
 
-    setUploading(true);
-    try {
-      const res = await fetchWithAuth(`${API_URL}/upload-image`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        console.error("Upload lỗi:", result);
-        throw new Error(result.message || "Không thể upload hình ảnh");
-      }
-
-      setForm((prevForm) => ({
-        ...prevForm,
-        uploadedFiles: [...prevForm.uploadedFiles, result.path],
-      }));
-    } catch (err) {
-      alert(`Upload lỗi: ${err.message}`);
-    } finally {
-      setUploading(false);
+  setUploading(true);
+  try {
+    const res = await fetchWithAuth(`https://api-ndolv2.nongdanonline.vn/answers/upload-image`, {
+  method: "POST",
+  body: formData,
+});
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await res.text();
+      console.error("⚠️ Server không trả JSON:", text);
+      throw new Error("Phản hồi không phải JSON");
     }
-  };
+
+    const result = await res.json();
+
+    if (!res.ok) {
+      console.error("❌ Upload thất bại:", result);
+      throw new Error(result.message || "Không thể upload hình ảnh");
+    }
+    setForm((prev) => ({
+      ...prev,
+      uploadedFiles: [...prev.uploadedFiles, result.path],
+    }));
+  } catch (err) {
+    alert(`Upload lỗi: ${err.message}`);
+  } finally {
+    setUploading(false);
+  }
+};
+
 
   return (
     <div className="p-6">
@@ -285,7 +278,6 @@ export function AnswersTable() {
             <Input
               value={form.farmId}
               onChange={(e) => setForm({ ...form, farmId: e.target.value })}
-              className="rounded-lg shadow-sm"
             />
           </div>
 
@@ -294,7 +286,6 @@ export function AnswersTable() {
             <Input
               value={form.questionId}
               onChange={(e) => setForm({ ...form, questionId: e.target.value })}
-              className="rounded-lg shadow-sm"
             />
           </div>
 
@@ -313,7 +304,6 @@ export function AnswersTable() {
                     .filter(Boolean),
                 })
               }
-              className="rounded-lg shadow-sm"
             />
           </div>
 
@@ -322,33 +312,20 @@ export function AnswersTable() {
             <Input
               value={form.otherText}
               onChange={(e) => setForm({ ...form, otherText: e.target.value })}
-              className="rounded-lg shadow-sm"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label className="text-sm font-medium text-gray-700">Upload file</label>
-            <Input
-              type="file"
-              onChange={handleUploadImage}
-              className="rounded-lg shadow-sm"
-            />
+            <Input type="file" onChange={handleUploadImage} />
+            {uploading && <span className="text-sm text-gray-500">Đang tải lên...</span>}
           </div>
         </DialogBody>
         <DialogFooter className="flex justify-end gap-3">
-          <Button
-            variant="outlined"
-            color="gray"
-            onClick={() => setOpen(false)}
-            className="rounded-full px-5 py-2"
-          >
+          <Button variant="outlined" color="gray" onClick={() => setOpen(false)}>
             Huỷ
           </Button>
-          <Button
-            color="blue"
-            onClick={handleSubmit}
-            className="rounded-full px-5 py-2 shadow-md hover:shadow-lg transition"
-          >
+          <Button color="blue" onClick={handleSubmit}>
             {editData ? "Cập nhật" : "Tạo mới"}
           </Button>
         </DialogFooter>
