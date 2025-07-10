@@ -66,6 +66,7 @@ handleCloseDialogInforVideo()
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
       if (res.status === 200) { 
+        console.log("Dữ liệu từ API:", res.data)
         setVideoDetail(res.data)
         setLoading(false)
         

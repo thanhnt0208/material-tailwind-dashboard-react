@@ -14,10 +14,11 @@ export default function VideoLikeList() {
   const getLikes = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${BaseUrl}/video-like/${videoId}`, {
+      const res = await axios.get(`${BaseUrl}/video-like/${videoId}/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setLikes(res.data?.data || []);
+      console.log("Danh sách user đã like:", res.data);
+      setLikes(res.data?.users  || []);
     } catch (error) {
       console.error('Lỗi lấy danh sách Like:', error);
     } finally {
@@ -40,10 +41,22 @@ export default function VideoLikeList() {
       ) : likes.length === 0 ? (
         <p className="text-gray-500">Chưa có ai Like video này.</p>
       ) : (
-        <ul className="list-disc pl-6">
+        <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {likes.map((user, index) => (
-            <li key={index} className="mb-1">
-              {user.fullName}
+            <li
+              key={index}
+              className="flex items-center gap-4 p-4 bg-white rounded-lg shadow hover:shadow-md transition"
+            >
+              <img
+                src={
+                  user.avatar
+                    ? `${BaseUrl}${user.avatar}`
+                    : "https://via.placeholder.com/50x50.png?text=User"
+                }
+                alt={user.fullName}
+                className="w-12 h-12 rounded-full object-cover border"
+              />
+              <span className="font-medium text-gray-800">{user.fullName}</span>
             </li>
           ))}
         </ul>

@@ -18,7 +18,7 @@ const fetchAllVideos = async () => {
     })
     console.log("Dữ liệu video:", videos)
     if (res.status === 200) {
-     console.log(res.data)
+      console.log("Dữ liệu từ API:", res.data)
       setVideos(res.data)
     }
   } catch (error) {
