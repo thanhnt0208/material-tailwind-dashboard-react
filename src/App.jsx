@@ -6,6 +6,8 @@ import PostDetail from "./pages/dashboard/post/PostDetail";
 import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId";
 import CommentPostbyIdPost from "./pages/dashboard/AdminCommentPost/CommentPostbyIdPost";
 import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostByIdUser";
+import FarmDetail from "./pages/dashboard/farm/FarmDetail";
+import { Farms } from "./pages/dashboard/farm/farms";
 function App() {
   return (
     <Routes>
@@ -18,6 +20,8 @@ function App() {
       <Route path="/dashboard/CommentPostbyId/:id" element={<CommentPostbyId />} />
       <Route path="/dashboard/CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
       <Route path="/dashboard/CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
+      <Route path="/admin/Farms" element={<Farms />} />
+      <Route path="/admin/farms/:id" element={<FarmDetail />} />
 
     </Routes>
   );
