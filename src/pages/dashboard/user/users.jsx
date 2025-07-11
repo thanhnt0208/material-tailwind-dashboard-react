@@ -7,12 +7,13 @@ import {
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import FarmForm from "./FarmForm";
-
+import { useNavigate } from "react-router-dom";
 export function Users() {
   const [users, setUsers] = useState([]);
   const [roles] = useState(["Customer", "Admin", "Farmer"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -105,19 +106,9 @@ export function Users() {
     }
   };
 
-  const handleView = async (user) => {
-    setViewUser(user);
-    setViewOpen(true);
-    try {
-      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/user-addresses", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const userAddresses = res.data.filter(addr => addr.userid === user.id);
-      setAddresses(userAddresses);
-    } catch {
-      setAddresses([]);
-    }
-  };
+const handleView = (user) => {
+  navigate(`/dashboard/users/${user.id}`);
+};
 
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc muốn xoá?")) return;

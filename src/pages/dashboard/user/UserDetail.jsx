@@ -1,69 +1,119 @@
+// src/pages/dashboard/user/UserDetail.jsx
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardHeader, CardBody, Typography, Spinner } from "@material-tailwind/react";
+import {
+  Typography, Spinner, Avatar, Card, CardBody,
+} from "@material-tailwind/react";
 
 export default function UserDetail() {
   const { id } = useParams();
+  const token = localStorage.getItem("token");
+
   const [user, setUser] = useState(null);
+  const [addresses, setAddresses] = useState([]);
+  const [farms, setFarms] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+
+  const fetchUserDetail = async () => {
+    try {
+      const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(res.data);
+    } catch (err) {
+      console.error("Error loading user:", err);
+    }
+  };
+
+  const fetchAddresses = async () => {
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/user-addresses", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userAddr = res.data.filter(a => a.userid === id);
+    setAddresses(userAddr);
+  };
+
+  const fetchFarms = async () => {
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/farms", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setFarms(res.data.filter(f => f.ownerId === id));
+  };
+
+  const fetchVideos = async () => {
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/videos", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setVideos(res.data.filter(v => v.userId === id));
+  };
+
+  const fetchPosts = async () => {
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/posts", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setPosts(res.data.filter(p => p.userId === id));
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Không tìm thấy access token!");
+    if (!token) return;
+    const loadAll = async () => {
+      await fetchUserDetail();
+      await fetchAddresses();
+      await fetchFarms();
+      await fetchVideos();
+      await fetchPosts();
       setLoading(false);
-      return;
-    }
-
-    axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setUser(res.data))
-    .catch(() => setError("Không thể tải chi tiết người dùng."))
-    .finally(() => setLoading(false));
+    };
+    loadAll();
   }, [id]);
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <Spinner className="h-12 w-12" color="blue" />
-    </div>
-  );
-
-  if (error) return (
-    <Typography color="red" className="text-center mt-8">{error}</Typography>
-  );
-
-  if (!user) return <Typography className="text-center mt-8">Không có dữ liệu người dùng.</Typography>;
+  if (loading) return <div className="p-4 text-center"><Spinner /></div>;
+  if (!user) return <div className="p-4 text-center text-red-500">Không tìm thấy người dùng</div>;
 
   return (
-    <div className="p-4 max-w-2xl mx-auto">
-      <Card>
-        <CardHeader floated={false} className="h-80">
-          {user.avatar ? (
-            <img
-              src={`https://api-ndolv2.nongdanonline.cc${user.avatar}`}
-              alt={user.fullName}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="h-full w-full bg-gray-300 flex items-center justify-center text-gray-500">
-              No Avatar
-            </div>
-          )}
-        </CardHeader>
-        <CardBody>
-          <Typography variant="h4" color="blue-gray" className="mb-2">{user.fullName}</Typography>
-          <Typography variant="small">Email: {user.email}</Typography>
-          <Typography variant="small">Phone: {user.phone || "N/A"}</Typography>
-          <Typography variant="small">Role: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
-          <Typography variant="small">Active: {user.isActive ? "Yes" : "No"}</Typography>
-          <Typography variant="small">Note: {user.note || "N/A"}</Typography>
-          <Typography variant="small">Created At: {new Date(user.createdAt).toLocaleString()}</Typography>
-          <Typography variant="small">Last Login: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "N/A"}</Typography>
-        </CardBody>
-      </Card>
+    <div className="p-4">
+      <Typography variant="h5">Chi tiết người dùng</Typography>
+      <div className="flex gap-4 items-center my-4">
+        <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="xl" />
+        <div>
+          <Typography variant="h6">{user.fullName}</Typography>
+          <Typography>Email: {user.email}</Typography>
+          <Typography>SĐT: {user.phone || "N/A"}</Typography>
+          <Typography>Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
+          <Typography>Trạng thái: {user.isActive ? "ĐÃ CẤP QUYỀN" : "CHƯA CẤP QUYỀN"}</Typography>
+        </div>
+      </div>
+
+      <div className="my-4">
+        <Typography className="font-bold mb-2">Địa chỉ</Typography>
+        {addresses.length ? addresses.map((a, i) => (
+          <Typography key={i} className="text-sm">{a.address} - {a.ward}, {a.district}, {a.province}</Typography>
+        )) : <Typography className="text-gray-500 text-sm">Không có địa chỉ</Typography>}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+        <Card>
+          <CardBody>
+            <Typography className="font-bold mb-2">Nông trại ({farms.length})</Typography>
+            {farms.map(f => <Typography key={f.id}>{f.name}</Typography>)}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Typography className="font-bold mb-2">Video ({videos.length})</Typography>
+            {videos.map(v => <Typography key={v.id}>{v.title}</Typography>)}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Typography className="font-bold mb-2">Bài viết ({posts.length})</Typography>
+            {posts.map(p => <Typography key={p.id}>{p.title}</Typography>)}
+          </CardBody>
+        </Card>
+      </div>
     </div>
   );
 }
