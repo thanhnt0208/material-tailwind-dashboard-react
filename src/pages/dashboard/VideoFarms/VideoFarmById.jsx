@@ -12,8 +12,6 @@ import { useNavigate } from "react-router-dom";
 export const VideoFarmById = () => {
     const [openDialogInforVideo, setOpenDialogInforVideo] = useState(false);
   const [idVideo, setIdVideo] = useState([])
-  const [openDialog, setOpenDialog] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState(null);
   const [openComment, setOpenComment] = useState(false);
    const [editData, setEditData] = useState(null);
   const [selectedVideoId, setSelectedVideoId] = useState(null)
@@ -24,11 +22,10 @@ export const VideoFarmById = () => {
   const { farmId } = useParams();
   const navigate = useNavigate();
 
-const deletevideo = async()=>{
+const deletevideo = async(videoId)=>{
       if (!window.confirm('Bạn có chắc muốn xóa video này?')) return;
   try {
-    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete-s3/${idVideo}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
-    console.log(res)
+    const res= await axios.delete(`${BaseUrl}/admin-video-farm/delete-s3/${videoId}`,{headers:{Authorization: `Bearer ${tokenUser}`}})
 if(res.status===200){
 await getDetailVideo()
 alert("Xóa thành công")
@@ -146,7 +143,7 @@ const handleOpenComment = (e, videoId) => {
             <button
             onClick={(e)=>{
                 e.stopPropagation();
-              deletevideo()}}
+              deletevideo(item._id)}}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded shadow transition"
             >
               Xóa

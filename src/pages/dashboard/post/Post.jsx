@@ -103,6 +103,7 @@ export function PostList() {
   const findUser = (id) => users.find((u) => u.id === id);
 
   const handleEditClick = (post) => {
+
     setSelectedPost({
       ...post,
       tagsInput: post.tags?.join(", ") || "",
@@ -127,20 +128,47 @@ export function PostList() {
           images: selectedPost.images,
         }),
       });
+  setSelectedPost({
+    ...post,
+    tagsInput: post.tags ? post.tags.join(", ") : "", 
+  });
+  setOpenEdit(true);
+};
 
-      const json = await res.json();
-      if (res.ok) {
-        alert("Cập nhật thành công!");
-        setOpenEdit(false);
-        fetchPosts();
-      } else {
-        alert(json.message || "Cập nhật thất bại");
-      }
-    } catch (err) {
-      console.error("PUT error:", err);
-      alert("Lỗi kết nối server khi cập nhật");
+  const updatePost = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        title: selectedPost.title,
+        description: selectedPost.description,
+        status: selectedPost.status,
+        tags: (selectedPost.tagsInput || "")
+          .split(",") // tách dấu phẩy
+          .map((tag) => tag.trim()) // bỏ khoảng trắng
+          .filter((tag) => tag !== ""), // bỏ tag rỗng
+      }),
+    });
+
+    const json = await res.json();
+    if (res.ok) {
+      alert("Cập nhật thành công!");
+      setOpenEdit(false);
+      fetchPosts();
+    } else {
+      alert(json.message || "Cập nhật thất bại");
     }
-  };
+  } catch (err) {
+    console.error("PUT error:", err);
+    alert("Lỗi kết nối server khi cập nhật");
+  }
+};
+
 
   const deletePost = async (id) => {
     const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bài post này?");
@@ -317,7 +345,7 @@ export function PostList() {
       )}
 
       <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
-        <div className="p-4 space-y-4 max-w-lg">
+        <div className="p-6 space-y-4 mx-auto max-w-md bg-white rounded-lg shadow-lg">
           <Typography variant="h5">Cập nhật bài post</Typography>
 
           <Input
@@ -329,9 +357,28 @@ export function PostList() {
           />
 
           <textarea
-            className="border p-2 w-full rounded h-40 resize-y"
+            className="border p-2 w-full rounded h-32 resize-y"
             placeholder="Mô tả"
             value={selectedPost?.description || ""}
+            onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
+          />
+
+          {/* Tags */}
+          <Input
+          label="Tags (ngăn cách bởi dấu phẩy)"
+          value={selectedPost?.tagsInput || ""}
+          onChange={(e) =>
+            setSelectedPost({
+              ...selectedPost,
+              tagsInput: e.target.value, // Giữ nguyên string bạn gõ
+            })
+            }
+          />
+
+          {/* Hình ảnh */}
+          <Input
+            label="Link hình ảnh (từ thư mục /uploads/post/...)"
+            value={selectedPost?.images?.[0] || ""}
             onChange={(e) =>
               setSelectedPost({ ...selectedPost, description: e.target.value })
             }
