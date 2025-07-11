@@ -112,30 +112,6 @@ export function PostList() {
   };
 
   const updatePost = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: selectedPost.title,
-          description: selectedPost.description,
-          status: selectedPost.status,
-          tags: selectedPost.tagsInput?.split(",").map((t) => t.trim()),
-          images: selectedPost.images,
-        }),
-      });
-  setSelectedPost({
-    ...post,
-    tagsInput: post.tags ? post.tags.join(", ") : "", 
-  });
-  setOpenEdit(true);
-};
-
-  const updatePost = async () => {
   try {
     const token = localStorage.getItem("token");
     const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
