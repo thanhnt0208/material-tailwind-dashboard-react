@@ -16,80 +16,97 @@ export function PostList() {
   const [loading, setLoading] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedPost, setSelectedPost] = useState(null);
-  const [users, setUsers] = useState([]); 
+  const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 10;
 
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${BASE_URL}/admin-users`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const json = await res.json();
-    if (res.ok && Array.isArray(json)) {
-      setUsers(json); 
-    } else if (res.ok && Array.isArray(json.data)) {
-      setUsers(json.data); 
-    } else {
-      console.warn("Danh sách users không hợp lệ:", json);
-      setUsers([]);
-    }
-  } catch (err) {
-    console.error("Fetch users error:", err);
-    setUsers([]);
-  }
-};
-
-
-
-  const fetchPosts = async () => {
-  setLoading(true);
-  const token = localStorage.getItem("token");
-  const limit = 10;
-  const totalToFetch = 100;
-  const totalPagesToFetch = Math.ceil(totalToFetch / limit);
-
-  try {
-    const fetchPage = async (page) => {
-      const res = await fetch(`${BASE_URL}/admin-post-feed?page=${page}&limit=${limit}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${BASE_URL}/admin-users`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (res.ok) return json.data || [];
-      else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
-    };
+      if (res.ok && Array.isArray(json)) {
+        setUsers(json);
+      } else if (res.ok && Array.isArray(json.data)) {
+        setUsers(json.data);
+      } else {
+        console.warn("Danh sách users không hợp lệ:", json);
+        setUsers([]);
+      }
+    } catch (err) {
+      console.error("Fetch users error:", err);
+      setUsers([]);
+    }
+  };
 
-    const allPages = await Promise.all(
-      Array.from({ length: totalPagesToFetch }, (_, i) => fetchPage(i + 1))
-    );
+  const fetchPosts = async () => {
+    setLoading(true);
+    const token = localStorage.getItem("token");
+    const limit = 10;
+    const totalToFetch = 100;
+    const totalPagesToFetch = Math.ceil(totalToFetch / limit);
 
-    const allPosts = allPages.flat();
-    setPosts(allPosts);
-  } catch (err) {
-    console.error("Fetch posts error:", err);
-    alert("Không thể lấy danh sách bài viết: " + err.message);
-  }
+    try {
+      const fetchPage = async (page) => {
+        const res = await fetch(`${BASE_URL}/admin-post-feed?page=${page}&limit=${limit}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const json = await res.json();
+        if (res.ok) return json.data || [];
+        else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
+      };
 
-  setLoading(false);
-};
+      const allPages = await Promise.all(
+        Array.from({ length: totalPagesToFetch }, (_, i) => fetchPage(i + 1))
+      );
 
+      const allPosts = allPages.flat();
+
+      const withCommentCounts = await Promise.all(
+        allPosts.map(async (post) => {
+          const postId = post._id || post.id;
+          try {
+            const res = await fetch(`${BASE_URL}/admin-comment-post/post/${postId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            const json = await res.json();
+            const comments = Array.isArray(json.data) ? json.data : [];
+            return { ...post, id: postId, commentCount: comments.length };
+          } catch (err) {
+            console.warn("Lỗi khi lấy comment cho post:", postId, err);
+            return { ...post, id: postId, commentCount: 0 };
+          }
+        })
+      );
+
+      setPosts(withCommentCounts);
+    } catch (err) {
+      console.error("Fetch posts error:", err);
+      alert("Không thể lấy danh sách bài viết: " + err.message);
+    }
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    fetchUsers(); 
+    fetchUsers();
     fetchPosts();
   }, []);
 
   const findUser = (id) => users.find((u) => u.id === id);
 
-
   const handleEditClick = (post) => {
-    setSelectedPost(post);
+    setSelectedPost({
+      ...post,
+      tagsInput: post.tags?.join(", ") || "",
+    });
     setOpenEdit(true);
   };
 
@@ -106,7 +123,8 @@ export function PostList() {
           title: selectedPost.title,
           description: selectedPost.description,
           status: selectedPost.status,
-          tags: selectedPost.tags,
+          tags: selectedPost.tagsInput?.split(",").map((t) => t.trim()),
+          images: selectedPost.images,
         }),
       });
 
@@ -152,7 +170,6 @@ export function PostList() {
   const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
   const totalPages = Math.ceil(posts.length / postsPerPage);
 
-
   return (
     <div className="p-4">
       <Typography variant="h4" className="mb-4">
@@ -172,6 +189,7 @@ export function PostList() {
                 <th className="p-2 border">Hình</th>
                 <th className="p-2 border">Tác giả</th>
                 <th className="p-2 border">Like</th>
+                <th className="p-2 border">Bình luận</th>
                 <th className="p-2 border">Trạng thái</th>
                 <th className="p-2 border">Hành động</th>
               </tr>
@@ -179,7 +197,6 @@ export function PostList() {
             <tbody>
               {currentPosts.map((post) => {
                 const author = findUser(post.authorId);
-
                 return (
                   <tr
                     key={post.id}
@@ -189,26 +206,27 @@ export function PostList() {
                     <td className="p-2 border">{post.title}</td>
                     <td className="p-2 border max-w-xs align-top">
                       <p className="line-clamp-10 text-sm leading-snug break-words">
-                        {post.description.length > 30 ? post.description.slice(0, 25) + "..." : post.description}
+                        {post.description.length > 30
+                          ? post.description.slice(0, 25) + "..."
+                          : post.description}
                       </p>
                     </td>
-
                     <td className="p-2 border">
                       {Array.isArray(post.tags) && post.tags.length > 0 && (
-                      <div className="flex items-center gap-1">
-                        <div className="px-1 py-0.5 text-s bg-gray-200 rounded">
-                          {post.tags[0]}
+                        <div className="flex items-center gap-1">
+                          <div className="px-1 py-0.5 text-s bg-gray-200 rounded">
+                            {post.tags[0]}
+                          </div>
+                          {post.tags.length > 1 && (
+                            <span className="text-xs text-gray-500">
+                              +{post.tags.length - 1}
+                            </span>
+                          )}
                         </div>
-                        {post.tags.length > 1 && (
-                          <span className="text-xs text-gray-500">+{post.tags.length - 1}</span>
-                        )}
-                      </div>
-                    )}
-
+                      )}
                     </td>
-
                     <td className="p-2 border">
-                      {post.images.length > 0 ? (
+                      {post.images?.length > 0 ? (
                         <img
                           src={`${BASE_URL}${post.images[0]}`}
                           alt="Hình ảnh"
@@ -220,21 +238,13 @@ export function PostList() {
                     </td>
                     <td className="p-2 border flex items-center gap-2">
                       {author ? (
-                        <>
-                          {/* {author.avatar && (
-                            <Avatar
-                              src={`${BASE_URL}${author.avatar}`}
-                              alt={author.fullName}
-                              size="sm"
-                            />
-                          )} */}
-                          <span>{author.fullName}</span>
-                        </>
+                        <span>{author.fullName}</span>
                       ) : (
                         <span>Không rõ</span>
                       )}
                     </td>
                     <td className="p-2 border">{post.like}</td>
+                    <td className="p-2 border">{post.commentCount ?? 0}</td>
                     <td className="p-2 border">
                       <Chip
                         value={post.status ? "Đang hoạt động" : "Đã ẩn"}
@@ -253,7 +263,14 @@ export function PostList() {
                       >
                         Sửa
                       </Button>
-                      <Button color="red" size="sm" onClick={() => deletePost(post.id)}>
+                      <Button
+                        color="red"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePost(post.id);
+                        }}
+                      >
                         Xoá
                       </Button>
                     </td>
@@ -269,80 +286,73 @@ export function PostList() {
               )}
             </tbody>
           </table>
+
           <div className="flex justify-center mt-4 gap-2">
-          <Button
-            size="sm"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage(currentPage - 1)}
-          >
-            Trước
-          </Button>
-          {[...Array(totalPages)].map((_, i) => (
             <Button
-              key={i}
               size="sm"
-              color={currentPage === i + 1 ? "blue" : "gray"}
-              onClick={() => setCurrentPage(i + 1)}
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(currentPage - 1)}
             >
-              {i + 1}
+              Trước
             </Button>
-          ))}
-          <Button
-            size="sm"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage(currentPage + 1)}
-          >
-            Sau
-          </Button>
-        </div>
+            {[...Array(totalPages)].map((_, i) => (
+              <Button
+                key={i}
+                size="sm"
+                color={currentPage === i + 1 ? "blue" : "gray"}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(currentPage + 1)}
+            >
+              Sau
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Dialog cập nhật */}
       <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
         <div className="p-4 space-y-4 max-w-lg">
           <Typography variant="h5">Cập nhật bài post</Typography>
 
-          {/* Tiêu đề */}
           <Input
             label="Tiêu đề"
             value={selectedPost?.title || ""}
-            onChange={(e) => setSelectedPost({ ...selectedPost, title: e.target.value })}
+            onChange={(e) =>
+              setSelectedPost({ ...selectedPost, title: e.target.value })
+            }
           />
 
-          {/* Mô tả */}
           <textarea
             className="border p-2 w-full rounded h-40 resize-y"
             placeholder="Mô tả"
             value={selectedPost?.description || ""}
-            onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
-          />
-
-          {/* Tags */}
-          <Input
-  label="Tags (ngăn cách bởi dấu phẩy)"
-  value={selectedPost?.tagsInput || ""}
-  onChange={(e) =>
-    setSelectedPost({
-      ...selectedPost,
-      tagsInput: e.target.value, // Giữ nguyên string bạn gõ
-    })
-  }
-/>
-
-          {/* Hình ảnh */}
-          <Input
-            label="Link hình ảnh (từ thư mục /uploads/post/...)"
-            value={selectedPost?.images?.[0] || ""}
             onChange={(e) =>
-              setSelectedPost({
-                ...selectedPost,
-                images: [e.target.value],
-              })
+              setSelectedPost({ ...selectedPost, description: e.target.value })
             }
           />
 
-          
+          <Input
+            label="Tags (ngăn cách bởi dấu phẩy)"
+            value={selectedPost?.tagsInput || ""}
+            onChange={(e) =>
+              setSelectedPost({ ...selectedPost, tagsInput: e.target.value })
+            }
+          />
+
+          <Input
+            label="Link hình ảnh"
+            value={selectedPost?.images?.[0] || ""}
+            onChange={(e) =>
+              setSelectedPost({ ...selectedPost, images: [e.target.value] })
+            }
+          />
+
           {selectedPost?.images?.[0] && (
             <img
               src={`${BASE_URL}${selectedPost.images[0]}`}
@@ -351,8 +361,6 @@ export function PostList() {
             />
           )}
 
-
-          {/* Tác giả */}
           <Input
             label="Tác giả (nhập tên)"
             value={
@@ -372,8 +380,6 @@ export function PostList() {
             }}
           />
 
-
-          {/* Trạng thái */}
           <select
             className="border p-2 w-full rounded"
             value={selectedPost?.status}
@@ -398,7 +404,6 @@ export function PostList() {
           </div>
         </div>
       </Dialog>
-
     </div>
   );
 }

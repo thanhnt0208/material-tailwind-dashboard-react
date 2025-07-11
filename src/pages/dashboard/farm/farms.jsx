@@ -267,20 +267,6 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
-
-      <FarmForm
-        open={openForm}
-        onClose={() => setOpenForm(false)}
-        initialData={editingFarm}
-        onSubmit={(data) => {
-          if (editingFarm) {
-            editFarm(editingFarm._id, data);
-          } else {
-            addFarm(data);
-          }
-        }}
-      />
-
       <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
         <DialogHeader className="justify-between">
           Chi tiết nông trại
