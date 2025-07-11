@@ -1,13 +1,11 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, IconButton, Menu,
-  MenuHandler, MenuList, MenuItem, Dialog, DialogHeader,
-  DialogBody, DialogFooter, Input, Select, Option, Button, Spinner, Avatar
+  Card, CardHeader, CardBody, CardFooter,
+  Typography, Button, Dialog, DialogHeader,
+  DialogBody, DialogFooter, Input, Select, Option, Spinner
 } from "@material-tailwind/react";
-import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import FarmForm from "./FarmForm";
-import UserDetailDialog from "./UserDetailDialog"; // nhớ chỉnh path nếu cần
 
 export function Users() {
   const [users, setUsers] = useState([]);
@@ -35,7 +33,8 @@ export function Users() {
       const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      const activeUsers = (Array.isArray(res.data) ? res.data : []).filter(u => u.isActive);
+      setUsers(activeUsers);
     } catch {
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
@@ -134,6 +133,7 @@ export function Users() {
     }
   };
 
+
   const handleCreateFarm = async (farmData) => {
     try {
       await axios.post("https://api-ndolv2.nongdanonline.cc/farms", farmData, {
@@ -141,80 +141,64 @@ export function Users() {
       });
       alert("Tạo nông trại thành công!");
       setOpenFarmForm(false);
-    } catch {
+    } catch (error) {
+      console.error(error);
       alert("Tạo nông trại thất bại!");
     }
   };
 
   return (
-    <div className="p-4">
-      <Typography variant="h6" color="blue-gray" className="mb-4">Quản lý người dùng</Typography>
+    <div className="px-4 pb-4">
+      <Typography variant="h6" color="blue-gray" className="mb-2">Quản lý người dùng</Typography>
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full border">
-          <thead>
-            <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Roles", "Trạng thái", "Thao tác"].map((head) => (
-                <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {users.map(user => (
-              <tr key={user.id} className="border-t">
-                <td className="p-2">
-                  <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" />
-                </td>
-                <td className="p-2">{user.fullName}</td>
-                <td className="p-2">{user.email.length > 25 ? user.email.slice(0, 20) + "..." : user.email}</td>
-                <td className="p-2">{user.phone || "N/A"}</td>
-                <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
-                <td className="p-2">
-                  {user.isActive ? (
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">ĐÃ CẤP QUYỀN</span>
-                  ) : (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">CHƯA CẤP QUYỀN</span>
-                  )}
-                </td>
-                <td className="p-2">
-                  <Menu placement="left-start">
-                    <MenuHandler>
-                      <IconButton variant="text"><EllipsisVerticalIcon className="h-5 w-5" /></IconButton>
-                    </MenuHandler>
-                    <MenuList>
-                      <MenuItem onClick={() => handleView(user)}>Xem</MenuItem>
-                      <MenuItem onClick={() => openEdit(user)}>Sửa</MenuItem>
-                      <MenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Xoá</MenuItem>
-                    </MenuList>
-                  </Menu>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+        {users.map(user => (
+          <Card key={user.id}>
+            <CardHeader floated={false} color="gray" className="h-40">
+              {user.avatar ? (
+                <img src={`https://api-ndolv2.nongdanonline.cc${user.avatar}`} alt={user.fullName} className="h-full w-full object-cover" />
+              ) : (
+                <div className="h-full w-full bg-gray-300 flex items-center justify-center">No Avatar</div>
+              )}
+            </CardHeader>
+            <CardBody>
+              <Typography variant="h6">{user.fullName}</Typography>
+              <Typography variant="small">Email: {user.email.length > 25 ? user.email.slice(0,20) + "...": user.email}</Typography>
+              <Typography variant="small">Phone: {user.phone || "N/A"}</Typography>
+              <Typography variant="small">Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
+            </CardBody>
+            <CardFooter className="flex justify-between gap-1">
+              <Button size="sm" variant="outlined" onClick={() => handleView(user)}>XEM</Button>
+              <Button size="sm" variant="outlined" onClick={() => openEdit(user)}>SỬA</Button>
+              <Button size="sm" color="red" variant="outlined" onClick={() => handleDelete(user.id)}>XOÁ</Button>
+            </CardFooter>
+          </Card>
+        ))}
       </div>
 
       {/* Dialog SỬA */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
-        <DialogBody className="space-y-3">
-          <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-          <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-          <Typography className="font-bold">Quản lý role</Typography>
-          <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
-            {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
-          </Select>
-          <Button size="sm" variant="outlined" onClick={handleAddRole}>+ Thêm Role</Button>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {(Array.isArray(selectedUser?.role) ? selectedUser.role : [selectedUser?.role]).map(role => (
-              <span key={`${selectedUser?.id}-${role}`} className="flex items-center bg-blue-gray-100 rounded-full px-2 py-1 text-xs">
-                {role}
-                <button className="ml-1 text-red-500" onClick={() => handleRemoveRole(role)}>×</button>
-              </span>
-            ))}
+        <DialogBody>
+          <div className="flex flex-col gap-3">
+            <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
+            <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+            <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+            <Typography className="font-bold mt-2">Quản lý role</Typography>
+            <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
+              {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
+            </Select>
+            <Button size="sm" variant="outlined" onClick={handleAddRole}>+ Thêm Role</Button>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {(Array.isArray(selectedUser?.role) ? selectedUser.role : [selectedUser?.role]).map(role => (
+                <span key={`${selectedUser?.id}-${role}`} className="flex items-center bg-blue-gray-100 rounded-full px-2 py-1 text-xs">
+                  {role}
+                  <button className="ml-1 text-red-500" onClick={() => handleRemoveRole(role)}>×</button>
+                </span>
+              ))}
+            </div>
           </div>
         </DialogBody>
         <DialogFooter>
@@ -224,18 +208,41 @@ export function Users() {
       </Dialog>
 
       {/* Dialog XEM */}
-      <UserDetailDialog
-  open={viewOpen}
-  onClose={() => setViewOpen(false)}
-  user={viewUser}
-  addresses={addresses}
-  onAddFarm={(userId) => {
-    setFarmFormData({ ownerId: userId });
-    setOpenFarmForm(true);
-  }}
-/>
+      <Dialog open={viewOpen} handler={setViewOpen} size="sm">
+        <DialogHeader>Chi tiết người dùng</DialogHeader>
+        <DialogBody>
+          {viewUser ? (
+            <>
+              <Typography variant="h6">{viewUser.fullName}</Typography>
+              <Typography>Email: {viewUser.email}</Typography>
+              <Typography>Phone: {viewUser.phone || "N/A"}</Typography>
+              <Typography>Roles: {Array.isArray(viewUser.role) ? viewUser.role.join(", ") : viewUser.role}</Typography>
+              <Typography>ID: {viewUser.id}</Typography>
+              <Typography className="mt-2 font-bold">Addresses:</Typography>
+              {addresses.length ? addresses.map((addr, i) => (
+                <Typography key={`${viewUser.id}-addr-${i}`} className="text-sm">{addr.address} - {addr.ward}, {addr.district}, {addr.province}</Typography>
+              )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
 
+              <Button
+                color="green"
+                size="sm"
+                className="mt-4"
+                onClick={() => {
+                  setFarmFormData({ ownerId: viewUser.id });
+                  setOpenFarmForm(true);
+                }}
+              >
+                Thêm nông trại cho người dùng này
+              </Button>
+            </>
+          ) : <Typography>Đang tải...</Typography>}
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
+        </DialogFooter>
+      </Dialog>
 
+      {/* Dialog Thêm Nông Trại */}
       <FarmForm
         open={openFarmForm}
         onClose={() => setOpenFarmForm(false)}
