@@ -5,7 +5,7 @@ import {
   Card, Input, Button, Typography, Spinner,
 } from "@material-tailwind/react";
 
-const BASE = "https://api-ndolv2.nongdanonline.vn/video-comment";
+const BASE = "https://api-ndolv2.nongdanonline.cc/video-comment";
 const token = () => localStorage.getItem("token");
 
 const fetchComments = (videoId) =>

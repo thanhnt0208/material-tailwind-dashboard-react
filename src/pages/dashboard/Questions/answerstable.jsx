@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@material-tailwind/react";
 
-const API_URL = "https://api-ndolv2.nongdanonline.vn/answers";
+const API_URL = "https://api-ndolv2.nongdanonline.cc/answers";
 
 // Hàm fetch có auto-refresh token
 const fetchWithAuth = async (url, options = {}) => {

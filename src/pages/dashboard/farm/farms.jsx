@@ -14,15 +14,17 @@ import {
   MenuHandler,
   MenuList,
   MenuItem,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  IconButton,
 } from "@material-tailwind/react";
-import {
-  EllipsisVerticalIcon,
-} from "@heroicons/react/24/outline";
-import { useNavigate } from "react-router-dom";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
 import FarmForm from "../user/FarmForm";
+import FarmDetail from "./FarmDetail";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
@@ -40,7 +42,8 @@ export function Farms() {
 
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const navigate = useNavigate();
+  const [openDetail, setOpenDetail] = useState(false);
+  const [selectedFarmId, setSelectedFarmId] = useState(null);
 
   const fetchFarms = async () => {
     try {
@@ -82,24 +85,25 @@ export function Farms() {
     }
   };
 
-  const activateFarm = async (id, actionText) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} farm này không?`)) return;
+  const changeStatus = async (id, action) => {
+    const actionMap = {
+      activate: "kích hoạt",
+      deactivate: "khóa",
+    };
+
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionMap[action] || action} farm này không?`)) return;
+
     try {
-      await axios.patch(`${BASE_URL}/adminfarms/${id}/activate`, null, getOpts());
+      await axios.patch(`${BASE_URL}/adminfarms/${id}/${action}`, null, getOpts());
       await fetchFarms();
     } catch (err) {
-      alert(`Lỗi ${actionText}: ` + (err.response?.data?.message || err.message));
+      alert(`Lỗi ${actionMap[action] || action}: ` + (err.response?.data?.message || err.message));
     }
   };
 
-  const deactivateFarm = async (id, actionText) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} farm này không?`)) return;
-    try {
-      await axios.patch(`${BASE_URL}/adminfarms/${id}/deactivate`, null, getOpts());
-      await fetchFarms();
-    } catch (err) {
-      alert(`Lỗi ${actionText}: ` + (err.response?.data?.message || err.message));
-    }
+  const handleOpenDetail = (id) => {
+    setSelectedFarmId(id);
+    setOpenDetail(true);
   };
 
   useEffect(() => {
@@ -160,7 +164,7 @@ export function Farms() {
                   <tr
                     key={farm._id}
                     className="border-b hover:bg-indigo-50 transition text-base cursor-pointer"
-                    onClick={() => navigate(`/admin/farms/${farm._id}`)}
+                    onClick={() => handleOpenDetail(farm._id)}
                   >
                     <td className="px-2 py-2">{farm.name}</td>
                     <td className="px-2 py-2">{farm.code}</td>
@@ -215,7 +219,7 @@ export function Farms() {
                             <>
                               <MenuItem
                                 onClick={() => {
-                                  activateFarm(farm._id, "duyệt");
+                                  changeStatus(farm._id, "activate");
                                   setOpenMenuId(null);
                                 }}
                               >
@@ -223,7 +227,7 @@ export function Farms() {
                               </MenuItem>
                               <MenuItem
                                 onClick={() => {
-                                  deactivateFarm(farm._id, "từ chối");
+                                  changeStatus(farm._id, "deactivate");
                                   setOpenMenuId(null);
                                 }}
                               >
@@ -235,7 +239,7 @@ export function Farms() {
                           {farm.status === "active" && (
                             <MenuItem
                               onClick={() => {
-                                deactivateFarm(farm._id, "khóa");
+                                changeStatus(farm._id, "deactivate");
                                 setOpenMenuId(null);
                               }}
                             >
@@ -246,7 +250,7 @@ export function Farms() {
                           {farm.status === "inactive" && (
                             <MenuItem
                               onClick={() => {
-                                activateFarm(farm._id, "mở khóa");
+                                changeStatus(farm._id, "activate");
                                 setOpenMenuId(null);
                               }}
                             >
@@ -276,6 +280,22 @@ export function Farms() {
           }
         }}
       />
+
+      <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
+        <DialogHeader className="justify-between">
+          Chi tiết nông trại
+          <IconButton variant="text" onClick={() => setOpenDetail(false)} className="ml-auto">
+            ✕
+          </IconButton>
+        </DialogHeader>
+        <DialogBody className="p-4">
+         <FarmDetail
+  open={openDetail}
+  onClose={() => setOpenDetail(false)}
+  farmId={selectedFarmId}
+/>
+        </DialogBody>
+      </Dialog>
     </>
   );
 }
