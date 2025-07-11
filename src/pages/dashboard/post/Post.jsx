@@ -125,9 +125,9 @@ export function PostList() {
         description: selectedPost.description,
         status: selectedPost.status,
         tags: (selectedPost.tagsInput || "")
-          .split(",") // tách dấu phẩy
-          .map((tag) => tag.trim()) // bỏ khoảng trắng
-          .filter((tag) => tag !== ""), // bỏ tag rỗng
+          .split(",") 
+          .map((tag) => tag.trim()) 
+          .filter((tag) => tag !== ""), 
       }),
     });
 
@@ -346,7 +346,7 @@ export function PostList() {
           onChange={(e) =>
             setSelectedPost({
               ...selectedPost,
-              tagsInput: e.target.value, // Giữ nguyên string bạn gõ
+              tagsInput: e.target.value, 
             })
             }
           />
@@ -356,33 +356,10 @@ export function PostList() {
             label="Link hình ảnh (từ thư mục /uploads/post/...)"
             value={selectedPost?.images?.[0] || ""}
             onChange={(e) =>
-              setSelectedPost({ ...selectedPost, description: e.target.value })
+              setSelectedPost({ ...selectedPost, images: [e.target.value] }) // ✅ update vào images
             }
           />
 
-          <Input
-            label="Tags (ngăn cách bởi dấu phẩy)"
-            value={selectedPost?.tagsInput || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, tagsInput: e.target.value })
-            }
-          />
-
-          <Input
-            label="Link hình ảnh"
-            value={selectedPost?.images?.[0] || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, images: [e.target.value] })
-            }
-          />
-
-          {selectedPost?.images?.[0] && (
-            <img
-              src={`${BASE_URL}${selectedPost.images[0]}`}
-              alt="Preview"
-              className="w-32 h-32 object-cover mt-2 rounded"
-            />
-          )}
 
           <Input
             label="Tác giả (nhập tên)"
