@@ -106,6 +106,7 @@ export function PostList() {
           title: selectedPost.title,
           description: selectedPost.description,
           status: selectedPost.status,
+          tags: selectedPost.tags,
         }),
       });
 
@@ -193,10 +194,19 @@ export function PostList() {
                     </td>
 
                     <td className="p-2 border">
-                      {post.tags.map((tag, index) => (
-                        <Chip key={index} value={tag} size="sm" className="mr-1" />
-                      ))}
+                      {Array.isArray(post.tags) && post.tags.length > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="px-1 py-0.5 text-s bg-gray-200 rounded">
+                          {post.tags[0]}
+                        </div>
+                        {post.tags.length > 1 && (
+                          <span className="text-xs text-gray-500">+{post.tags.length - 1}</span>
+                        )}
+                      </div>
+                    )}
+
                     </td>
+
                     <td className="p-2 border">
                       {post.images.length > 0 ? (
                         <img
@@ -211,13 +221,13 @@ export function PostList() {
                     <td className="p-2 border flex items-center gap-2">
                       {author ? (
                         <>
-                          {author.avatar && (
+                          {/* {author.avatar && (
                             <Avatar
                               src={`${BASE_URL}${author.avatar}`}
                               alt={author.fullName}
                               size="sm"
                             />
-                          )}
+                          )} */}
                           <span>{author.fullName}</span>
                         </>
                       ) : (
@@ -290,23 +300,80 @@ export function PostList() {
 
       {/* Dialog cập nhật */}
       <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
-        <div className="p-4 space-y-4">
+        <div className="p-4 space-y-4 max-w-lg">
           <Typography variant="h5">Cập nhật bài post</Typography>
+
+          {/* Tiêu đề */}
           <Input
             label="Tiêu đề"
             value={selectedPost?.title || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, title: e.target.value })
-            }
+            onChange={(e) => setSelectedPost({ ...selectedPost, title: e.target.value })}
           />
+
+          {/* Mô tả */}
           <textarea
-            className="border p-2 w-full rounded h-52 resize-y"
+            className="border p-2 w-full rounded h-40 resize-y"
             placeholder="Mô tả"
             value={selectedPost?.description || ""}
+            onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
+          />
+
+          {/* Tags */}
+          <Input
+  label="Tags (ngăn cách bởi dấu phẩy)"
+  value={selectedPost?.tagsInput || ""}
+  onChange={(e) =>
+    setSelectedPost({
+      ...selectedPost,
+      tagsInput: e.target.value, // Giữ nguyên string bạn gõ
+    })
+  }
+/>
+
+          {/* Hình ảnh */}
+          <Input
+            label="Link hình ảnh (từ thư mục /uploads/post/...)"
+            value={selectedPost?.images?.[0] || ""}
             onChange={(e) =>
-              setSelectedPost({ ...selectedPost, description: e.target.value })
+              setSelectedPost({
+                ...selectedPost,
+                images: [e.target.value],
+              })
             }
           />
+
+          
+          {selectedPost?.images?.[0] && (
+            <img
+              src={`${BASE_URL}${selectedPost.images[0]}`}
+              alt="Preview"
+              className="w-32 h-32 object-cover mt-2 rounded"
+            />
+          )}
+
+
+          {/* Tác giả */}
+          <Input
+            label="Tác giả (nhập tên)"
+            value={
+              selectedPost?.authorId
+                ? users.find((u) => u.id === selectedPost.authorId)?.fullName || ""
+                : ""
+            }
+            onChange={(e) => {
+              const name = e.target.value;
+              const user = users.find((u) =>
+                u.fullName.toLowerCase().includes(name.toLowerCase())
+              );
+              setSelectedPost({
+                ...selectedPost,
+                authorId: user?.id || "",
+              });
+            }}
+          />
+
+
+          {/* Trạng thái */}
           <select
             className="border p-2 w-full rounded"
             value={selectedPost?.status}
@@ -320,6 +387,7 @@ export function PostList() {
             <option value="true">Đang hoạt động</option>
             <option value="false">Đã ẩn</option>
           </select>
+
           <div className="flex justify-end gap-2 mt-4">
             <Button onClick={() => setOpenEdit(false)} variant="outlined">
               Hủy
@@ -330,6 +398,7 @@ export function PostList() {
           </div>
         </div>
       </Dialog>
+
     </div>
   );
 }
