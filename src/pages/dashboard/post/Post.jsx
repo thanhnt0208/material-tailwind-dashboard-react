@@ -125,9 +125,9 @@ export function PostList() {
         description: selectedPost.description,
         status: selectedPost.status,
         tags: (selectedPost.tagsInput || "")
-          .split(",") // tách dấu phẩy
-          .map((tag) => tag.trim()) // bỏ khoảng trắng
-          .filter((tag) => tag !== ""), // bỏ tag rỗng
+          .split(",") 
+          .map((tag) => tag.trim()) 
+          .filter((tag) => tag !== ""), 
       }),
     });
 
@@ -346,7 +346,7 @@ export function PostList() {
           onChange={(e) =>
             setSelectedPost({
               ...selectedPost,
-              tagsInput: e.target.value, // Giữ nguyên string bạn gõ
+              tagsInput: e.target.value, 
             })
             }
           />
