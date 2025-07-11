@@ -3,9 +3,7 @@ import axios from "axios";
 import { Typography, Button } from "@material-tailwind/react";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
-const getOpts = () => ({
-  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-});
+
 
 const Info = ({ label, value }) => (
   <div className="flex flex-col gap-1">
@@ -47,7 +45,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const [images, setImages] = useState([]);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [videoCount, setVideoCount] = useState(0); // ← Thêm state đếm video
+  const [videoCount, setVideoCount] = useState(0); 
 
   const fetchDetail = async () => {
     if (!farmId) return;
@@ -59,30 +57,67 @@ export default function FarmDetail({ open, onClose, farmId }) {
     }
   };
 
-const fetchImages = async () => {
+  const getOpts = () => {
   const token = localStorage.getItem("token");
-  if (!token || !farmId) return;
+  if (!token) {
+    console.error(" Không tìm thấy token trong localStorage");
+    return {};
+  }
 
   try {
-    console.log("farmId:", farmId);
-    console.log("Token:", token);
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    console.log(" Roles trong token:", payload.role);
 
-    const res = await axios.get(`${BASE_URL}/farm-pictures/${farmId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setImages(res.data);
-  } catch (err) {
-    const message = err.response?.data?.message || err.message;
-    console.warn("Lỗi khi lấy ảnh:", message);
-
-    // Nếu 403, không alert nhưng set ảnh trống
-    if (err.response?.status === 403) {
-      setImages([]);
+    if (payload.role.includes("Admin")) {
+      console.log(" Đã có quyền Admin");
     } else {
-      alert("Lỗi khi lấy ảnh: " + message);
+      console.warn(" Token này không có Admin role. Gọi API sẽ lỗi 403.");
     }
+  } catch (e) {
+    console.error(" Lỗi khi decode token:", e);
   }
+
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+  };
 };
+
+
+
+console.log("FarmID:", farmId);
+const fetchImages = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/farm-pictures/${farmId}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          "Content-Type": "application/json",
+           Accept: "application/json", 
+          "User-Agent": "Swagger-UI/5.10.0",
+        },
+      });
+      setImages(res.data.data || []);
+    } catch (err) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message || err.message;
+
+      if (status === 401) {
+        alert("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.");
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      } else if (status === 403) {
+        console.error(" 403 Forbidden - Không có quyền truy cập API");
+        alert("Bạn không có quyền xem hình ảnh này.");
+      } else {
+        console.error(" Lỗi khi lấy ảnh:", message);
+        alert("Lỗi khi lấy ảnh: " + message);
+      }
+    }
+  };
+
+
 
 
   const fetchFarmVideos = async () => {
@@ -131,7 +166,7 @@ const fetchImages = async () => {
     if (open && farmId) {
       fetchDetail();
       fetchImages();
-      fetchFarmVideos(); // ← Gọi API video
+      fetchFarmVideos(); 
     }
   }, [open, farmId]);
 
@@ -190,21 +225,22 @@ const fetchImages = async () => {
             <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
 
             {images.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {images.map((img, idx) => (
-                  <img
-                    key={idx}
-                    src={img.url}
-                    alt={`Ảnh ${idx + 1}`}
-                    className="w-full h-40 object-cover rounded-lg border shadow-sm"
-                  />
-                ))}
-              </div>
-            ) : (
-              <Typography className="text-sm text-gray-500 italic mb-4">
-                Chưa có hình ảnh
-              </Typography>
-            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={`${BASE_URL}${img.url}`} 
+                  alt={`Ảnh ${idx + 1}`}
+                  className="w-full h-40 object-cover rounded-lg border shadow-sm"
+                />
+              ))}
+            </div>
+          ) : (
+            <Typography className="text-sm text-gray-500 italic mb-4">
+              Chưa có hình ảnh
+            </Typography>
+          )}
+
 
             {farm.status === "active" ? (
               <div className="flex flex-wrap gap-2 items-center">
