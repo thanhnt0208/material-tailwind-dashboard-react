@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@material-tailwind/react";
 
-const API_URL = "https://api-ndolv2.nongdanonline.vn/answers";
+const API_URL = "https://api-ndolv2.nongdanonline.cc/answers";
 
 // Hàm fetch có auto-refresh token
 const fetchWithAuth = async (url, options = {}) => {
@@ -26,7 +26,7 @@ const fetchWithAuth = async (url, options = {}) => {
   if (res.status === 401 || res.status === 403) {
     console.warn("⚠ Token hết hạn, đang làm mới...");
     const refreshToken = localStorage.getItem("refreshToken");
-    const refreshRes = await fetch("https://api-ndolv2.nongdanonline.vn/auth/refresh-token", {
+    const refreshRes = await fetch("https://api-ndolv2.nongdanonline.cc/auth/refresh-token", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ refreshToken }),
@@ -175,7 +175,7 @@ const handleUploadImage = async (e) => {
 
   setUploading(true);
   try {
-    const res = await fetchWithAuth(`https://api-ndolv2.nongdanonline.vn/answers/upload-image`, {
+    const res = await fetchWithAuth(`https://api-ndolv2.nongdanonline.cc/answers/upload-image`, {
   method: "POST",
   body: formData,
 });

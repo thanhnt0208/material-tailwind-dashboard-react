@@ -11,7 +11,7 @@ export default function Home() {
       try {
         const token = localStorage.getItem("token");  // nhớ lưu token trước đó
         const response = await axios.get(
-          "https://api-ndolv2.nongdanonline.vn/user-dashboard/login-stats",
+          "https://api-ndolv2.nongdanonline.cc/user-dashboard/login-stats",
           {
             headers: { Authorization: `Bearer ${token}` }
           }

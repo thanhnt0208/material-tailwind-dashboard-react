@@ -3,7 +3,7 @@ import { Button, Typography, Avatar, Chip } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, Input } from "@material-tailwind/react";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn"; 
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc"; 
 
 export function PostList() {
   const [posts, setPosts] = useState([]);

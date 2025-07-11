@@ -10,7 +10,7 @@ import {
 import FarmForm from "../user/FarmForm";
 import FarmDetail from "./FarmDetail";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });

@@ -6,7 +6,8 @@ export * from "@/pages/dashboard/VideoFarms/VideoFarms";
 export * from "@/pages/dashboard/post/Post";
 export * from "@/pages/dashboard/AdminReports"
 export * from "@/pages/dashboard/AdminCommentPost/CommentPost";
-export * from "@/pages/dashboard/user/users"
+export { default as Users } from "./user/users";
+
 
 
 

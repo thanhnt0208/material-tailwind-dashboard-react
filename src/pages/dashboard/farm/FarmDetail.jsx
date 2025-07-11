@@ -5,7 +5,7 @@ import {
 } from "@material-tailwind/react";
 import FarmPictures from "./FarmPictures";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
