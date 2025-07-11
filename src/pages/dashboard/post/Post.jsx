@@ -144,13 +144,28 @@ export function PostList() {
     if (res.ok) {
       alert(" Cập nhật thành công!");
 
-      
+      setPosts((prevPosts) =>
+      prevPosts.map((p) =>
+        p.id === selectedPost.id
+          ? {
+              ...p,
+              title: selectedPost.title,
+              description: selectedPost.description,
+              tags: selectedPost.tagsInput
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag !== ""),
+              status: selectedPost.status,
+              images: selectedPost.images,
+            }
+          : p
+      )
+    );
       setSelectedPost(null);
       setOpenEdit(false);
 
       
-      await fetchPosts(); 
-      setPosts((prev) => [...prev]);
+      
     } else {
       console.error(" PUT lỗi:", json);
       alert(json.message || " Cập nhật thất bại");
