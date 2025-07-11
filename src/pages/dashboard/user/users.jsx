@@ -163,9 +163,9 @@ const handleView = (user) => {
                 <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
                 <td className="p-2">
                   {user.isActive ? (
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">ĐÃ CẤP QUYỀN</span>
+                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
                   ) : (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">CHƯA CẤP QUYỀN</span>
+                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>
                   )}
                 </td>
                 <td className="p-2">
@@ -227,9 +227,9 @@ const handleView = (user) => {
               <Typography>Roles: {Array.isArray(viewUser.role) ? viewUser.role.join(", ") : viewUser.role}</Typography>
               <Typography>
                 Trạng thái: {viewUser.isActive ? (
-                  <span className="text-green-600 font-semibold">ĐÃ CẤP QUYỀN</span>
+                  <span className="text-green-600 font-semibold">Active</span>
                 ) : (
-                  <span className="text-gray-500 font-semibold">CHƯA CẤP QUYỀN</span>
+                  <span className="text-gray-500 font-semibold">inactive</span>
                 )}
               </Typography>
               <Typography className="font-bold">Địa chỉ:</Typography>
