@@ -29,14 +29,8 @@ export function PostList() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
-      if (res.ok && Array.isArray(json)) {
-        setUsers(json);
-      } else if (res.ok && Array.isArray(json.data)) {
-        setUsers(json.data);
-      } else {
-        console.warn("Danh sách users không hợp lệ:", json);
-        setUsers([]);
-      }
+      const data = Array.isArray(json) ? json : json.data || [];
+      setUsers(data);
     } catch (err) {
       console.error("Fetch users error:", err);
       setUsers([]);
@@ -59,8 +53,7 @@ export function PostList() {
           },
         });
         const json = await res.json();
-        if (res.ok) return json.data || [];
-        else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
+        return res.ok ? json.data || [] : [];
       };
 
       const allPages = await Promise.all(
@@ -79,8 +72,7 @@ export function PostList() {
             const json = await res.json();
             const comments = Array.isArray(json.data) ? json.data : [];
             return { ...post, id: postId, commentCount: comments.length };
-          } catch (err) {
-            console.warn("Lỗi khi lấy comment cho post:", postId, err);
+          } catch {
             return { ...post, id: postId, commentCount: 0 };
           }
         })
@@ -103,7 +95,6 @@ export function PostList() {
   const findUser = (id) => users.find((u) => u.id === id);
 
   const handleEditClick = (post) => {
-
     setSelectedPost({
       ...post,
       tagsInput: post.tags?.join(", ") || "",
@@ -124,51 +115,27 @@ export function PostList() {
           title: selectedPost.title,
           description: selectedPost.description,
           status: selectedPost.status,
-          tags: selectedPost.tagsInput?.split(",").map((t) => t.trim()),
+          tags: (selectedPost.tagsInput || "")
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter((tag) => tag !== ""),
           images: selectedPost.images,
         }),
       });
-  setSelectedPost({
-    ...post,
-    tagsInput: post.tags ? post.tags.join(", ") : "", 
-  });
-  setOpenEdit(true);
-};
 
-  const updatePost = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        title: selectedPost.title,
-        description: selectedPost.description,
-        status: selectedPost.status,
-        tags: (selectedPost.tagsInput || "")
-          .split(",") // tách dấu phẩy
-          .map((tag) => tag.trim()) // bỏ khoảng trắng
-          .filter((tag) => tag !== ""), // bỏ tag rỗng
-      }),
-    });
-
-    const json = await res.json();
-    if (res.ok) {
-      alert("Cập nhật thành công!");
-      setOpenEdit(false);
-      fetchPosts();
-    } else {
-      alert(json.message || "Cập nhật thất bại");
+      const json = await res.json();
+      if (res.ok) {
+        alert("Cập nhật thành công!");
+        setOpenEdit(false);
+        fetchPosts();
+      } else {
+        alert(json.message || "Cập nhật thất bại");
+      }
+    } catch (err) {
+      console.error("PUT error:", err);
+      alert("Lỗi kết nối server khi cập nhật");
     }
-  } catch (err) {
-    console.error("PUT error:", err);
-    alert("Lỗi kết nối server khi cập nhật");
-  }
-};
-
+  };
 
   const deletePost = async (id) => {
     const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bài post này?");
@@ -234,7 +201,7 @@ export function PostList() {
                     <td className="p-2 border">{post.title}</td>
                     <td className="p-2 border max-w-xs align-top">
                       <p className="line-clamp-10 text-sm leading-snug break-words">
-                        {post.description.length > 30
+                        {post.description?.length > 30
                           ? post.description.slice(0, 25) + "..."
                           : post.description}
                       </p>
@@ -265,11 +232,7 @@ export function PostList() {
                       )}
                     </td>
                     <td className="p-2 border flex items-center gap-2">
-                      {author ? (
-                        <span>{author.fullName}</span>
-                      ) : (
-                        <span>Không rõ</span>
-                      )}
+                      {author ? author.fullName : "Không rõ"}
                     </td>
                     <td className="p-2 border">{post.like}</td>
                     <td className="p-2 border">{post.commentCount ?? 0}</td>
@@ -315,12 +278,9 @@ export function PostList() {
             </tbody>
           </table>
 
+          {/* Pagination */}
           <div className="flex justify-center mt-4 gap-2">
-            <Button
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
+            <Button size="sm" disabled={currentPage === 1} onClick={() => setCurrentPage(currentPage - 1)}>
               Trước
             </Button>
             {[...Array(totalPages)].map((_, i) => (
@@ -333,17 +293,14 @@ export function PostList() {
                 {i + 1}
               </Button>
             ))}
-            <Button
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
+            <Button size="sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage(currentPage + 1)}>
               Sau
             </Button>
           </div>
         </div>
       )}
 
+      {/* Dialog Edit */}
       <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
         <div className="p-6 space-y-4 mx-auto max-w-md bg-white rounded-lg shadow-lg">
           <Typography variant="h5">Cập nhật bài post</Typography>
@@ -351,9 +308,7 @@ export function PostList() {
           <Input
             label="Tiêu đề"
             value={selectedPost?.title || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, title: e.target.value })
-            }
+            onChange={(e) => setSelectedPost({ ...selectedPost, title: e.target.value })}
           />
 
           <textarea
@@ -363,41 +318,16 @@ export function PostList() {
             onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
           />
 
-          {/* Tags */}
-          <Input
-          label="Tags (ngăn cách bởi dấu phẩy)"
-          value={selectedPost?.tagsInput || ""}
-          onChange={(e) =>
-            setSelectedPost({
-              ...selectedPost,
-              tagsInput: e.target.value, // Giữ nguyên string bạn gõ
-            })
-            }
-          />
-
-          {/* Hình ảnh */}
-          <Input
-            label="Link hình ảnh (từ thư mục /uploads/post/...)"
-            value={selectedPost?.images?.[0] || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, description: e.target.value })
-            }
-          />
-
           <Input
             label="Tags (ngăn cách bởi dấu phẩy)"
             value={selectedPost?.tagsInput || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, tagsInput: e.target.value })
-            }
+            onChange={(e) => setSelectedPost({ ...selectedPost, tagsInput: e.target.value })}
           />
 
           <Input
             label="Link hình ảnh"
             value={selectedPost?.images?.[0] || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, images: [e.target.value] })
-            }
+            onChange={(e) => setSelectedPost({ ...selectedPost, images: [e.target.value] })}
           />
 
           {selectedPost?.images?.[0] && (
@@ -430,12 +360,7 @@ export function PostList() {
           <select
             className="border p-2 w-full rounded"
             value={selectedPost?.status}
-            onChange={(e) =>
-              setSelectedPost({
-                ...selectedPost,
-                status: e.target.value === "true",
-              })
-            }
+            onChange={(e) => setSelectedPost({ ...selectedPost, status: e.target.value === "true" })}
           >
             <option value="true">Đang hoạt động</option>
             <option value="false">Đã ẩn</option>

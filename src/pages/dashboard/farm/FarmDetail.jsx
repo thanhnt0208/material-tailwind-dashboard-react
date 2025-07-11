@@ -10,7 +10,9 @@ const getOpts = () => ({
 const Info = ({ label, value }) => (
   <div className="flex flex-col gap-1">
     <Typography className="text-sm font-medium text-gray-800">{label}</Typography>
-    <Typography className="text-sm text-blue-gray-700">{value || "—"}</Typography>
+    <Typography className="text-sm text-blue-gray-700">
+      {value !== null && value !== undefined && value !== "" ? value : "—"}
+    </Typography>
   </div>
 );
 
@@ -20,7 +22,6 @@ const mapToLabel = (arr, options) => {
   return values.map((v) => options.find((o) => o.value === v)?.label || v).join(", ");
 };
 
-// Danh sách Dịch vụ
 const serviceOptions = [
   { label: "Bán trực tiếp", value: "direct_selling" },
   { label: "Bán thức ăn", value: "feed_selling" },
@@ -31,7 +32,6 @@ const serviceOptions = [
   { label: "Dịch vụ khác", value: "other_services" },
 ];
 
-// Danh sách Tính năng (KHÁC với dịch vụ)
 const featureOptions = [
   { label: "Mô hình aquaponic", value: "aquaponic_model" },
   { label: "Chứng nhận VietGAP", value: "viet_gap_cert" },
@@ -44,8 +44,10 @@ const featureOptions = [
 export default function FarmDetail({ open, onClose, farmId }) {
   const [farm, setFarm] = useState(null);
   const [error, setError] = useState(null);
+  const [images, setImages] = useState([]);
+  const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [files, setFiles] = useState([]);
+  const [videoCount, setVideoCount] = useState(0); // ← Thêm state đếm video
 
   const fetchDetail = async () => {
     if (!farmId) return;
@@ -57,18 +59,67 @@ export default function FarmDetail({ open, onClose, farmId }) {
     }
   };
 
-  const handleFileChange = (e) => setFiles([...e.target.files]);
+const fetchImages = async () => {
+  const token = localStorage.getItem("token");
+  if (!token || !farmId) return;
+
+  try {
+    console.log("farmId:", farmId);
+    console.log("Token:", token);
+
+    const res = await axios.get(`${BASE_URL}/farm-pictures/${farmId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setImages(res.data);
+  } catch (err) {
+    const message = err.response?.data?.message || err.message;
+    console.warn("Lỗi khi lấy ảnh:", message);
+
+    // Nếu 403, không alert nhưng set ảnh trống
+    if (err.response?.status === 403) {
+      setImages([]);
+    } else {
+      alert("Lỗi khi lấy ảnh: " + message);
+    }
+  }
+};
+
+
+  const fetchFarmVideos = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
+      if (res.status === 200) {
+        const allVideos = res.data;
+        const count = allVideos.filter((v) => v.farmId?.id === farmId).length;
+        setVideoCount(count);
+      }
+    } catch (err) {
+      console.error("Lỗi khi lấy danh sách video:", err);
+    }
+  };
+
+  const handleFileChange = (e) => setSelectedFiles([...e.target.files]);
 
   const handleUpload = async () => {
-    if (!files.length || !farmId) return;
-    const formData = new FormData();
-    files.forEach((file) => formData.append("images", file));
+    if (!selectedFiles.length || !farmId) return;
 
     setUploading(true);
     try {
-      await axios.post(`${BASE_URL}/farm-pictures/${farmId}`, formData, getOpts());
-      setFiles([]);
-      await fetchDetail();
+      for (const file of selectedFiles) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        await axios.post(`${BASE_URL}/farm-pictures/${farmId}`, formData, {
+          ...getOpts(),
+          headers: {
+            ...getOpts().headers,
+            "Content-Type": "multipart/form-data",
+          },
+        });
+      }
+
+      setSelectedFiles([]);
+      await fetchImages();
     } catch (err) {
       alert("Upload thất bại: " + (err.response?.data?.message || err.message));
     } finally {
@@ -77,7 +128,11 @@ export default function FarmDetail({ open, onClose, farmId }) {
   };
 
   useEffect(() => {
-    if (open && farmId) fetchDetail();
+    if (open && farmId) {
+      fetchDetail();
+      fetchImages();
+      fetchFarmVideos(); // ← Gọi API video
+    }
   }, [open, farmId]);
 
   if (!open) return null;
@@ -90,7 +145,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
         <Typography className="text-indigo-500">Đang tải...</Typography>
       ) : (
         <>
-          {/* Thông tin chung */}
+          {/* Thông tin nông trại */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <Info label="Tên nông trại" value={farm.name} />
             <Info label="Mã nông trại" value={farm.code} />
@@ -111,20 +166,19 @@ export default function FarmDetail({ open, onClose, farmId }) {
             <Info label="Đường" value={farm.street} />
             <Info label="Vị trí tổng quát" value={farm.location} />
             <Info label="Tổng diện tích (m²)" value={farm.area} />
-            <Info label="Đất canh tác (m²)" value={farm.cultivationArea} />
+            <Info label="Đất canh tác (m²)" value={farm.cultivatedArea} />
             <Info label="Dịch vụ" value={mapToLabel(farm.services, serviceOptions)} />
             <Info label="Tính năng" value={mapToLabel(farm.features, featureOptions)} />
             <Info label="Chủ sở hữu" value={farm.ownerInfo?.name} />
             <Info label="Số điện thoại" value={farm.phone} />
             <Info label="Zalo" value={farm.zalo} />
+            <Info label="Số video nông trại" value={videoCount} />
           </div>
 
           {/* Mô tả */}
           {farm.description && (
             <div>
-              <Typography variant="h6" className="mb-2 text-blue-gray-900">
-                Mô tả
-              </Typography>
+              <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
               <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">
                 {farm.description}
               </Typography>
@@ -135,19 +189,21 @@ export default function FarmDetail({ open, onClose, farmId }) {
           <div>
             <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
 
-            {farm.images?.length > 0 ? (
+            {images.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                {farm.images.map((img, idx) => (
+                {images.map((img, idx) => (
                   <img
                     key={idx}
-                    src={typeof img === "string" ? img : img.url}
+                    src={img.url}
                     alt={`Ảnh ${idx + 1}`}
                     className="w-full h-40 object-cover rounded-lg border shadow-sm"
                   />
                 ))}
               </div>
             ) : (
-              <Typography className="text-sm text-gray-500 italic mb-4">Chưa có hình ảnh</Typography>
+              <Typography className="text-sm text-gray-500 italic mb-4">
+                Chưa có hình ảnh
+              </Typography>
             )}
 
             {farm.status === "active" ? (
@@ -157,15 +213,15 @@ export default function FarmDetail({ open, onClose, farmId }) {
                   multiple
                   onChange={handleFileChange}
                   className="block w-56 text-sm text-gray-700
-                             file:mr-2 file:py-1 file:px-3
-                             file:rounded-lg file:border file:border-gray-300
-                             file:text-sm file:font-medium
-                             file:bg-white file:text-gray-700
-                             hover:file:bg-gray-50"
+                            file:mr-2 file:py-1 file:px-3
+                            file:rounded-lg file:border file:border-gray-300
+                            file:text-sm file:font-medium
+                            file:bg-white file:text-gray-700
+                            hover:file:bg-gray-50"
                 />
                 <Button
                   onClick={handleUpload}
-                  disabled={uploading}
+                  disabled={uploading || !selectedFiles.length}
                   color="indigo"
                   className="text-sm px-4 py-2"
                 >
