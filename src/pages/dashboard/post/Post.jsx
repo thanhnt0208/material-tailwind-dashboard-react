@@ -102,40 +102,6 @@ export function PostList() {
     setOpenEdit(true);
   };
 
-  const updatePost = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          title: selectedPost.title,
-          description: selectedPost.description,
-          status: selectedPost.status,
-          tags: (selectedPost.tagsInput || "")
-            .split(",")
-            .map((tag) => tag.trim())
-            .filter((tag) => tag !== ""),
-          images: selectedPost.images,
-        }),
-      });
-
-      const json = await res.json();
-      if (res.ok) {
-        alert("Cập nhật thành công!");
-        setOpenEdit(false);
-        fetchPosts();
-      } else {
-        alert(json.message || "Cập nhật thất bại");
-      }
-    } catch (err) {
-      console.error("PUT error:", err);
-      alert("Lỗi kết nối server khi cập nhật");
-    }
-  };
 
   const deletePost = async (id) => {
     const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bài post này?");
