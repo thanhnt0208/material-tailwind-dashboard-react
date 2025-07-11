@@ -1,16 +1,30 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import {
-  Card, CardBody, Input, Button, Typography, Checkbox, Chip, Tabs, TabsHeader, Tab,
+  Card,
+  CardBody,
+  Input,
+  Button,
+  Typography,
+  Chip,
+  Tabs,
+  TabsHeader,
+  Tab,
+  Menu,
+  MenuHandler,
+  MenuList,
+  MenuItem,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  IconButton,
 } from "@material-tailwind/react";
-import {
-  PencilSquareIcon, TrashIcon, PlusIcon, LockOpenIcon ,LockClosedIcon, XCircleIcon, CheckCircleIcon
-} from "@heroicons/react/24/solid";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+
 import FarmForm from "../user/FarmForm";
 import FarmDetail from "./FarmDetail";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
@@ -26,8 +40,10 @@ export function Farms() {
   const [openForm, setOpenForm] = useState(false);
   const [editingFarm, setEditingFarm] = useState(null);
 
-  const [selectedFarmId, setSelectedFarmId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
   const [openDetail, setOpenDetail] = useState(false);
+  const [selectedFarmId, setSelectedFarmId] = useState(null);
 
   const fetchFarms = async () => {
     try {
@@ -69,24 +85,25 @@ export function Farms() {
     }
   };
 
-  const activateFarm = async (id, actionText) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} farm này không?`)) return;
+  const changeStatus = async (id, action) => {
+    const actionMap = {
+      activate: "kích hoạt",
+      deactivate: "khóa",
+    };
+
+    if (!window.confirm(`Bạn có chắc chắn muốn ${actionMap[action] || action} farm này không?`)) return;
+
     try {
-      await axios.patch(`${BASE_URL}/adminfarms/${id}/activate`, null, getOpts());
+      await axios.patch(`${BASE_URL}/adminfarms/${id}/${action}`, null, getOpts());
       await fetchFarms();
     } catch (err) {
-      alert(`Lỗi ${actionText}: ` + (err.response?.data?.message || err.message));
+      alert(`Lỗi ${actionMap[action] || action}: ` + (err.response?.data?.message || err.message));
     }
   };
 
-  const deactivateFarm = async (id, actionText) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn ${actionText} farm này không?`)) return;
-    try {
-      await axios.patch(`${BASE_URL}/adminfarms/${id}/deactivate`, null, getOpts());
-      await fetchFarms();
-    } catch (err) {
-      alert(`Lỗi ${actionText}: ` + (err.response?.data?.message || err.message));
-    }
+  const handleOpenDetail = (id) => {
+    setSelectedFarmId(id);
+    setOpenDetail(true);
   };
 
   useEffect(() => {
@@ -128,124 +145,121 @@ export function Farms() {
           <Typography color="red">Lỗi: {error}</Typography>
         ) : (
           <CardBody className="overflow-x-auto p-0">
-            <table className="w-full min-w-[1100px] table-auto">
+            <table className="w-full min-w-[1000px] table-auto text-base">
               <thead>
-                <tr className="bg-indigo-50 text-indigo-600 text-left">
-                  <th className="w-10 px-4"><Checkbox ripple={false} /></th>
-                  {["Tên", "Mã", "Chủ sở hữu", "SĐT", "Địa chỉ", "Diện tích", "Trạng thái", "Thao tác"].map((head) => (
-                    <th key={head} className="px-4 py-3 text-xs font-bold uppercase">{head}</th>
-                  ))}
+                <tr className="bg-indigo-50 text-indigo-600 text-left text-sm">
+                  <th className="px-2 py-2 font-bold uppercase">Tên</th>
+                  <th className="px-2 py-2 font-bold uppercase">Mã</th>
+                  <th className="px-2 py-2 font-bold uppercase">Chủ sở hữu</th>
+                  <th className="px-2 py-2 font-bold uppercase">SĐT</th>
+                  <th className="px-2 py-2 font-bold uppercase">Địa chỉ</th>
+                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Diện tích</th>
+                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Trạng thái</th>
+                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Thao tác</th>
                 </tr>
               </thead>
+
               <tbody>
                 {displayedFarms.map((farm) => (
                   <tr
                     key={farm._id}
-                    className="border-b hover:bg-indigo-50 transition"
-                    onClick={() => { setSelectedFarmId(farm._id); setOpenDetail(true); }}
+                    className="border-b hover:bg-indigo-50 transition text-base cursor-pointer"
+                    onClick={() => handleOpenDetail(farm._id)}
                   >
-                    <td className="px-4 py-4"><Checkbox ripple={false} /></td>
-                    <td className="px-4 py-4">{farm.name}</td>
-                    <td className="px-4 py-4">{farm.code}</td>
-                    <td className="px-4 py-4">{farm.ownerInfo?.name || "—"}</td>
-                    <td className="px-4 py-4">{farm.phone || "—"}</td>
-                    <td className="px-4 py-4">{farm.location}</td>
-                    <td className="px-4 py-4">{farm.area} m²</td>
-                    <td className="px-4 py-4">
+                    <td className="px-2 py-2">{farm.name}</td>
+                    <td className="px-2 py-2">{farm.code}</td>
+                    <td className="px-2 py-2">{farm.ownerInfo?.name || "—"}</td>
+                    <td className="px-2 py-2">{farm.phone || "—"}</td>
+                    <td className="px-2 py-2">{farm.location}</td>
+                    <td className="px-2 py-2">{farm.area} m²</td>
+                    <td className="px-2 py-2">
                       <Chip
                         value={farm.status === "pending" ? "Chờ duyệt" : farm.status === "active" ? "Đang hoạt động" : "Đã khóa"}
                         color={farm.status === "pending" ? "amber" : farm.status === "inactive" ? "red" : "teal"}
                         size="sm"
                       />
                     </td>
-                   <td className="px-4 py-4">
-                    <div className="flex flex-col gap-2">
-                      {/* Nhóm nút Sửa & Xoá */}
-                      <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingFarm(farm);
-                        setOpenForm(true);
-                      }}
-                      className="bg-blue-600 hover:bg-blue-700 text-white rounded px-3 py-1 shadow-md"
-                    >
-                      Sửa
-                    </Button>
+                    <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
+                      <Menu
+                        open={openMenuId === farm._id}
+                        handler={() => setOpenMenuId(openMenuId === farm._id ? null : farm._id)}
+                        allowHover={false}
+                        placement="left-start"
+                      >
+                        <MenuHandler>
+                          <Button
+                            size="sm"
+                            className="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 min-w-[36px]"
+                          >
+                            <EllipsisVerticalIcon className="h-5 w-5" />
+                          </Button>
+                        </MenuHandler>
 
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteFarm(farm._id);
-                      }}
-                      className="bg-gray-200 hover:bg-gray-300 text-gray-800 rounded px-3 py-1 shadow-md"
-                    >
-                      Xoá
-                    </Button>
-                  </div>
+                        <MenuList className="z-[999] p-2 min-w-[120px]">
+                          <MenuItem
+                            onClick={() => {
+                              setEditingFarm(farm);
+                              setOpenForm(true);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            Sửa
+                          </MenuItem>
 
+                          <MenuItem
+                            onClick={() => {
+                              deleteFarm(farm._id);
+                              setOpenMenuId(null);
+                            }}
+                          >
+                            Xoá
+                          </MenuItem>
 
-                      {/* Nhóm nút trạng thái */}
-                      <div className="flex gap-2 mt-1">
-                        {farm.status === "pending" && (
-                          <>
-                            <Button
-  size="sm"
-  onClick={(e) => {
-    e.stopPropagation();
-    activateFarm(farm._id, "duyệt");
-  }}
-  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs w-[80px] rounded shadow-md"
->
-  DUYỆT
-</Button>
+                          {farm.status === "pending" && (
+                            <>
+                              <MenuItem
+                                onClick={() => {
+                                  changeStatus(farm._id, "activate");
+                                  setOpenMenuId(null);
+                                }}
+                              >
+                                Duyệt
+                              </MenuItem>
+                              <MenuItem
+                                onClick={() => {
+                                  changeStatus(farm._id, "deactivate");
+                                  setOpenMenuId(null);
+                                }}
+                              >
+                                Từ chối
+                              </MenuItem>
+                            </>
+                          )}
 
-<Button
-  size="sm"
-  onClick={(e) => {
-    e.stopPropagation();
-    deactivateFarm(farm._id, "từ chối");
-  }}
-  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-xs w-[80px] rounded shadow-md"
->
-  TỪ CHỐI
-</Button>
+                          {farm.status === "active" && (
+                            <MenuItem
+                              onClick={() => {
+                                changeStatus(farm._id, "deactivate");
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              Khóa
+                            </MenuItem>
+                          )}
 
-                          </>
-)}
-
-
-                  {farm.status === "active" && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deactivateFarm(farm._id, "khóa");
-                      }}
-                      className="bg-red-500 hover:bg-red-600 text-white rounded px-3 py-1 shadow-md"
-                    >
-                      Khóa
-                    </Button>
-                  )}
-
-                  {farm.status === "inactive" && (
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        activateFarm(farm._id, "mở khóa");
-                      }}
-                      className="bg-green-600 hover:bg-green-700 text-white rounded px-3 py-1 shadow-md"
-                    >
-                      Mở khóa
-                    </Button>
-                  )}
-
-                      </div>
-                    </div>
-                  </td>
+                          {farm.status === "inactive" && (
+                            <MenuItem
+                              onClick={() => {
+                                changeStatus(farm._id, "activate");
+                                setOpenMenuId(null);
+                              }}
+                            >
+                              Mở khóa
+                            </MenuItem>
+                          )}
+                        </MenuList>
+                      </Menu>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -253,28 +267,23 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
-
-      {/* Form thêm/sửa farm */}
-      <FarmForm
-        open={openForm}
-        onClose={() => setOpenForm(false)}
-        initialData={editingFarm}
-        onSubmit={(data) => {
-          if (editingFarm) {
-            editFarm(editingFarm._id, data);
-          } else {
-          addFarm(data);
-        }
-        }}
-      />
-
-      {/* Chi tiết farm */}
-      <FarmDetail
-        farmId={selectedFarmId}
-        open={openDetail}
-        onClose={() => setOpenDetail(false)}
-      />
+      <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
+        <DialogHeader className="justify-between">
+          Chi tiết nông trại
+          <IconButton variant="text" onClick={() => setOpenDetail(false)} className="ml-auto">
+            ✕
+          </IconButton>
+        </DialogHeader>
+        <DialogBody className="p-4">
+         <FarmDetail
+  open={openDetail}
+  onClose={() => setOpenDetail(false)}
+  farmId={selectedFarmId}
+/>
+        </DialogBody>
+      </Dialog>
     </>
   );
 }
+
 export default Farms;

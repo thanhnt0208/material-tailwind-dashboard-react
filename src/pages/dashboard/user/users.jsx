@@ -30,7 +30,7 @@ export function Users() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("https://api-ndolv2.nongdanonline.vn/admin-users", {
+      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const activeUsers = (Array.isArray(res.data) ? res.data : []).filter(u => u.isActive);
@@ -64,7 +64,7 @@ export function Users() {
   const handleUpdate = async () => {
     if (!token || !selectedUser) return;
     try {
-      await axios.put(`https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}`, formData, {
+      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`, formData, {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
       alert("Cập nhật thành công!");
@@ -79,7 +79,7 @@ export function Users() {
     if (!selectedUser) return;
     try {
       await axios.patch(
-        `https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}/add-role`,
+        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
         { role: selectedRole },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -94,7 +94,7 @@ export function Users() {
     if (!selectedUser) return;
     try {
       await axios.patch(
-        `https://api-ndolv2.nongdanonline.vn/admin-users/${selectedUser.id}/remove-roles`,
+        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
         { roles: [role] },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -109,7 +109,7 @@ export function Users() {
     setViewUser(user);
     setViewOpen(true);
     try {
-      const res = await axios.get("https://api-ndolv2.nongdanonline.vn/user-addresses", {
+      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/user-addresses", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const userAddresses = res.data.filter(addr => addr.userid === user.id);
@@ -123,7 +123,7 @@ export function Users() {
     if (!window.confirm("Bạn chắc muốn xoá?")) return;
     try {
       await axios.delete(
-        `https://api-ndolv2.nongdanonline.vn/admin-users/${userId}`,
+        `https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       alert("Đã xoá người dùng!");
@@ -136,7 +136,7 @@ export function Users() {
 
   const handleCreateFarm = async (farmData) => {
     try {
-      await axios.post("https://api-ndolv2.nongdanonline.vn/farms", farmData, {
+      await axios.post("https://api-ndolv2.nongdanonline.cc/farms", farmData, {
         headers: { Authorization: `Bearer ${token}` },
       });
       alert("Tạo nông trại thành công!");
@@ -158,7 +158,7 @@ export function Users() {
           <Card key={user.id}>
             <CardHeader floated={false} color="gray" className="h-40">
               {user.avatar ? (
-                <img src={`https://api-ndolv2.nongdanonline.vn${user.avatar}`} alt={user.fullName} className="h-full w-full object-cover" />
+                <img src={`https://api-ndolv2.nongdanonline.cc${user.avatar}`} alt={user.fullName} className="h-full w-full object-cover" />
               ) : (
                 <div className="h-full w-full bg-gray-300 flex items-center justify-center">No Avatar</div>
               )}

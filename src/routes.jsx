@@ -16,6 +16,7 @@ import { SignIn, SignUp } from "@/pages/auth";
 
 import { ViewfinderCircleIcon,VideoCameraIcon,ChatBubbleOvalLeftEllipsisIcon  } from "@heroicons/react/24/outline";
 import { Comment } from "react-loader-spinner";
+import FarmDetail from "@/pages/dashboard/farm/FarmDetail";
 
 const icon = {
   className: "w-5 h-5 text-inherit",

@@ -1,164 +1,122 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
-  Dialog, DialogHeader, DialogBody, DialogFooter,
-  Input, Button, Checkbox,
+  Card,
+  CardBody,
+  Typography,
+  Button,
 } from "@material-tailwind/react";
-import Select from "react-select";
+import axios from "axios";
+import FarmForm from "./FarmForm";
 
-// Danh sách dịch vụ
-const serviceOptions = [
-  { value: "direct_selling", label: "Bán hàng trực tiếp" },
-  { value: "feed_selling", label: "Bán thức ăn chăn nuôi" },
-  { value: "custom_feed_blending", label: "Pha trộn thức ăn theo yêu cầu" },
-  { value: "processing_service", label: "Dịch vụ chế biến" },
-  { value: "storage_service", label: "Dịch vụ lưu trữ" },
-  { value: "transport_service", label: "Dịch vụ vận chuyển" },
-  { value: "other_services", label: "Dịch vụ khác" },
-];
-
-// Danh sách tính năng
-const featureOptions = [
-  { value: "aquaponic_model", label: "Mô hình Aquaponic" },
-  { value: "ras_ready", label: "Hệ thống RAS" },
-  { value: "hydroponic", label: "Thuỷ canh" },
-  { value: "greenhouse", label: "Nhà kính" },
-  { value: "vertical_farming", label: "Nông trại thẳng đứng" },
-  { value: "viet_gap_cert", label: "Chứng nhận VietGAP" },
-  { value: "organic_cert", label: "Chứng nhận hữu cơ" },
-  { value: "global_gap_cert", label: "Chứng nhận GlobalGAP" },
-  { value: "haccp_cert", label: "Chứng nhận HACCP" },
-  { value: "camera_online", label: "Camera trực tuyến" },
-  { value: "drone_monitoring", label: "Giám sát bằng drone" },
-  { value: "automated_pest_detection", label: "Phát hiện sâu bệnh tự động" },
-  { value: "precision_irrigation", label: "Tưới tiêu chính xác" },
-  { value: "auto_irrigation", label: "Tưới tiêu tự động" },
-  { value: "soil_based_irrigation", label: "Tưới theo độ ẩm đất" },
-  { value: "iot_sensors", label: "Cảm biến IoT" },
-  { value: "soil_moisture_monitoring", label: "Giám sát độ ẩm đất" },
-  { value: "air_quality_sensor", label: "Cảm biến chất lượng không khí" },
-];
-
-// Danh sách tag
-const tagOptions = [
-  { value: "nông sản", label: "nông sản" },
-  { value: "hữu cơ", label: "hữu cơ" },
-  { value: "mùa vụ", label: "mùa vụ" },
-];
-
-const FarmForm = ({ open, onClose, initialData = {}, onSubmit }) => {
-  const [form, setForm] = useState({
-    name: "",
-    code: "",
-    location: "",
-    area: 0,
-    cultivatedArea: 0,
-    services: [],
-    features: [],
-    tags: [],
-    phone: "",
-    zalo: "",
-    province: "",
-    district: "",
-    ward: "",
-    street: "",
-    isAvailable: true,
-    status: "pending",
-    ownerId: "",
-  });
+const FarmDetail = () => {
+  const { id } = useParams();
+  const [farm, setFarm] = useState(null);
+  const [openEdit, setOpenEdit] = useState(false);
+  const [image, setImage] = useState(null);
 
   useEffect(() => {
-    if (initialData) {
-      setForm((prev) => ({
-        ...prev,
-        ...initialData,
-      }));
+    fetchFarm();
+  }, [id]);
+
+  const fetchFarm = async () => {
+    try {
+      const res = await axios.get(`/api/farms/${id}`);
+      setFarm(res.data);
+    } catch (err) {
+      console.error("Failed to fetch farm:", err);
     }
-  }, [initialData]);
-
-  const handleChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleArrayChange = (field, value) => {
-    setForm((prev) => ({ ...prev, [field]: value }));
+  const handleUpdate = async (updatedFarm) => {
+    try {
+      await axios.put(`/api/farms/${id}`, updatedFarm);
+      setFarm(updatedFarm);
+    } catch (err) {
+      console.error("Failed to update farm:", err);
+    }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(form);  // Gửi dữ liệu cho component cha
-    onClose();       // Đóng dialog
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      const res = await axios.post(`/api/farms/${id}/upload-image`, formData);
+      setFarm((prev) => ({ ...prev, image: res.data.imageUrl }));
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
   };
+
+  if (!farm) return <div>Đang tải...</div>;
 
   return (
-    <Dialog open={open} handler={onClose} size="lg">
-      <DialogHeader className="text-lg">
-        {initialData?._id ? "Chỉnh sửa" : "Thêm"} nông trại
-      </DialogHeader>
+    <div className="p-4">
+      <Card>
+        <CardBody>
+          <div className="flex justify-between items-center mb-4">
+            <Typography variant="h5">Thông tin Nông trại</Typography>
+            <Button color="blue" onClick={() => setOpenEdit(true)}>
+              Chỉnh sửa
+            </Button>
+          </div>
 
-      <DialogBody className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 px-4 text-sm">
-        <Input label="Tên nông trại" value={form.name} onChange={(e) => handleChange("name", e.target.value)} />
-        <Input label="Vị trí" value={form.location} onChange={(e) => handleChange("location", e.target.value)} />
-        <Input label="Diện tích (m²)" type="number" value={form.area} onChange={(e) => handleChange("area", e.target.value)} />
-        <Input label="Diện tích đất canh tác (m²)" type="number" value={form.cultivatedArea} onChange={(e) => handleChange("cultivatedArea", e.target.value)} />
+          <div className="mb-4">
+            <Typography variant="small">Tên: {farm.name}</Typography>
+            <Typography variant="small">Mã: {farm.code}</Typography>
+            <Typography variant="small">Vị trí: {farm.location}</Typography>
+            <Typography variant="small">Diện tích: {farm.area} m²</Typography>
+            <Typography variant="small">Diện tích canh tác: {farm.cultivatedArea} m²</Typography>
+            <Typography variant="small">
+              Sẵn sàng: {farm.isAvailable ? "Có" : "Không"}
+            </Typography>
+            <Typography variant="small">
+              Trạng thái: {farm.status || "Chưa xác định"}
+            </Typography>
+            <Typography variant="small">
+              Tags: {farm.tags?.join(", ") || "Không có"}
+            </Typography>
+            <Typography variant="small">
+              Dịch vụ: {farm.services?.join(", ") || "Không có"}
+            </Typography>
+            <Typography variant="small">
+              Tính năng: {farm.features?.join(", ") || "Không có"}
+            </Typography>
+          </div>
 
-        <div className="mb-1 md:col-span-2">
-          <label className="block text-sm mb-1">Dịch vụ</label>
-          <Select
-            isMulti
-            options={serviceOptions}
-            classNamePrefix="select-sm"
-            value={form.services.map(val => serviceOptions.find(opt => opt.value === val)).filter(Boolean)}
-            onChange={(selected) => handleArrayChange("services", selected.map(s => s.value))}
-          />
-        </div>
+          <div className="mb-4">
+            <Typography variant="small">Hình ảnh:</Typography>
+            {farm.image ? (
+              <img
+                src={farm.image}
+                alt="Farm"
+                className="w-full max-w-sm border rounded my-2"
+              />
+            ) : (
+              <Typography variant="small" className="italic">
+                Chưa có hình ảnh
+              </Typography>
+            )}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="mt-2"
+            />
+          </div>
+        </CardBody>
+      </Card>
 
-        <div className="mb-1 md:col-span-2">
-          <label className="block text-sm mb-1">Tính năng</label>
-          <Select
-            isMulti
-            options={featureOptions}
-            classNamePrefix="select-sm"
-            value={form.features.map(val => featureOptions.find(opt => opt.value === val)).filter(Boolean)}
-            onChange={(selected) => handleArrayChange("features", selected.map(s => s.value))}
-          />
-        </div>
-
-        <div className="mb-1 md:col-span-2">
-          <label className="block text-sm mb-1">Tags</label>
-          <Select
-            isMulti
-            options={tagOptions}
-            classNamePrefix="select-sm"
-            value={form.tags.map(val => ({ value: val, label: val }))}
-            onChange={(selected) => handleArrayChange("tags", selected.map(s => s.value))}
-          />
-        </div>
-
-        <Input label="Số điện thoại" value={form.phone} onChange={(e) => handleChange("phone", e.target.value)} />
-        <Input label="Zalo" value={form.zalo} onChange={(e) => handleChange("zalo", e.target.value)} />
-        <Input label="Tỉnh/Thành phố" value={form.province} onChange={(e) => handleChange("province", e.target.value)} />
-        <Input label="Quận/Huyện" value={form.district} onChange={(e) => handleChange("district", e.target.value)} />
-        <Input label="Phường/Xã" value={form.ward} onChange={(e) => handleChange("ward", e.target.value)} />
-        <Input label="Đường" value={form.street} onChange={(e) => handleChange("street", e.target.value)} />
-
-        {/* Chỉ đọc ID chủ sở hữu */}
-        <Input label="ID Chủ sở hữu" value={form.ownerId} readOnly />
-
-        <Checkbox
-          label="Farm đang sẵn sàng"
-          checked={form.isAvailable}
-          onChange={(e) => handleChange("isAvailable", e.target.checked)}
-        />
-      </DialogBody>
-
-      <DialogFooter className="flex justify-end gap-2 px-4 py-3">
-        <Button variant="text" onClick={onClose}>Huỷ</Button>
-        <Button color="green" onClick={handleSubmit}>
-          {initialData?._id ? "Cập nhật" : "Thêm"}
-        </Button>
-      </DialogFooter>
-    </Dialog>
+      <FarmForm
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        initialData={farm}
+        onSubmit={handleUpdate}
+      />
+    </div>
   );
 };
 
-export default FarmForm;
+export default FarmDetail;

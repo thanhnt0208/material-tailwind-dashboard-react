@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Button, Dialog, DialogBody, DialogFooter, DialogHeader, Input, Typography } from "@material-tailwind/react";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
