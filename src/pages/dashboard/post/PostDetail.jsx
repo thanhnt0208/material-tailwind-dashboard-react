@@ -13,7 +13,6 @@ const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 export default function PostDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [users, setUsers] = useState([]);
@@ -21,8 +20,6 @@ export default function PostDetail() {
   const [commentLoading, setCommentLoading] = useState(true);
 
   const token = localStorage.getItem("token");
-
-  // Fetch bài viết
   const fetchPost = async () => {
     try {
       const res = await fetch(`${BASE_URL}/admin-post-feed/${id}`, {
@@ -52,8 +49,9 @@ export default function PostDetail() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const json = await res.json();
+      console.log(json)
       if (res.ok) {
-        setComments(json.data || []);
+setComments(Array.isArray(json.comments) ? json.comments : []);
       }
     } catch (err) {
       console.error("❌ Fetch comments error:", err);
@@ -62,7 +60,6 @@ export default function PostDetail() {
     }
   };
 
-  // Fetch users
   const fetchUsers = async () => {
     try {
       const res = await fetch(`${BASE_URL}/admin-users`, {
@@ -78,7 +75,6 @@ export default function PostDetail() {
       console.error("❌ Fetch users error:", err);
     }
   };
-
   useEffect(() => {
     fetchPost();
     fetchComments();
@@ -91,7 +87,7 @@ export default function PostDetail() {
   const formatDateTime = (dateString) => {
     if (!dateString) return "Không rõ";
     const date = new Date(dateString);
-    return date.toLocaleString("vi-VN"); // Format theo giờ VN
+    return date.toLocaleString("vi-VN"); 
   };
 
   if (loading)
@@ -172,7 +168,6 @@ export default function PostDetail() {
         ))}
       </div>
 
-      {/* Trạng thái + Lượt thích */}
       <div className="flex items-center gap-4 mb-6">
         <Chip
           value={post.status ? "Đang hoạt động" : "Đã ẩn"}
@@ -181,7 +176,6 @@ export default function PostDetail() {
         <Typography>Lượt thích: {post.like}</Typography>
       </div>
 
-      {/* Bình luận */}
       <div className="border-t pt-4 mt-6">
         <Typography variant="h5" className="font-semibold mb-3 text-blue-800">
           Bình luận
@@ -189,12 +183,14 @@ export default function PostDetail() {
         {commentLoading ? (
           <Typography>Đang tải bình luận...</Typography>
         ) : comments.length > 0 ? (
-          comments.map((cmt) => (
-            <div
+          comments.map((cmt) => {
+            console.log("data nè:",cmt)
+          return(
+ <div
               key={cmt._id}
               className="border-b py-3 flex items-start gap-3"
             >
-              <Avatar
+    <Avatar
                 src={
                   cmt.userId?.avatar?.startsWith("http")
                     ? cmt.userId.avatar
@@ -202,14 +198,17 @@ export default function PostDetail() {
                 }
                 alt={cmt.userId?.fullName}
               />
+              
               <div>
                 <Typography className="font-medium">
                   {cmt.userId?.fullName || "Ẩn danh"}
                 </Typography>
+                
                 <Typography className="text-gray-700">
                   {cmt.comment}
                 </Typography>
-                {/* Reply */}
+               
+                
                 {cmt.replies?.length > 0 && (
                   <div className="ml-4 mt-2 border-l-2 pl-2 border-blue-200">
                     {cmt.replies.map((rep) => (
@@ -217,6 +216,7 @@ export default function PostDetail() {
                         key={rep._id}
                         className="flex items-start gap-2 mt-1"
                       >
+                        
                         <Avatar
                           src={
                             rep.userId?.avatar?.startsWith("http")
@@ -234,13 +234,28 @@ export default function PostDetail() {
                             {rep.comment}
                           </Typography>
                         </div>
+                        <button
+  className="px-3 py-1 rounded bg-blue-500 hover:bg-blue-600 text-white font-medium shadow transition"
+>
+  Sửa
+</button>
+<button
+  className="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white font-medium shadow transition"
+>
+  Xóa
+</button>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
             </div>
-          ))
+
+          )
+            
+          }
+           
+          )
         ) : (
           <Typography>Không có bình luận</Typography>
         )}
