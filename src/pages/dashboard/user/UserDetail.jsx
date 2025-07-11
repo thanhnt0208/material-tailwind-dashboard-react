@@ -17,7 +17,7 @@ export default function UserDetail() {
       return;
     }
 
-    axios.get(`https://api-ndolv2.nongdanonline.vn/admin-users/${id}`, {
+    axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     .then(res => setUser(res.data))
@@ -43,7 +43,7 @@ export default function UserDetail() {
         <CardHeader floated={false} className="h-80">
           {user.avatar ? (
             <img
-              src={`https://api-ndolv2.nongdanonline.vn${user.avatar}`}
+              src={`https://api-ndolv2.nongdanonline.cc${user.avatar}`}
               alt={user.fullName}
               className="h-full w-full object-cover"
             />

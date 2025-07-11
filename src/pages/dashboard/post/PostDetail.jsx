@@ -1,7 +1,8 @@
 import React, {useEffect, useState} from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Typography, Button, Chip, Avatar } from "@material-tailwind/react";
-const BASE_URL = 'https://api-ndolv2.nongdanonline.vn';
+import CommentPostbyIdPost from "../AdminCommentPost/CommentPostbyIdPost";
+const BASE_URL = 'https://api-ndolv2.nongdanonline.cc';
 
 export function PostDetail() {
     const { id } = useParams();
@@ -75,6 +76,10 @@ export function PostDetail() {
                 color={post.status ? "green" : "red"}
                 size="sm"
             />
+            <div className="mt-10">
+                <Typography variant="h5" className="mb-2">Bình luận bài viết</Typography>
+                <CommentPostbyIdPost />
+            </div>
         </div>
   );
 }

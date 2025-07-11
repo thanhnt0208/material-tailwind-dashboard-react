@@ -35,7 +35,7 @@ export function SignIn() {
     }
 
     try {
-      const res = await fetch("https://api-ndolv2.nongdanonline.vn/auth/login", {
+      const res = await fetch("https://api-ndolv2.nongdanonline.cc/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

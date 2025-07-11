@@ -22,7 +22,7 @@ import { useNavigate } from "react-router-dom";
 
 import FarmForm from "../user/FarmForm";
 
-const BASE_URL = "https://api-ndolv2.nongdanonline.vn";
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
@@ -160,7 +160,7 @@ export function Farms() {
                   <tr
                     key={farm._id}
                     className="border-b hover:bg-indigo-50 transition text-base cursor-pointer"
-                    onClick={() => navigate(`/dashboard/admin/farms/${farm._id}`)}
+                    onClick={() => navigate(`/admin/farms/${farm._id}`)}
                   >
                     <td className="px-2 py-2">{farm.name}</td>
                     <td className="px-2 py-2">{farm.code}</td>
