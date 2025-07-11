@@ -43,8 +43,7 @@ const handleCloseDialogInforVideo =()=>{
   setEditValue({})
 setOpenDialogInforVideo(false)
 }
-console.log(idVideo)
-console.log(videoDetail)
+
 const handleSaveEdit = async()=>{
 try {
       const updatedValue = { status: "uploaded" }; 
@@ -69,7 +68,6 @@ handleCloseDialogInforVideo()
         headers: { Authorization: `Bearer ${tokenUser}` }
       });
       if (res.status === 200) { 
-        console.log("Dữ liệu từ API:", res.data)
         setVideoDetail(res.data)
         setLoading(false)
         
@@ -99,23 +97,6 @@ setOpenDialogInforVideo(true)
 }
 
 
-  const handleOpenDialog = (item) => {
-    setSelectedVideo({
-      title: item.title,
-      youtubeLink: item.youtubeLink,
-      playlistName: item.playlistName,
-      status: item.status,
-      uploadedBy: item.uploadedBy?.fullName,
-      createdAt: item.createdAt
-    });
-    setOpenDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setSelectedVideo(null);
-    setOpenDialog(false);
-  };
-
 const handleOpenComment = (e, videoId) => {
   e.stopPropagation(); 
   setSelectedVideoId(videoId);
@@ -129,7 +110,6 @@ const handleOpenComment = (e, videoId) => {
   useEffect(() => {
     getDetailVideo();
   }, []);
-
   return (
       <div className="p-4">
               <button
@@ -156,8 +136,6 @@ const handleOpenComment = (e, videoId) => {
             key={item._id}
             className="cursor-pointer bg-white rounded-lg shadow p-5 flex flex-col gap-2 border hover:shadow-lg transition"
           >
-
-
            <span className="font-bold text-lg mb-1">{item.title}</span>
 
             <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
@@ -224,17 +202,24 @@ const handleOpenComment = (e, videoId) => {
 
    
    <span className="text-sm text-gray-600 cursor-pointer">
-            Danh sách phát: <span className="font-medium">{item.playlistName}</span>
+            Danh sách phát: <span className=" truncate font-medium">{item.playlistName}</span>
           </span>
-          <span className="text-sm text-gray-600">
-            Ngày đăng: <span className="font-medium">{new Date(item.createdAt).toLocaleDateString()}</span>
+             <span className=" truncate text-sm text-gray-600">
+            Farm: <span className=" truncate font-medium">{item.farmId.name}</span>
           </span>
-          <span className="text-sm text-gray-600">
-            Người đăng: <span className="font-medium">{item.uploadedBy?.fullName}</span>
+          <span className="truncate text-sm text-gray-600">
+            Ngày đăng: <span className="truncate font-medium">{new Date(item.createdAt).toLocaleDateString()}</span>
           </span>
-            <span className="text-sm text-gray-600">
-            Trạng thái: <span className="font-medium">{item.status}</span>
+          <span className="truncate text-sm text-gray-600">
+            Người đăng: <span className="truncate font-medium">{item.uploadedBy?.fullName}</span>
           </span>
+             <span className="truncate text-sm text-gray-600">
+            Email: <span className=" truncatefont-medium">{item.uploadedBy.email}</span>
+          </span>
+            <span className=" truncatetext-sm text-gray-600">
+            Trạng thái: <span className=" truncate font-medium">{item.status}</span>
+          </span>
+          
           </div>
         ))
       )}
