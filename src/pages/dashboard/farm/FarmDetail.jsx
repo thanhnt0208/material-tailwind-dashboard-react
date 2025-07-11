@@ -1,94 +1,74 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { Typography, Button } from "@material-tailwind/react";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 const getOpts = () => ({
   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
 });
-// serviceOptions và featureOptions ánh xạ tiếng Việt
+
+const Info = ({ label, value }) => (
+  <div className="flex flex-col gap-1">
+    <Typography className="text-sm font-medium text-gray-800">{label}</Typography>
+    <Typography className="text-sm text-blue-gray-700">{value || "—"}</Typography>
+  </div>
+);
+
+const mapToLabel = (arr, options) => {
+  if (!arr || arr.length === 0) return "—";
+  const values = typeof arr === "string" ? arr.split(",").map((v) => v.trim()) : arr;
+  return values.map((v) => options.find((o) => o.value === v)?.label || v).join(", ");
+};
+
+// Danh sách Dịch vụ
 const serviceOptions = [
-  { value: "direct_selling", label: "Bán hàng trực tiếp" },
-  { value: "feed_selling", label: "Bán thức ăn chăn nuôi" },
-  { value: "custom_feed_blending", label: "Pha trộn thức ăn theo yêu cầu" },
-  { value: "processing_service", label: "Dịch vụ chế biến" },
-  { value: "storage_service", label: "Dịch vụ lưu trữ" },
-  { value: "transport_service", label: "Dịch vụ vận chuyển" },
-  { value: "other_services", label: "Dịch vụ khác" },
+  { label: "Bán trực tiếp", value: "direct_selling" },
+  { label: "Bán thức ăn", value: "feed_selling" },
+  { label: "Phối trộn thức ăn", value: "custom_feed_blending" },
+  { label: "Dịch vụ sơ chế", value: "processing_service" },
+  { label: "Dịch vụ lưu kho", value: "storage_service" },
+  { label: "Dịch vụ vận chuyển", value: "transport_service" },
+  { label: "Dịch vụ khác", value: "other_services" },
 ];
 
+// Danh sách Tính năng (KHÁC với dịch vụ)
 const featureOptions = [
-  { value: "aquaponic_model", label: "Mô hình Aquaponic" },
-  { value: "ras_ready", label: "Hệ thống RAS" },
-  { value: "hydroponic", label: "Thuỷ canh" },
-  { value: "greenhouse", label: "Nhà kính" },
-  { value: "vertical_farming", label: "Nông trại thẳng đứng" },
-  { value: "viet_gap_cert", label: "Chứng nhận VietGAP" },
-  { value: "organic_cert", label: "Chứng nhận hữu cơ" },
-  { value: "global_gap_cert", label: "Chứng nhận GlobalGAP" },
-  { value: "haccp_cert", label: "Chứng nhận HACCP" },
-  { value: "camera_online", label: "Camera trực tuyến" },
-  { value: "drone_monitoring", label: "Giám sát bằng drone" },
-  { value: "automated_pest_detection", label: "Phát hiện sâu bệnh tự động" },
-  { value: "precision_irrigation", label: "Tưới tiêu chính xác" },
-  { value: "auto_irrigation", label: "Tưới tiêu tự động" },
-  { value: "soil_based_irrigation", label: "Tưới theo độ ẩm đất" },
-  { value: "iot_sensors", label: "Cảm biến IoT" },
-  { value: "soil_moisture_monitoring", label: "Giám sát độ ẩm đất" },
-  { value: "air_quality_sensor", label: "Cảm biến chất lượng không khí" },
+  { label: "Mô hình aquaponic", value: "aquaponic_model" },
+  { label: "Chứng nhận VietGAP", value: "viet_gap_cert" },
+  { label: "Chứng nhận hữu cơ", value: "organic_cert" },
+  { label: "Nông trại thông minh", value: "smart_farm" },
+  { label: "Tự động hóa", value: "automation" },
+  { label: "Sử dụng IoT", value: "iot_enabled" },
 ];
 
-// Hàm chuyển value -> label
-const mapToLabel = (values, options) =>
-  (values || [])
-    .map((val) => options.find((opt) => opt.value === val)?.label || val)
-    .join(", ");
-
-const FarmDetail = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function FarmDetail({ open, onClose, farmId }) {
   const [farm, setFarm] = useState(null);
   const [error, setError] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [files, setFiles] = useState([]);
 
-  useEffect(() => {
-    const fetchFarm = async () => {
-      try {
-        const res = await axios.get(`${BASE_URL}/adminfarms/${id}`, getOpts());
-        setFarm(res.data);
-      } catch (err) {
-        setError(err.response?.data?.message || err.message);
-      }
-    };
-    fetchFarm();
-  }, [id]);
-
-  const handleFileChange = (e) => {
-    setSelectedFiles(e.target.files);
+  const fetchDetail = async () => {
+    if (!farmId) return;
+    try {
+      const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
+      setFarm(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    }
   };
 
+  const handleFileChange = (e) => setFiles([...e.target.files]);
+
   const handleUpload = async () => {
-    if (!selectedFiles.length) return;
-
+    if (!files.length || !farmId) return;
     const formData = new FormData();
-    for (let file of selectedFiles) {
-      formData.append("images", file);
-    }
+    files.forEach((file) => formData.append("images", file));
 
+    setUploading(true);
     try {
-      setUploading(true);
-      await axios.post(`${BASE_URL}/adminfarms/${id}/images`, formData, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data",
-        },
-      });
-
-      // Refresh farm data
-      const res = await axios.get(`${BASE_URL}/adminfarms/${id}`, getOpts());
-      setFarm(res.data);
-      setSelectedFiles([]);
+      await axios.post(`${BASE_URL}/farm-pictures/${farmId}`, formData, getOpts());
+      setFiles([]);
+      await fetchDetail();
     } catch (err) {
       alert("Upload thất bại: " + (err.response?.data?.message || err.message));
     } finally {
@@ -96,87 +76,110 @@ const FarmDetail = () => {
     }
   };
 
+  useEffect(() => {
+    if (open && farmId) fetchDetail();
+  }, [open, farmId]);
+
+  if (!open) return null;
+
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-indigo-700">Chi tiết Nông trại</h1>
-          <button
-            onClick={() => navigate(-1)}
-            className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
-          >
-            Thoát
-          </button>
-        </div>
+    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+      {error && <Typography color="red">{error}</Typography>}
 
-        {error && <p className="text-red-500">Lỗi: {error}</p>}
-        {!farm ? (
-          <p className="text-gray-500">Đang tải dữ liệu...</p>
-        ) : (
-          <div className="space-y-6 bg-white p-6 rounded-xl shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <p><strong>Tên nông trại:</strong> {farm.name}</p>
-              <p><strong>Vị trí:</strong> {farm.location}</p>
-              <p><strong>Diện tích (m²):</strong> {farm.area}</p>
-              <p><strong>Diện tích đất canh tác (m²):</strong> {farm.cultivationArea}</p>
-              <p><strong>Dịch vụ:</strong> {mapToLabel(farm.services, serviceOptions)}</p>
-              <p><strong>Tính năng:</strong> {mapToLabel(farm.features, featureOptions)}</p>
-              <p><strong>Tags:</strong> {(farm.tags || []).join(", ")}</p>
-              <p><strong>Số điện thoại:</strong> {farm.phone}</p>
-              <p><strong>Zalo:</strong> {farm.zalo || "—"}</p>
-              <p><strong>Tỉnh/Thành phố:</strong> {farm.province}</p>
-              <p><strong>Quận/Huyện:</strong> {farm.district}</p>
-              <p><strong>Phường/Xã:</strong> {farm.ward}</p>
-              <p><strong>Đường:</strong> {farm.street}</p>
-              <p><strong>ID Chủ sở hữu:</strong> {farm.ownerId}</p>
-              <p><strong>Chủ sở hữu:</strong> {farm.ownerInfo?.name || "—"}</p>
-              <p><strong>Trạng thái:</strong> {
-                farm.status === "pending" ? "Chờ duyệt" :
-                farm.status === "active" ? "Đang hoạt động" :
-                "Đã khóa"
-              }</p>
-
-              {/* Cập nhật hình ảnh */}
-              <div className="col-span-1 md:col-span-2">
-                <h2 className="text-lg font-semibold text-gray-700 mb-2"> hình ảnh nông trại:</h2>
-
-                {farm.images && farm.images.length > 0 ? (
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    {farm.images.map((img, index) => (
-                      <img
-                        key={index}
-                        src={typeof img === "string" ? img : img.url}
-                        alt={`Ảnh ${index + 1}`}
-                        className="w-full h-40 object-cover rounded-lg border"
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 italic mb-4">Chưa có hình ảnh</p>
-                )}
-
-                <div className="flex items-center gap-4">
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleFileChange}
-                    className="border border-gray-300 rounded px-3 py-1"
-                  />
-                  <button
-                    onClick={handleUpload}
-                    disabled={uploading}
-                    className={`px-4 py-2 rounded text-white ${uploading ? "bg-gray-400" : "bg-indigo-600 hover:bg-indigo-700"}`}
-                  >
-                    {uploading ? "Đang tải..." : "Tải ảnh lên"}
-                  </button>
-                </div>
-              </div>
-            </div>
+      {!farm ? (
+        <Typography className="text-indigo-500">Đang tải...</Typography>
+      ) : (
+        <>
+          {/* Thông tin chung */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <Info label="Tên nông trại" value={farm.name} />
+            <Info label="Mã nông trại" value={farm.code} />
+            <Info label="Tags" value={(farm.tags || []).join(", ")} />
+            <Info
+              label="Trạng thái"
+              value={
+                farm.status === "pending"
+                  ? "Chờ duyệt"
+                  : farm.status === "active"
+                  ? "Đang hoạt động"
+                  : "Đã khóa"
+              }
+            />
+            <Info label="Tỉnh/Thành phố" value={farm.province} />
+            <Info label="Quận/Huyện" value={farm.district} />
+            <Info label="Phường/Xã" value={farm.ward} />
+            <Info label="Đường" value={farm.street} />
+            <Info label="Vị trí tổng quát" value={farm.location} />
+            <Info label="Tổng diện tích (m²)" value={farm.area} />
+            <Info label="Đất canh tác (m²)" value={farm.cultivationArea} />
+            <Info label="Dịch vụ" value={mapToLabel(farm.services, serviceOptions)} />
+            <Info label="Tính năng" value={mapToLabel(farm.features, featureOptions)} />
+            <Info label="Chủ sở hữu" value={farm.ownerInfo?.name} />
+            <Info label="Số điện thoại" value={farm.phone} />
+            <Info label="Zalo" value={farm.zalo} />
           </div>
-        )}
-      </div>
+
+          {/* Mô tả */}
+          {farm.description && (
+            <div>
+              <Typography variant="h6" className="mb-2 text-blue-gray-900">
+                Mô tả
+              </Typography>
+              <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">
+                {farm.description}
+              </Typography>
+            </div>
+          )}
+
+          {/* Hình ảnh */}
+          <div>
+            <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
+
+            {farm.images?.length > 0 ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                {farm.images.map((img, idx) => (
+                  <img
+                    key={idx}
+                    src={typeof img === "string" ? img : img.url}
+                    alt={`Ảnh ${idx + 1}`}
+                    className="w-full h-40 object-cover rounded-lg border shadow-sm"
+                  />
+                ))}
+              </div>
+            ) : (
+              <Typography className="text-sm text-gray-500 italic mb-4">Chưa có hình ảnh</Typography>
+            )}
+
+            {farm.status === "active" ? (
+              <div className="flex flex-wrap gap-2 items-center">
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="block w-56 text-sm text-gray-700
+                             file:mr-2 file:py-1 file:px-3
+                             file:rounded-lg file:border file:border-gray-300
+                             file:text-sm file:font-medium
+                             file:bg-white file:text-gray-700
+                             hover:file:bg-gray-50"
+                />
+                <Button
+                  onClick={handleUpload}
+                  disabled={uploading}
+                  color="indigo"
+                  className="text-sm px-4 py-2"
+                >
+                  {uploading ? "Đang tải..." : "Tải ảnh lên"}
+                </Button>
+              </div>
+            ) : (
+              <Typography className="text-sm text-red-500 italic">
+                Chỉ nông trại đang hoạt động mới được phép thêm hình ảnh.
+              </Typography>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
-};
-
-export default FarmDetail;
+}
