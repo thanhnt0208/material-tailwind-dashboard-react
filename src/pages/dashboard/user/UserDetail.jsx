@@ -1,118 +1,123 @@
-// src/pages/dashboard/user/UserDetail.jsx
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import axios from "axios";
+import { useParams, useNavigate } from "react-router-dom";
 import {
-  Typography, Spinner, Avatar, Card, CardBody,
+  Card, CardBody, Typography, Avatar, Spinner, Button
 } from "@material-tailwind/react";
 
 export default function UserDetail() {
-  const { id } = useParams();
-  const token = localStorage.getItem("token");
+  const { id } = useParams(); // Lấy ID từ URL
+  const navigate = useNavigate();
 
   const [user, setUser] = useState(null);
-  const [addresses, setAddresses] = useState([]);
   const [farms, setFarms] = useState([]);
-  const [videos, setVideos] = useState([]);
-  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const fetchUserDetail = async () => {
-    try {
-      const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(res.data);
-    } catch (err) {
-      console.error("Error loading user:", err);
-    }
-  };
-
-  const fetchAddresses = async () => {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/user-addresses", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const userAddr = res.data.filter(a => a.userid === id);
-    setAddresses(userAddr);
-  };
-
-  const fetchFarms = async () => {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/farms", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setFarms(res.data.filter(f => f.ownerId === id));
-  };
-
-  const fetchVideos = async () => {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/videos", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setVideos(res.data.filter(v => v.userId === id));
-  };
-
-  const fetchPosts = async () => {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/posts", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    setPosts(res.data.filter(p => p.userId === id));
-  };
+  const token = localStorage.getItem("token");
 
   useEffect(() => {
-    if (!token) return;
-    const loadAll = async () => {
-      await fetchUserDetail();
-      await fetchAddresses();
-      await fetchFarms();
-      await fetchVideos();
-      await fetchPosts();
-      setLoading(false);
-    };
-    loadAll();
-  }, [id]);
+    const fetchUserAndFarms = async () => {
+      try {
+        const [userRes, farmsRes] = await Promise.all([
+          axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+          axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
+            headers: { Authorization: `Bearer ${token}` },
+          }),
+        ]);
 
-  if (loading) return <div className="p-4 text-center"><Spinner /></div>;
-  if (!user) return <div className="p-4 text-center text-red-500">Không tìm thấy người dùng</div>;
+        setUser(userRes.data);
+        const userFarms = farmsRes.data.filter(farm => farm.ownerId === id);
+        setFarms(userFarms);
+
+      } catch (err) {
+        console.error(err);
+        alert("Lỗi khi tải dữ liệu!");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchUserAndFarms();
+    } else {
+      alert("Không tìm thấy token, vui lòng đăng nhập!");
+      navigate("/login");
+    }
+  }, [id, token, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-10">
+        <Spinner />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Typography className="text-center text-red-500">Không tìm thấy user!</Typography>;
+  }
 
   return (
-    <div className="p-4">
-      <Typography variant="h5">Chi tiết người dùng</Typography>
-      <div className="flex gap-4 items-center my-4">
-        <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="xl" />
-        <div>
-          <Typography variant="h6">{user.fullName}</Typography>
-          <Typography>Email: {user.email}</Typography>
-          <Typography>SĐT: {user.phone || "N/A"}</Typography>
-          <Typography>Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
-          <Typography>Trạng thái: {user.isActive ? "ĐÃ CẤP QUYỀN" : "CHƯA CẤP QUYỀN"}</Typography>
+    <div className="p-4 max-w-4xl mx-auto">
+      <Button onClick={() => navigate(-1)} variant="outlined" size="sm" className="mb-4">← Quay lại</Button>
+
+      {/* Thông tin user */}
+      <Card className="p-4 mb-6">
+        <div className="flex items-center space-x-4">
+          <Avatar
+            size="xl"
+            src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""}
+          />
+          <div>
+            <Typography variant="h5">{user.fullName}</Typography>
+            <Typography>Email: {user.email}</Typography>
+            <Typography>Phone: {user.phone || "N/A"}</Typography>
+            <Typography>Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
+            <Typography>
+              Trạng thái: {user.isActive ? (
+                <span className="text-green-600 font-semibold">ĐÃ CẤP QUYỀN</span>
+              ) : (
+                <span className="text-gray-500 font-semibold">CHƯA CẤP QUYỀN</span>
+              )}
+            </Typography>
+          </div>
         </div>
+      </Card>
+
+      {/* Danh sách farm */}
+      <div>
+        <Typography variant="h6" className="mb-2">Danh sách nông trại</Typography>
+        {farms.length ? (
+          farms.map((farm) => (
+            <Card key={farm._id} className="mb-4 flex flex-col md:flex-row p-4 items-center">
+              {farm.defaultImage?.imageUrl && (
+                <img
+                  src={`https://api-ndolv2.nongdanonline.cc${farm.defaultImage.imageUrl}`}
+                  alt={farm.defaultImage.description || "Farm"}
+                  className="w-32 h-32 object-cover rounded-md mb-2 md:mb-0 md:mr-4"
+                />
+              )}
+              <CardBody>
+                <Typography variant="small">Diện tích: {farm.cultivatedArea} m²</Typography>
+                <Typography variant="small">Trạng thái: {farm.status}</Typography>
+                {farm.coordinates && (
+                  <Typography variant="small">
+                    Toạ độ: {farm.coordinates.lat}, {farm.coordinates.lng}
+                  </Typography>
+                )}
+              </CardBody>
+            </Card>
+          ))
+        ) : (
+          <Typography className="text-gray-400">Người dùng chưa có nông trại nào.</Typography>
+        )}
       </div>
 
-      <div className="my-4">
-        <Typography className="font-bold mb-2">Địa chỉ</Typography>
-        {addresses.length ? addresses.map((a, i) => (
-          <Typography key={i} className="text-sm">{a.address} - {a.ward}, {a.district}, {a.province}</Typography>
-        )) : <Typography className="text-gray-500 text-sm">Không có địa chỉ</Typography>}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-        <Card>
-          <CardBody>
-            <Typography className="font-bold mb-2">Nông trại ({farms.length})</Typography>
-            {farms.map(f => <Typography key={f.id}>{f.name}</Typography>)}
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography className="font-bold mb-2">Video ({videos.length})</Typography>
-            {videos.map(v => <Typography key={v.id}>{v.title}</Typography>)}
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography className="font-bold mb-2">Bài viết ({posts.length})</Typography>
-            {posts.map(p => <Typography key={p.id}>{p.title}</Typography>)}
-          </CardBody>
-        </Card>
+      {/* Bài post / video */}
+      <div className="mt-6">
+        <Typography variant="h6">Bài Post / Video</Typography>
+        <Typography className="text-gray-400">Đang phát triển...</Typography>
       </div>
     </div>
   );
