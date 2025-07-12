@@ -7,10 +7,6 @@ import {
   Dialog,
   DialogHeader,
   DialogBody,
-  Menu,
-  MenuHandler,
-  MenuList,
-  MenuItem,
 } from "@material-tailwind/react";
 import { Audio } from "react-loader-spinner";
 
@@ -41,7 +37,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         alert(json.message || "Không thể lấy bài viết");
       }
     } catch (err) {
-      console.error(" Fetch post error:", err);
+      console.error("Fetch post error:", err);
       alert("Lỗi khi lấy dữ liệu bài viết");
     } finally {
       setLoading(false);
@@ -58,7 +54,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         setComments(Array.isArray(json.comments) ? json.comments : []);
       }
     } catch (err) {
-      console.error(" Fetch comments error:", err);
+      console.error("Fetch comments error:", err);
     } finally {
       setCommentLoading(false);
     }
@@ -76,7 +72,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         setUsers(json.data);
       }
     } catch (err) {
-      console.error(" Fetch users error:", err);
+      console.error("Fetch users error:", err);
     }
   };
 
@@ -99,23 +95,6 @@ export default function PostDetailDialog({ postId, open, onClose }) {
   };
 
   return (
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-    <div className="p-6 max-w-4xl mx-auto bg-white rounded shadow">
-     
-      {/* Tiêu đề */}
-      <Typography variant="h4" className="font-bold mb-2 text-black-800">
-        Tiêu đề: {post.title}
-      </Typography>
-=======
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     <Dialog open={open} handler={onClose} size="xl">
       <DialogHeader className="flex justify-between">
         <Typography variant="h5">Chi tiết bài viết</Typography>
@@ -123,34 +102,6 @@ export default function PostDetailDialog({ postId, open, onClose }) {
           Đóng
         </Button>
       </DialogHeader>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-
-      <DialogBody className="max-h-[75vh] overflow-y-auto">
-        {loading ? (
-          <div className="flex justify-center items-center h-60">
-            <Audio height="80" width="80" color="green" ariaLabel="loading" />
-          </div>
-        ) : !post ? (
-          <Typography className="text-center">
-            Không tìm thấy bài viết
-          </Typography>
-        ) : (
-          <>
-            {/* Tiêu đề */}
-            <Typography variant="h4" className="font-bold mb-2 text-black-800">
-              {post.title}
-            </Typography>
->>>>>>> Stashed changes
-
-            {/* Ngày tạo và cập nhật */}
-            <div className="text-sm text-gray-600 mb-4">
-              <p>🗓️ <b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
-              <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
-            </div>
-
-=======
 
       <DialogBody className="max-h-[75vh] overflow-y-auto">
         {loading ? (
@@ -174,57 +125,6 @@ export default function PostDetailDialog({ postId, open, onClose }) {
               <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
             </div>
 
->>>>>>> Stashed changes
-=======
-
-      <DialogBody className="max-h-[75vh] overflow-y-auto">
-        {loading ? (
-          <div className="flex justify-center items-center h-60">
-            <Audio height="80" width="80" color="green" ariaLabel="loading" />
-          </div>
-        ) : !post ? (
-          <Typography className="text-center">
-            Không tìm thấy bài viết
-          </Typography>
-        ) : (
-          <>
-            {/* Tiêu đề */}
-            <Typography variant="h4" className="font-bold mb-2 text-black-800">
-              {post.title}
-            </Typography>
-
-            {/* Ngày tạo và cập nhật */}
-            <div className="text-sm text-gray-600 mb-4">
-              <p>🗓️ <b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
-              <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
-            </div>
-
->>>>>>> Stashed changes
-=======
-
-      <DialogBody className="max-h-[75vh] overflow-y-auto">
-        {loading ? (
-          <div className="flex justify-center items-center h-60">
-            <Audio height="80" width="80" color="green" ariaLabel="loading" />
-          </div>
-        ) : !post ? (
-          <Typography className="text-center">
-            Không tìm thấy bài viết
-          </Typography>
-        ) : (
-          <>
-            {/* Tiêu đề */}
-            <Typography variant="h4" className="font-bold mb-2 text-black-800">
-              {post.title}
-            </Typography>
-
-            {/* Ngày tạo và cập nhật */}
-            <div className="text-sm text-gray-600 mb-4">
-              <p>🗓️ <b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
-              <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
-            </div>
-
->>>>>>> Stashed changes
             {/* Tác giả */}
             <div className="flex items-center gap-3 mb-4">
               <Typography className="font-semibold text-gray-700">Tác giả:</Typography>
@@ -268,8 +168,8 @@ export default function PostDetailDialog({ postId, open, onClose }) {
             {/* Bình luận */}
             <div className="border-t pt-4 mt-6">
               <div
-                className="cursor-pointer mb-2" 
-                onClick={() => setShowComments(!showComments)} 
+                className="cursor-pointer mb-2"
+                onClick={() => setShowComments(!showComments)}
               >
                 <Typography variant="h5" className="text-blue-800">
                   Bình luận
@@ -280,55 +180,52 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                       <Typography>Đang tải bình luận...</Typography>
                     ) : comments.length > 0 ? (
                       comments.map((cmt) => (
-  <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
-    <Avatar
-      src={
-        cmt.userId?.avatar?.startsWith("http")
-          ? cmt.userId.avatar
-          : `${BASE_URL}${cmt.userId?.avatar || ""}`
-      }
-      alt={cmt.userId?.fullName}
-    />
-    <div className="flex-1">
-      <div className="flex justify-between">
-        <Typography className="font-medium">
-          {cmt.userId?.fullName || "Ẩn danh"}
-        </Typography>
-      </div>
-      <Typography className="text-gray-700">{cmt.comment}</Typography>
+                        <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
+                          <Avatar
+                            src={
+                              cmt.userId?.avatar?.startsWith("http")
+                                ? cmt.userId.avatar
+                                : `${BASE_URL}${cmt.userId?.avatar || ""}`
+                            }
+                            alt={cmt.userId?.fullName}
+                          />
+                          <div className="flex-1">
+                            <div className="flex justify-between">
+                              <Typography className="font-medium">
+                                {cmt.userId?.fullName || "Ẩn danh"}
+                              </Typography>
+                            </div>
+                            <Typography className="text-gray-700">{cmt.comment}</Typography>
 
-      {/* Replies */}
-      {cmt.replies?.length > 0 && (
-        <div className="ml-4 mt-2 border-l-2 pl-2 border-blue-200">
-          {cmt.replies.map((rep) => (
-            <div
-              key={rep._id}
-              className="flex items-start gap-2 mt-1"
-            >
-              <Avatar
-                src={
-                  rep.userId?.avatar?.startsWith("http")
-                    ? rep.userId.avatar
-                    : `${BASE_URL}${rep.userId?.avatar || ""}`
-                }
-                alt={rep.userId?.fullName}
-                size="xs"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between">
-                  <Typography className="font-semibold">
-                    {rep.userId?.fullName || "Ẩn danh"}:
-                  </Typography>
-                </div>
-                <Typography className="text-sm">{rep.comment}</Typography>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-))
+                            {/* Replies */}
+                            {cmt.replies?.length > 0 && (
+                              <div className="ml-4 mt-2 border-l-2 pl-2 border-blue-200">
+                                {cmt.replies.map((rep) => (
+                                  <div key={rep._id} className="flex items-start gap-2 mt-1">
+                                    <Avatar
+                                      src={
+                                        rep.userId?.avatar?.startsWith("http")
+                                          ? rep.userId.avatar
+                                          : `${BASE_URL}${rep.userId?.avatar || ""}`
+                                      }
+                                      alt={rep.userId?.fullName}
+                                      size="xs"
+                                    />
+                                    <div className="flex-1">
+                                      <div className="flex justify-between">
+                                        <Typography className="font-semibold">
+                                          {rep.userId?.fullName || "Ẩn danh"}:
+                                        </Typography>
+                                      </div>
+                                      <Typography className="text-sm">{rep.comment}</Typography>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
                     ) : (
                       <Typography>Không có bình luận</Typography>
                     )}
