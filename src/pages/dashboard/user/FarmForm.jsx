@@ -1,6 +1,7 @@
 
 
 
+
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -99,7 +100,7 @@ const FarmForm = () => {
   const fetchFarm = async () => {
     if (!farmId) return;
     try {
-<<<<<<< HEAD
+
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
       const data = res.data;
       setForm({
@@ -138,7 +139,7 @@ const FarmForm = () => {
         status: "pending",
       });
       setError("");
-=======
+
       const token = localStorage.getItem("token"); 
       const res = await axios.get(
         `https://api-ndolv2.nongdanonline.cc/adminfarms/${id}`, 
@@ -190,7 +191,7 @@ const FarmForm = () => {
       setError("Không thể lưu nông trại.");
     } finally {
       setSaving(false);
->>>>>>> 207daaf3f9a46e0d104a69f82ceba181d1c7a837
+
     }
   }, [open, farmId]);
 
@@ -199,7 +200,7 @@ const FarmForm = () => {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-<<<<<<< HEAD
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -396,4 +397,3 @@ const FarmForm = () => {
 };
 
 export default FarmForm;
->>>>>>> 207daaf3f9a46e0d104a69f82ceba181d1c7a837
