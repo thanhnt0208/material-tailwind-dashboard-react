@@ -1,122 +1,159 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   Card,
   CardBody,
   Typography,
   Button,
+  Input,
+  Spinner
 } from "@material-tailwind/react";
 import axios from "axios";
-import FarmForm from "./FarmForm";
 
-const FarmDetail = () => {
+
+const FarmForm = () => {
   const { id } = useParams();
-  const [farm, setFarm] = useState(null);
-  const [openEdit, setOpenEdit] = useState(false);
-  const [image, setImage] = useState(null);
+  const navigate = useNavigate();
+  const [farm, setFarm] = useState({
+    name: "",
+    address: "",
+    area: "",
+    cultivatedArea: "",
+    status: "",
+  });
+  const [loading, setLoading] = useState(!!id);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
 
   useEffect(() => {
-    fetchFarm();
+    if(id) fetchFarm();
   }, [id]);
 
   const fetchFarm = async () => {
     try {
-      const res = await axios.get(`/api/farms/${id}`);
-      setFarm(res.data);
+      const token = localStorage.getItem("token"); 
+      const res = await axios.get(
+        `https://api-ndolv2.nongdanonline.cc/adminfarms/${id}`, 
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setFarm(res.data); 
     } catch (err) {
       console.error("Failed to fetch farm:", err);
+      setError("Không thể tải thông tin nông trại.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleUpdate = async (updatedFarm) => {
+  const handleChange = (e) => {
+    setFarm({ ...farm, [e.target.name]: e.target.value }); 
+  };
+
+  const handleSubmit = async () => {
+    const token = localStorage.getItem("token"); 
+    setSaving(true);
     try {
-      await axios.put(`/api/farms/${id}`, updatedFarm);
-      setFarm(updatedFarm);
+      if (id) {
+        // ✅ [SỬA] Nếu có id → update
+        await axios.put(
+          `https://api-ndolv2.nongdanonline.cc/adminfarms/${id}`,
+          farm,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        alert("Cập nhật nông trại thành công!");
+      } else {
+        // ✅ [SỬA] Nếu không có id → tạo mới
+        await axios.post(
+          `https://api-ndolv2.nongdanonline.cc/adminfarms`,
+          farm,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        alert("Tạo nông trại mới thành công!");
+      }
+      navigate(-1); 
     } catch (err) {
-      console.error("Failed to update farm:", err);
+      console.error("Failed to save farm:", err);
+      setError("Không thể lưu nông trại.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("image", file);
-    try {
-      const res = await axios.post(`/api/farms/${id}/upload-image`, formData);
-      setFarm((prev) => ({ ...prev, image: res.data.imageUrl }));
-    } catch (err) {
-      console.error("Upload failed:", err);
-    }
-  };
 
-  if (!farm) return <div>Đang tải...</div>;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Spinner className="h-12 w-12" color="blue" />
+      </div>
+    );
+  }
 
   return (
-    <div className="p-4">
+    <div className="p-4 max-w-xl mx-auto">
       <Card>
         <CardBody>
-          <div className="flex justify-between items-center mb-4">
-            <Typography variant="h5">Thông tin Nông trại</Typography>
-            <Button color="blue" onClick={() => setOpenEdit(true)}>
-              Chỉnh sửa
+          <Typography variant="h5" className="mb-4">
+            {id ? "Chỉnh sửa Nông trại" : "Tạo Nông trại Mới"} 
+          </Typography>
+
+          {error && (
+            <Typography color="red" className="mb-2">
+              {error} 
+            </Typography>
+          )}
+
+          <div className="space-y-3">
+            <Input
+              label="Tên Nông trại"
+              name="name"
+              value={farm.name}
+              onChange={handleChange}
+            /> 
+            <Input
+              label="Địa chỉ"
+              name="address"
+              value={farm.address}
+              onChange={handleChange}
+            /> 
+            <Input
+              label="Diện tích (m²)"
+              name="area"
+              value={farm.area}
+              onChange={handleChange}
+            /> 
+            <Input
+              label="Diện tích canh tác (m²)"
+              name="cultivatedArea"
+              value={farm.cultivatedArea}
+              onChange={handleChange}
+            /> 
+            <Input
+              label="Trạng thái"
+              name="status"
+              value={farm.status}
+              onChange={handleChange}
+            /> 
+          </div>
+
+          <div className="flex justify-between mt-6">
+            <Button color="blue" onClick={handleSubmit} disabled={saving}>
+              {saving ? "Đang lưu..." : id ? "Cập nhật" : "Tạo mới"} 
             </Button>
-          </div>
-
-          <div className="mb-4">
-            <Typography variant="small">Tên: {farm.name}</Typography>
-            <Typography variant="small">Mã: {farm.code}</Typography>
-            <Typography variant="small">Vị trí: {farm.location}</Typography>
-            <Typography variant="small">Diện tích: {farm.area} m²</Typography>
-            <Typography variant="small">Diện tích canh tác: {farm.cultivatedArea} m²</Typography>
-            <Typography variant="small">
-              Sẵn sàng: {farm.isAvailable ? "Có" : "Không"}
-            </Typography>
-            <Typography variant="small">
-              Trạng thái: {farm.status || "Chưa xác định"}
-            </Typography>
-            <Typography variant="small">
-              Tags: {farm.tags?.join(", ") || "Không có"}
-            </Typography>
-            <Typography variant="small">
-              Dịch vụ: {farm.services?.join(", ") || "Không có"}
-            </Typography>
-            <Typography variant="small">
-              Tính năng: {farm.features?.join(", ") || "Không có"}
-            </Typography>
-          </div>
-
-          <div className="mb-4">
-            <Typography variant="small">Hình ảnh:</Typography>
-            {farm.image ? (
-              <img
-                src={farm.image}
-                alt="Farm"
-                className="w-full max-w-sm border rounded my-2"
-              />
-            ) : (
-              <Typography variant="small" className="italic">
-                Chưa có hình ảnh
-              </Typography>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="mt-2"
-            />
+            <Button color="gray" onClick={() => navigate(-1)}>
+              Hủy 
+            </Button>
           </div>
         </CardBody>
       </Card>
-
-      <FarmForm
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        initialData={farm}
-        onSubmit={handleUpdate}
-      />
     </div>
   );
 };
 
-export default FarmDetail;
+export default FarmForm;

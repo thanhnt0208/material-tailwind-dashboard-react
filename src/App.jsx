@@ -9,6 +9,7 @@ import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostB
 import FarmDetail from "./pages/dashboard/farm/FarmDetail";
 import { Farms } from "./pages/dashboard/farm/farms";
 import VideoById from "./pages/dashboard/VideoFarms/VideoById";
+import UserDetail from "./pages/dashboard/user/UserDetail";
 function App() {
   return (
     <Routes>
@@ -24,7 +25,7 @@ function App() {
       <Route path="/admin/Farms" element={<Farms />} />
       <Route path="/admin/farms/:id" element={<FarmDetail />} />
       <Route path="/dashboard/VideoFarms/VideoById/:id" element={<VideoById />} />
-
+      <Route path="/dashboard/users/:id" element={<UserDetail />} />
 
     </Routes>
   );

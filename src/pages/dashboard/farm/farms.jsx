@@ -276,10 +276,10 @@ export function Farms() {
         </DialogHeader>
         <DialogBody className="p-4">
          <FarmDetail
-  open={openDetail}
-  onClose={() => setOpenDetail(false)}
-  farmId={selectedFarmId}
-/>
+          open={openDetail}
+          onClose={() => setOpenDetail(false)}
+          farmId={selectedFarmId}
+        />
         </DialogBody>
       </Dialog>
     </>
