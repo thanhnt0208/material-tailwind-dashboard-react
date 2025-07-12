@@ -1,122 +1,246 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import React, { useState, useEffect } from "react";
 import {
-  Card,
-  CardBody,
-  Typography,
+  Input,
+  Textarea,
   Button,
+  Typography,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  IconButton,
+  Select as MTSelect,
+  Option,
 } from "@material-tailwind/react";
 import axios from "axios";
-import FarmForm from "./FarmForm";
+import { XMarkIcon } from "@heroicons/react/24/outline";
+import Select from "react-select";
 
-const FarmDetail = () => {
-  const { id } = useParams();
-  const [farm, setFarm] = useState(null);
-  const [openEdit, setOpenEdit] = useState(false);
-  const [image, setImage] = useState(null);
+const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 
-  useEffect(() => {
-    fetchFarm();
-  }, [id]);
+const serviceOptions = [
+  { label: "Bán trực tiếp", value: "direct_selling" },
+  { label: "Bán thức ăn", value: "feed_selling" },
+  { label: "Phối trộn thức ăn", value: "custom_feed_blending" },
+  { label: "Dịch vụ sơ chế", value: "processing_service" },
+  { label: "Dịch vụ lưu kho", value: "storage_service" },
+  { label: "Dịch vụ vận chuyển", value: "transport_service" },
+  { label: "Dịch vụ khác", value: "other_services" },
+];
+
+const featureOptions = [
+  { label: "Mô hình aquaponic", value: "aquaponic_model" },
+  { label: "Chứng nhận VietGAP", value: "viet_gap_cert" },
+  { label: "Chứng nhận hữu cơ", value: "organic_cert" },
+  { label: "Nông trại thông minh", value: "smart_farm" },
+  { label: "Tự động hóa", value: "automation" },
+  { label: "Sử dụng IoT", value: "iot_enabled" },
+];
+
+export default function FarmFormDialog({ farmId, open, onClose, onSubmitSuccess }) {
+  const [form, setForm] = useState({
+    name: "",
+    code: "",
+    tags: "",
+    province: "",
+    district: "",
+    ward: "",
+    street: "",
+    location: "",
+    area: "",
+    cultivatedArea: "",
+    phone: "",
+    zalo: "",
+    description: "",
+    services: [],
+    features: [],
+    ownerInfo: { name: "" },
+    status: "pending",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const getOpts = () => {
+    const token = localStorage.getItem("token");
+    return {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+  };
 
   const fetchFarm = async () => {
+    if (!farmId) return;
     try {
-      const res = await axios.get(`/api/farms/${id}`);
-      setFarm(res.data);
+      const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
+      const data = res.data;
+      setForm({
+        ...data,
+        tags: (data.tags || []).join(", "),
+        services: data.services || [],
+        features: data.features || [],
+        ownerInfo: { name: data.ownerInfo?.name || "" },
+        status: data.status || "pending",
+      });
     } catch (err) {
-      console.error("Failed to fetch farm:", err);
+      setError("Không thể tải dữ liệu.");
     }
   };
 
-  const handleUpdate = async (updatedFarm) => {
-    try {
-      await axios.put(`/api/farms/${id}`, updatedFarm);
-      setFarm(updatedFarm);
-    } catch (err) {
-      console.error("Failed to update farm:", err);
+  useEffect(() => {
+    if (open && farmId) fetchFarm();
+    if (open && !farmId) {
+      setForm({
+        name: "",
+        code: "",
+        tags: "",
+        province: "",
+        district: "",
+        ward: "",
+        street: "",
+        location: "",
+        area: "",
+        cultivatedArea: "",
+        phone: "",
+        zalo: "",
+        description: "",
+        services: [],
+        features: [],
+        ownerInfo: { name: "" },
+        status: "pending",
+      });
+      setError("");
     }
+  }, [open, farmId]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const formData = new FormData();
-    formData.append("image", file);
+  const handleSubmit = async () => {
+    setLoading(true);
     try {
-      const res = await axios.post(`/api/farms/${id}/upload-image`, formData);
-      setFarm((prev) => ({ ...prev, image: res.data.imageUrl }));
+      const payload = {
+        ...form,
+        tags: form.tags.split(",").map((t) => t.trim()),
+      };
+
+      if (farmId) {
+        await axios.put(`${BASE_URL}/adminfarms/${farmId}`, payload, getOpts());
+      } else {
+        await axios.post(`${BASE_URL}/adminfarms`, payload, getOpts());
+      }
+
+      if (onSubmitSuccess) onSubmitSuccess();
+      onClose();
     } catch (err) {
-      console.error("Upload failed:", err);
+      setError("Lỗi lưu dữ liệu: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (!farm) return <div>Đang tải...</div>;
 
   return (
-    <div className="p-4">
-      <Card>
-        <CardBody>
-          <div className="flex justify-between items-center mb-4">
-            <Typography variant="h5">Thông tin Nông trại</Typography>
-            <Button color="blue" onClick={() => setOpenEdit(true)}>
-              Chỉnh sửa
-            </Button>
-          </div>
+    <Dialog open={open} handler={onClose} size="xl">
+      <DialogHeader className="flex justify-between items-center">
+        <Typography variant="h5">
+          {farmId ? "Chỉnh sửa nông trại" : "Tạo mới nông trại"}
+        </Typography>
+        <IconButton variant="text" onClick={onClose}>
+          <XMarkIcon className="h-5 w-5" />
+        </IconButton>
+      </DialogHeader>
 
-          <div className="mb-4">
-            <Typography variant="small">Tên: {farm.name}</Typography>
-            <Typography variant="small">Mã: {farm.code}</Typography>
-            <Typography variant="small">Vị trí: {farm.location}</Typography>
-            <Typography variant="small">Diện tích: {farm.area} m²</Typography>
-            <Typography variant="small">Diện tích canh tác: {farm.cultivatedArea} m²</Typography>
-            <Typography variant="small">
-              Sẵn sàng: {farm.isAvailable ? "Có" : "Không"}
-            </Typography>
-            <Typography variant="small">
-              Trạng thái: {farm.status || "Chưa xác định"}
-            </Typography>
-            <Typography variant="small">
-              Tags: {farm.tags?.join(", ") || "Không có"}
-            </Typography>
-            <Typography variant="small">
-              Dịch vụ: {farm.services?.join(", ") || "Không có"}
-            </Typography>
-            <Typography variant="small">
-              Tính năng: {farm.features?.join(", ") || "Không có"}
-            </Typography>
-          </div>
+      <DialogBody className="max-h-[80vh] overflow-y-auto px-6 space-y-4">
+        {error && <Typography color="red">{error}</Typography>}
 
-          <div className="mb-4">
-            <Typography variant="small">Hình ảnh:</Typography>
-            {farm.image ? (
-              <img
-                src={farm.image}
-                alt="Farm"
-                className="w-full max-w-sm border rounded my-2"
-              />
-            ) : (
-              <Typography variant="small" className="italic">
-                Chưa có hình ảnh
-              </Typography>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              className="mt-2"
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input label="Tên nông trại" name="name" value={form.name} onChange={handleChange} />
+          <Input label="Mã nông trại" name="code" value={form.code} onChange={handleChange} />
+          <Input label="Tags (phân cách bằng dấu phẩy)" name="tags" value={form.tags} onChange={handleChange} />
+
+          <MTSelect
+            label="Trạng thái"
+            value={form.status}
+            onChange={(val) => setForm((prev) => ({ ...prev, status: val }))}
+          >
+            <Option value="active">Đang hoạt động</Option>
+            <Option value="inactive">Ngưng hoạt động</Option>
+            <Option value="pending">Chờ xác nhận</Option>
+          </MTSelect>
+
+          <Input label="Tỉnh/Thành phố" name="province" value={form.province} onChange={handleChange} />
+          <Input label="Quận/Huyện" name="district" value={form.district} onChange={handleChange} />
+          <Input label="Phường/Xã" name="ward" value={form.ward} onChange={handleChange} />
+          <Input label="Đường" name="street" value={form.street} onChange={handleChange} />
+          <Input label="Vị trí tổng quát" name="location" value={form.location} onChange={handleChange} />
+          <Input label="Tổng diện tích (m²)" name="area" value={form.area} onChange={handleChange} />
+          <Input label="Đất canh tác (m²)" name="cultivatedArea" value={form.cultivatedArea} onChange={handleChange} />
+          <Input label="Số điện thoại" name="phone" value={form.phone} onChange={handleChange} />
+          <Input label="Zalo" name="zalo" value={form.zalo} onChange={handleChange} />
+          <Input
+            label="Chủ sở hữu"
+            name="ownerInfo.name"
+            value={form.ownerInfo.name}
+            onChange={(e) => {
+              const value = e.target.value;
+              setForm((prev) => ({
+                ...prev,
+                ownerInfo: { ...prev.ownerInfo, name: value },
+              }));
+            }}
+          />
+        </div>
+
+        {/* Dịch vụ và tính năng chọn nhiều */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Dịch vụ</label>
+            <Select
+              isMulti
+              options={serviceOptions}
+              value={serviceOptions.filter((opt) => form.services.includes(opt.value))}
+              onChange={(selected) =>
+                setForm((prev) => ({
+                  ...prev,
+                  services: selected.map((s) => s.value),
+                }))
+              }
             />
           </div>
-        </CardBody>
-      </Card>
 
-      <FarmForm
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        initialData={farm}
-        onSubmit={handleUpdate}
-      />
-    </div>
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Tính năng</label>
+            <Select
+              isMulti
+              options={featureOptions}
+              value={featureOptions.filter((opt) => form.features.includes(opt.value))}
+              onChange={(selected) =>
+                setForm((prev) => ({
+                  ...prev,
+                  features: selected.map((f) => f.value),
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <Textarea
+          label="Mô tả"
+          name="description"
+          value={form.description}
+          onChange={handleChange}
+        />
+      </DialogBody>
+
+      <DialogFooter className="space-x-2">
+        <Button variant="text" onClick={onClose}>Đóng</Button>
+        <Button color="blue" onClick={handleSubmit} loading={loading}>
+          {farmId ? "Cập nhật" : "Tạo mới"}
+        </Button>
+      </DialogFooter>
+    </Dialog>
   );
-};
-
-export default FarmDetail;
+}
