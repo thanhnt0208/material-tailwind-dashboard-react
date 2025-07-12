@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Typography, IconButton, Menu,
+  Card, Typography, IconButton, Menu,
   MenuHandler, MenuList, MenuItem, Dialog,
   DialogHeader, DialogBody, DialogFooter, Input,
   Select, Option, Button, Spinner, Avatar
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
+import FarmForm from "./FarmForm";
 import { useNavigate } from "react-router-dom";
 
 export function Users() {
@@ -23,7 +24,10 @@ export function Users() {
     email: "",
     phone: "",
     isActive: true,
-    address: ""
+    addressName: "",
+    address: "",
+    ward: "",
+    province: ""
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
   const [counts, setCounts] = useState({});
@@ -39,7 +43,7 @@ export function Users() {
       const usersData = Array.isArray(res.data) ? res.data : [];
       setUsers(usersData);
 
-      // Lấy farms và videos trước
+      // Tính tổng farm, post, video
       const farmsRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -53,21 +57,14 @@ export function Users() {
         const farmsCount = farmsRes.data.filter(f => f.ownerId === userId).length;
         const videosCount = videosRes.data.filter(v => v.uploadedBy?.id === userId).length;
 
+        // Post thì dùng API riêng
         let postsCount = 0;
         try {
           const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          console.log("Posts response for user", userId, postsRes.data);
-          if (Array.isArray(postsRes.data)) {
-            postsCount = postsRes.data.length;
-          } else if (postsRes.data?.data && Array.isArray(postsRes.data.data)) {
-            postsCount = postsRes.data.data.length;
-          } else {
-            postsCount = 0;
-          }
-        } catch (error) {
-          console.error("Lỗi lấy posts cho user", userId, error);
+          postsCount = Array.isArray(postsRes.data) ? postsRes.data.length : 0;
+        } catch {
           postsCount = 0;
         }
 
@@ -75,6 +72,7 @@ export function Users() {
       }
 
       setCounts(countsObj);
+
     } catch {
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
@@ -98,7 +96,10 @@ export function Users() {
       email: user.email,
       phone: user.phone || "",
       isActive: user.isActive,
-      address: user.addresses?.[0]?.address || ""
+      addressName: user.addresses?.[0]?.addressName || "",
+      address: user.addresses?.[0]?.address || "",
+      ward: user.addresses?.[0]?.ward || "",
+      province: user.addresses?.[0]?.province || ""
     });
     setEditOpen(true);
   };
@@ -109,18 +110,26 @@ export function Users() {
       await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
         {
           fullName: formData.fullName,
+          email: formData.email,
           phone: formData.phone,
           isActive: formData.isActive
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      // Update địa chỉ (nếu có)
+
+      // Update địa chỉ
       if (selectedUser.addresses?.[0]?.id) {
         await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
-          { address: formData.address },
+          {
+            addressName: formData.addressName,
+            address: formData.address,
+            ward: formData.ward,
+            province: formData.province
+          },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
+
       alert("Cập nhật thành công!");
       fetchUsers();
       setEditOpen(false);
@@ -227,18 +236,19 @@ export function Users() {
         </table>
       </div>
 
+      {/* Dialog Edit */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
           <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
           <Input label="Email" value={formData.email} disabled />
           <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+
           <Select label="Trạng thái" value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
             onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}>
             <Option>Đã cấp quyền</Option>
             <Option>Chưa cấp quyền</Option>
           </Select>
-          <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
 
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
@@ -253,6 +263,13 @@ export function Users() {
               </span>
             ))}
           </div>
+
+          <Typography className="font-bold">Địa chỉ</Typography>
+          <Input label="Tên địa chỉ" value={formData.addressName} onChange={e => setFormData({ ...formData, addressName: e.target.value })} />
+          <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+          <Input label="Phường/Xã" value={formData.ward} onChange={e => setFormData({ ...formData, ward: e.target.value })} />
+          <Input label="Tỉnh/TP" value={formData.province} onChange={e => setFormData({ ...formData, province: e.target.value })} />
+
         </DialogBody>
         <DialogFooter>
           <Button variant="text" onClick={() => setEditOpen(false)}>Huỷ</Button>
