@@ -50,7 +50,8 @@ export function Farms() {
   const fetchFarms = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms`, getOpts());
-      setFarms(res.data);
+      console.log("👉 API trả về:", res.data);
+      setFarms(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
