@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, IconButton, Menu,
-  MenuHandler, MenuList, MenuItem, Dialog, DialogHeader,
-  DialogBody, DialogFooter, Input, Select, Option, Button, Spinner, Avatar
+  Card, Typography, IconButton, Menu,
+  MenuHandler, MenuList, MenuItem, Dialog,
+  DialogHeader, DialogBody, DialogFooter, Input,
+  Select, Option, Button, Spinner, Avatar
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import FarmForm from "./FarmForm";
 import { useNavigate } from "react-router-dom";
+
 export function Users() {
   const [users, setUsers] = useState([]);
   const [roles] = useState(["Customer", "Admin", "Farmer"]);
@@ -17,71 +19,66 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    isActive: true,
+    addressName: "",
+    address: "",
+    ward: "",
+    province: ""
+  });
   const [selectedRole, setSelectedRole] = useState("Farmer");
-
-  const [viewOpen, setViewOpen] = useState(false);
-  const [viewUser, setViewUser] = useState(null);
-  const [addresses, setAddresses] = useState([]);
-
-  const [openFarmForm, setOpenFarmForm] = useState(false);
-  const [farmFormData, setFarmFormData] = useState({ ownerId: null });
+  const [counts, setCounts] = useState({});
 
   const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    setLoading(true);
+    try {
+      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
+      setUsers(usersData);
 
-    const fetchedUsers = Array.isArray(res.data) ? res.data : [];
+      // Tính tổng farm, post, video
+      const farmsRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const videosRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    const farmRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const farmData = farmRes.data;
+      const countsObj = {};
+      for (const user of usersData) {
+        const userId = user.id;
+        const farmsCount = farmsRes.data.filter(f => f.ownerId === userId).length;
+        const videosCount = videosRes.data.filter(v => v.uploadedBy?.id === userId).length;
 
-    const videoRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const videoData = videoRes.data;
-    console.log("Video Data:", videoData);
-    
-    const postRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const postData = Array.isArray(postRes.data.data) ? postRes.data.data : [];
+        // Post thì dùng API riêng
+        let postsCount = 0;
+        try {
+          const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          postsCount = Array.isArray(postsRes.data) ? postsRes.data.length : 0;
+        } catch {
+          postsCount = 0;
+        }
 
-    const userPostCounts = {};
-    postData.forEach(post => {
-      const authorId = post.authorId;
-      if (userPostCounts[authorId]) {
-        userPostCounts[authorId]++;
-      } else {
-        userPostCounts[authorId] = 1;
+        countsObj[userId] = { farms: farmsCount, videos: videosCount, posts: postsCount };
       }
-    });
 
-    console.log("✅ Post count by user:", userPostCounts);
+      setCounts(countsObj);
 
-
-    const usersWithCounts = fetchedUsers.map(user => {
-      const farmCount = farmData.filter(farm => farm.ownerId === user.id).length;
-      const videoCount = videoData.filter(video => video.uploadedBy?.id === user.id).length;
-      const postCount = userPostCounts[user.id] || 0;
-      return { ...user, farmCount, videoCount, postCount };
-    });
-
-    setUsers(usersWithCounts);
-  } catch {
-    setError("Lỗi khi tải danh sách người dùng.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    } catch {
+      setError("Lỗi khi tải danh sách người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) {
@@ -97,7 +94,12 @@ export function Users() {
     setFormData({
       fullName: user.fullName,
       email: user.email,
-      phone: user.phone || ''
+      phone: user.phone || "",
+      isActive: user.isActive,
+      addressName: user.addresses?.[0]?.addressName || "",
+      address: user.addresses?.[0]?.address || "",
+      ward: user.addresses?.[0]?.ward || "",
+      province: user.addresses?.[0]?.province || ""
     });
     setEditOpen(true);
   };
@@ -105,9 +107,29 @@ export function Users() {
   const handleUpdate = async () => {
     if (!token || !selectedUser) return;
     try {
-      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
+      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
+        {
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          isActive: formData.isActive
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update địa chỉ
+      if (selectedUser.addresses?.[0]?.id) {
+        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
+          {
+            addressName: formData.addressName,
+            address: formData.address,
+            ward: formData.ward,
+            province: formData.province
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
       alert("Cập nhật thành công!");
       fetchUsers();
       setEditOpen(false);
@@ -146,33 +168,19 @@ export function Users() {
     }
   };
 
-const handleView = (user) => {
-  navigate(`/dashboard/users/${user.id}`);
-};
+  const handleView = (user) => {
+    navigate(`/dashboard/users/${user.id}`);
+  };
 
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc muốn xoá?")) return;
     try {
-      await axios.delete(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } });
       alert("Đã xoá người dùng!");
       fetchUsers();
     } catch {
       alert("Xoá thất bại!");
-    }
-  };
-
-  const handleCreateFarm = async (farmData) => {
-    try {
-      await axios.post("https://api-ndolv2.nongdanonline.cc/farms", farmData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Tạo nông trại thành công!");
-      setOpenFarmForm(false);
-    } catch {
-      alert("Tạo nông trại thất bại!");
     }
   };
 
@@ -186,7 +194,7 @@ const handleView = (user) => {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Farms", "Posts", "Videos", "Roles", "Trạng thái", "Thao tác"].map((head) => (
+              {["Avatar", "Tên", "Email", "Phone", "Posts", "Farms", "Videos", "Trạng thái", "Thao tác"].map(head => (
                 <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
               ))}
             </tr>
@@ -198,17 +206,16 @@ const handleView = (user) => {
                   <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" />
                 </td>
                 <td className="p-2">{user.fullName}</td>
-                <td className="p-2">{user.email.length > 25 ? user.email.slice(0, 20) + "..." : user.email}</td>
+                <td className="p-2">{user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
-                <td className="p-2 text-center">{user.farmCount}</td> 
-                <td className="p-2 text-center">{user.postCount}</td> 
-                <td className="p-2 text-center">{user.videoCount}</td>
-                <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
+                <td className="p-2">{counts[user.id]?.posts || 0}</td>
+                <td className="p-2">{counts[user.id]?.farms || 0}</td>
+                <td className="p-2">{counts[user.id]?.videos || 0}</td>
                 <td className="p-2">
                   {user.isActive ? (
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
+                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">ĐÃ CẤP QUYỀN</span>
                   ) : (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>
+                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">CHƯA CẤP QUYỀN</span>
                   )}
                 </td>
                 <td className="p-2">
@@ -229,19 +236,20 @@ const handleView = (user) => {
         </table>
       </div>
 
-      {/* Dialog SỬA */}
+      {/* Dialog Edit */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
           <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input
-            label="Email"
-            value={formData.email}
-            disabled
-            readOnly
-            className="cursor-not-allowed bg-gray-100"
-          />
+          <Input label="Email" value={formData.email} disabled />
           <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+
+          <Select label="Trạng thái" value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
+            onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}>
+            <Option>Đã cấp quyền</Option>
+            <Option>Chưa cấp quyền</Option>
+          </Select>
+
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
             {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
@@ -255,58 +263,19 @@ const handleView = (user) => {
               </span>
             ))}
           </div>
+
+          <Typography className="font-bold">Địa chỉ</Typography>
+          <Input label="Tên địa chỉ" value={formData.addressName} onChange={e => setFormData({ ...formData, addressName: e.target.value })} />
+          <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
+          <Input label="Phường/Xã" value={formData.ward} onChange={e => setFormData({ ...formData, ward: e.target.value })} />
+          <Input label="Tỉnh/TP" value={formData.province} onChange={e => setFormData({ ...formData, province: e.target.value })} />
+
         </DialogBody>
         <DialogFooter>
           <Button variant="text" onClick={() => setEditOpen(false)}>Huỷ</Button>
           <Button variant="gradient" onClick={handleUpdate}>Lưu</Button>
         </DialogFooter>
       </Dialog>
-
-      {/* Dialog XEM */}
-      <Dialog open={viewOpen} handler={setViewOpen} size="sm">
-        <DialogHeader>Chi tiết người dùng</DialogHeader>
-        <DialogBody className="space-y-2">
-          {viewUser ? (
-            <div className="flex flex-col items-center text-center space-y-2">
-              <Avatar src={viewUser.avatar ? `https://api-ndolv2.nongdanonline.cc${viewUser.avatar}` : ""} size="xl" />
-              <Typography variant="h6">{viewUser.fullName}</Typography>
-              <Typography variant="small">ID: {viewUser.id}</Typography>
-              <Typography>Email: {viewUser.email}</Typography>
-              <Typography>Phone: {viewUser.phone || "N/A"}</Typography>
-              <Typography>Roles: {Array.isArray(viewUser.role) ? viewUser.role.join(", ") : viewUser.role}</Typography>
-              <Typography>
-                Trạng thái: {viewUser.isActive ? (
-                  <span className="text-green-600 font-semibold">Active</span>
-                ) : (
-                  <span className="text-gray-500 font-semibold">inactive</span>
-                )}
-              </Typography>
-              <Typography className="font-bold">Địa chỉ:</Typography>
-              {addresses.length ? addresses.map((addr, i) => (
-                <Typography key={`${viewUser.id}-addr-${i}`} className="text-sm">
-                  {addr.address} - {addr.ward}, {addr.district}, {addr.province}
-                </Typography>
-              )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
-              <Button color="green" size="sm" className="mt-2" onClick={() => {
-                setFarmFormData({ ownerId: viewUser.id });
-                setOpenFarmForm(true);
-              }}>
-                Thêm nông trại cho người dùng này
-              </Button>
-            </div>
-          ) : <Typography>Đang tải...</Typography>}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* <FarmForm
-        open={openFarmForm}
-        onClose={() => setOpenFarmForm(false)}
-        initialData={farmFormData}
-        onSubmit={handleCreateFarm}
-      /> */}
     </div>
   );
 }

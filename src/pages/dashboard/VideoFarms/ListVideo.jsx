@@ -21,7 +21,7 @@ export const ListVideo = () => {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
       if (res.status === 200) { 
-        setVideos(res.data)
+        setVideos(res.data.data)
         setLoading(false)
       }
     } catch (error) {
