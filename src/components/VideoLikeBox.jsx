@@ -17,8 +17,8 @@ export default function VideoLikeBox({ videoId, refreshKey }) {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const usersList = Array.isArray(res.data)
-        ? res.data
+      const usersList = Array.isArray(res.data.data)
+        ? res.data.data
         : res.data?.users || [];
 
       setUsers(usersList);

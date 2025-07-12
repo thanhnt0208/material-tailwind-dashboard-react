@@ -13,26 +13,33 @@ import {
 } from '@material-tailwind/react';
 import EditQuestion from './EditQuestion';
 export const Questions = () => {
+
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [editData, setEditData] = useState(null);
   const [editValue, setEditValue] = useState({ options: [] });
-
+  const [currentPage, setCurrentPage] = useState(1);
+const questionsPerPage = 5;
   const [addDialog, setAddDialog] = useState(false);
   const [addValue, setAddValue] = useState({ text: '', options: [''], type: 'option', link: '' });
 
   const [showAnswersDialog, setShowAnswersDialog] = useState(false);
 
   const tokenUser = localStorage.getItem('token');
+const indexOfLastQuestion = currentPage * questionsPerPage;
+const indexOfFirstQuestion = indexOfLastQuestion - questionsPerPage;
+const paginatedQuestions = questions.slice(indexOfFirstQuestion, indexOfLastQuestion);
+const totalPages = Math.ceil(questions.length / questionsPerPage);
+
 
   const getData = async () => {
     try {
-      const res = await axios.get(`${BaseUrl}/admin-questions`, {
+      const res = await axios.get(`${BaseUrl}/admin-questions?limit=30`, {
         headers: { Authorization: `Bearer ${tokenUser}` },
       });
       if (res.status === 200) {
-        setQuestions(res.data);
+        setQuestions(res.data.data);
       }
     } catch (error) {
       console.log('Lỗi nè:', error);
@@ -205,12 +212,12 @@ export const Questions = () => {
             strokeWidthSecondary={2}
           />
         </div>
-      ) : questions.length === 0 ? (
+      ) : paginatedQuestions.length === 0 ? (
         <div className="text-center text-gray-500 mt-8">
           Không có câu hỏi nào.
         </div>
       ) : (
-        questions.map((item) => (
+        paginatedQuestions.map((item) => (
           <div
             key={item._id}
             className="mb-6 p-4 border rounded-lg bg-white shadow"
@@ -268,6 +275,27 @@ export const Questions = () => {
           </div>
         ))
 )}
+
+<div className="flex justify-center items-center gap-2 mt-4">
+  <button
+    className="px-3 py-1 rounded bg-blue-500 text-white disabled:bg-gray-300"
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(currentPage - 1)}
+  >
+    Trang trước
+  </button>
+  <span>
+    {currentPage} / {totalPages}
+  </span>
+  <button
+    className="px-3 py-1 rounded bg-blue-500 text-white disabled:bg-gray-300"
+    disabled={currentPage === totalPages || totalPages === 0}
+    onClick={() => setCurrentPage(currentPage + 1)}
+  >
+    Trang sau
+  </button>
+</div>
+
 <EditQuestion
 setEditValue={setEditValue}
 editData={editData}

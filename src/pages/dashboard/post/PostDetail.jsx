@@ -102,15 +102,7 @@ setComments(Array.isArray(json.comments) ? json.comments : []);
 
   return (
     <div className="p-6 max-w-4xl mx-auto bg-white rounded shadow">
-      {/* Quay lại */}
-      <Button
-        onClick={() => navigate(-1)}
-        variant="outlined"
-        className="mb-4"
-      >
-        ← Quay lại
-      </Button>
-
+     
       {/* Tiêu đề */}
       <Typography variant="h4" className="font-bold mb-2 text-black-800">
         Tiêu đề: {post.title}
