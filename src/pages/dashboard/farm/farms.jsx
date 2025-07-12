@@ -311,7 +311,15 @@ export function Farms() {
           </IconButton>
         </DialogHeader>
         <DialogBody className="p-4">
+<<<<<<< HEAD
           <FarmDetail open={openDetail} onClose={() => setOpenDetail(false)} farmId={selectedFarmId} />
+=======
+         <FarmDetail
+          open={openDetail}
+          onClose={() => setOpenDetail(false)}
+          farmId={selectedFarmId}
+        />
+>>>>>>> 207daaf3f9a46e0d104a69f82ceba181d1c7a837
         </DialogBody>
       </Dialog>
 
