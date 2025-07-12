@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
-import VideoFarmById from "./pages/dashboard/VideoFarms/VideoFarmById";
+import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 import VideoLikeList from "./pages/dashboard/VideoFarms/VideoLikeList";
 import PostDetail from "./pages/dashboard/post/PostDetail";
 import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId";
@@ -14,7 +14,7 @@ function App() {
     <Routes>
       <Route path="/dashboard/*" element={<Dashboard />} />
       <Route path="/auth/*" element={<Auth />} />
-      <Route path="/dashboard/VideoFarmById/:farmId" element={<VideoFarmById />} />
+      <Route path="/dashboard/VideoFarmById/:farmId" element={<VideoById />} />
       <Route path="/dashboard/video-like/:videoId" element={<VideoLikeList />} />
       <Route path="/dashboard/post/:id" element={<PostDetail />} />
       <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
