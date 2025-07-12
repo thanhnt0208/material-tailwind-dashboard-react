@@ -102,6 +102,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
     <div className="p-6 max-w-4xl mx-auto bg-white rounded shadow">
      
       {/* Tiêu đề */}
@@ -113,6 +114,8 @@ export default function PostDetailDialog({ postId, open, onClose }) {
 >>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     <Dialog open={open} handler={onClose} size="xl">
       <DialogHeader className="flex justify-between">
         <Typography variant="h5">Chi tiết bài viết</Typography>
@@ -120,6 +123,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
           Đóng
         </Button>
       </DialogHeader>
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
 <<<<<<< Updated upstream
 
@@ -146,6 +150,31 @@ export default function PostDetailDialog({ postId, open, onClose }) {
               <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
             </div>
 
+=======
+
+      <DialogBody className="max-h-[75vh] overflow-y-auto">
+        {loading ? (
+          <div className="flex justify-center items-center h-60">
+            <Audio height="80" width="80" color="green" ariaLabel="loading" />
+          </div>
+        ) : !post ? (
+          <Typography className="text-center">
+            Không tìm thấy bài viết
+          </Typography>
+        ) : (
+          <>
+            {/* Tiêu đề */}
+            <Typography variant="h4" className="font-bold mb-2 text-black-800">
+              {post.title}
+            </Typography>
+
+            {/* Ngày tạo và cập nhật */}
+            <div className="text-sm text-gray-600 mb-4">
+              <p>🗓️ <b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
+              <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
+            </div>
+
+>>>>>>> Stashed changes
 =======
 
       <DialogBody className="max-h-[75vh] overflow-y-auto">
