@@ -9,6 +9,7 @@ import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostB
 import FarmDetail from "./pages/dashboard/farm/FarmDetail";
 import { Farms } from "./pages/dashboard/farm/farms";
 import UserDetail from "./pages/dashboard/user/UserDetail";
+import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
   return (
  <Routes>

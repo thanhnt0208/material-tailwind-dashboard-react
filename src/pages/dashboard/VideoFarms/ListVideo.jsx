@@ -52,6 +52,8 @@ const paginatedVideos = searchedVideos.slice(indexOfFirstVideo, indexOfLastVideo
 const gotoVideoById =(id)=>{
   navigate(`/dashboard/VideoFarms/VideoById/${id}`)
 }
+console.log(videos)
+
 const statusList = Array.from(new Set(videos.map(v => v.status))).filter(Boolean);
   useEffect(() => {
 getAllVideos()
