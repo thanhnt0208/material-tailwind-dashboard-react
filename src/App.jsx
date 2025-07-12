@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
-import VideoFarmById from "./pages/dashboard/VideoFarms/VideoFarmById";
+import VideoFarmById from "./pages/dashboard/VideoFarms/VideoById";
 import VideoLikeList from "./pages/dashboard/VideoFarms/VideoLikeList";
 import PostDetail from "./pages/dashboard/post/PostDetail";
 import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId";
