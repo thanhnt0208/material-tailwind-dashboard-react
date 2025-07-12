@@ -36,7 +36,7 @@ export function Users() {
       const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const usersData = Array.isArray(res.data) ? res.data : [];
+      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
 
       // Lấy farms và videos trước
