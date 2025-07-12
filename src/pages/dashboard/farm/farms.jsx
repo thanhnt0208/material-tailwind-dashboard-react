@@ -212,15 +212,14 @@ export function Farms() {
 
                         <MenuList className="z-[999] p-2 min-w-[140px]">
                           <MenuItem
-                              onClick={() => {
-                                setEditingFarm(farm);
-                                setOpenForm(true);
-                                setOpenMenuId(null);
+                            onClick={() => {
+                              setEditingFarm(farm);
+                              setOpenForm(true);
+                              setOpenMenuId(null);
                             }}
-                            >
-                              Sửa
-                            </MenuItem>
-
+                          >
+                            Sửa
+                          </MenuItem>
 
                           <MenuItem
                             className="text-red-500 font-semibold"
@@ -285,22 +284,23 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
-{/* Dialog chỉnh sửa hoặc thêm farm */}
-<FarmForm
-  open={openForm}
-  onClose={() => {
-    setOpenForm(false);
-    setEditingFarm(null);
-  }}
-  initialData={editingFarm}
-  onSubmit={(data) => {
-    if (editingFarm) {
-      editFarm(editingFarm._id, data);
-    } else {
-      addFarm(data);
-    }
-  }}
-/>
+
+      {/* Dialog chỉnh sửa hoặc thêm farm */}
+      <FarmForm
+        open={openForm}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingFarm(null);
+        }}
+        initialData={editingFarm}
+        onSubmit={(data) => {
+          if (editingFarm) {
+            editFarm(editingFarm._id, data);
+          } else {
+            addFarm(data);
+          }
+        }}
+      />
 
       {/* Dialog xem chi tiết */}
       <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
@@ -311,15 +311,11 @@ export function Farms() {
           </IconButton>
         </DialogHeader>
         <DialogBody className="p-4">
-<<<<<<< HEAD
-          <FarmDetail open={openDetail} onClose={() => setOpenDetail(false)} farmId={selectedFarmId} />
-=======
-         <FarmDetail
-          open={openDetail}
-          onClose={() => setOpenDetail(false)}
-          farmId={selectedFarmId}
-        />
->>>>>>> 207daaf3f9a46e0d104a69f82ceba181d1c7a837
+          <FarmDetail
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            farmId={selectedFarmId}
+          />
         </DialogBody>
       </Dialog>
 
