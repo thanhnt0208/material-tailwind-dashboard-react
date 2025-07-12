@@ -51,7 +51,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      setFarm(res.data);
+      setFarm(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -124,7 +124,7 @@ const fetchImages = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
       if (res.status === 200) {
-        const allVideos = res.data;
+        const allVideos = res.data.data
         const count = allVideos.filter((v) => v.farmId?.id === farmId).length;
         setVideoCount(count);
       }

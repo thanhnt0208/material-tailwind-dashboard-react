@@ -11,23 +11,24 @@ import { Farms } from "./pages/dashboard/farm/farms";
 import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
   return (
-    <Routes>
-      <Route path="/dashboard/*" element={<Dashboard />} />
+ <Routes>
+      <Route path="/dashboard/*" element={<Dashboard />}>
+        <Route path="VideoFarmById/:farmId" element={<VideoFarmById />} />
+        <Route path="video-like/:videoId" element={<VideoLikeList />} />
+        <Route path="post/:id" element={<PostDetail />} />
+        <Route path="CommentPostbyId/:id" element={<CommentPostbyId />} />
+        <Route path="CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
+        <Route path="CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
+        <Route path="VideoFarms/VideoById/:id" element={<VideoById />} />
+      </Route>
       <Route path="/auth/*" element={<Auth />} />
-      <Route path="/dashboard/VideoFarmById/:farmId" element={<VideoFarmById />} />
-      <Route path="/dashboard/video-like/:videoId" element={<VideoLikeList />} />
-      <Route path="/dashboard/post/:id" element={<PostDetail />} />
-      <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
-      <Route path="/dashboard/CommentPostbyId/:id" element={<CommentPostbyId />} />
-      <Route path="/dashboard/CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
-      <Route path="/dashboard/CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
       <Route path="/admin/Farms" element={<Farms />} />
       <Route path="/admin/farms/:id" element={<FarmDetail />} />
-      <Route path="/dashboard/VideoFarms/VideoById/:id" element={<VideoById />} />
-
-
+      <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
     </Routes>
   );
 }
+  
+
  
 export default App;

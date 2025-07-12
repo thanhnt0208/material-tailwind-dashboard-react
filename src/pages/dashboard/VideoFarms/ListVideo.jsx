@@ -4,9 +4,8 @@ import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
-import LikeButton from './LikeButton';
-import CommentVideo from './commentVideo';
 import { useNavigate } from "react-router-dom";
+import { Input } from '@material-tailwind/react';
 export const ListVideo = () => {
     const [videos, setVideos] = useState([])
   const [filterStatus, setFilterStatus] = useState(""); 
@@ -27,18 +26,21 @@ const searchedVideos = filteredVideos.filter(
     v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
     v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
 );
-  const totalPages = Math.ceil(searchedVideos.length / videosPerPage);
+
+;
 
 const paginatedVideos = searchedVideos.slice(indexOfFirstVideo, indexOfLastVideo);
+  const totalPages = Math.ceil(searchedVideos.length / videosPerPage);
 
   const getAllVideos = async () => {
     try {
         setLoading(true)
-    const res = await axios.get(`${BaseUrl}/admin-video-farm`, {
+    const res = await axios.get(`${BaseUrl}/admin-video-farm?limit=30`, {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
       if (res.status === 200) { 
-        setVideos(res.data.data)
+        const sortedVideo= [...res.data.data].sort((a,b)=> new Date(b.createdAt)-new Date(a.createdAt))
+        setVideos(sortedVideo)
         setLoading(false)
       }
     } catch (error) {
@@ -50,10 +52,7 @@ const paginatedVideos = searchedVideos.slice(indexOfFirstVideo, indexOfLastVideo
 const gotoVideoById =(id)=>{
   navigate(`/dashboard/VideoFarms/VideoById/${id}`)
 }
-
 const statusList = Array.from(new Set(videos.map(v => v.status))).filter(Boolean);
-
-
   useEffect(() => {
 getAllVideos()
   }, []);
@@ -73,7 +72,11 @@ getAllVideos()
       <select
         className="border rounded px-3 py-1"
         value={filterStatus}
-        onChange={e => setFilterStatus(e.target.value)}
+        onChange={e =>{ setFilterStatus(e.target.value)
+setCurrentPage(1)
+        }
+        }
+        
       >
         <option value="">Tất cả</option>
         {statusList.map(status => (
