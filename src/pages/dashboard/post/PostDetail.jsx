@@ -7,19 +7,6 @@ import {
   Dialog,
   DialogHeader,
   DialogBody,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-=======
-=======
->>>>>>> Stashed changes
-  Menu,
-  MenuHandler,
-  MenuList,
-  MenuItem,
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 } from "@material-tailwind/react";
 import { Audio } from "react-loader-spinner";
 
@@ -50,15 +37,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         alert(json.message || "Không thể lấy bài viết");
       }
     } catch (err) {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       console.error("Fetch post error:", err);
-=======
-      console.error(" Fetch post error:", err);
->>>>>>> Stashed changes
-=======
-      console.error(" Fetch post error:", err);
->>>>>>> Stashed changes
       alert("Lỗi khi lấy dữ liệu bài viết");
     } finally {
       setLoading(false);
@@ -75,15 +54,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         setComments(Array.isArray(json.comments) ? json.comments : []);
       }
     } catch (err) {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       console.error("Fetch comments error:", err);
-=======
-      console.error(" Fetch comments error:", err);
->>>>>>> Stashed changes
-=======
-      console.error(" Fetch comments error:", err);
->>>>>>> Stashed changes
     } finally {
       setCommentLoading(false);
     }
@@ -101,15 +72,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
         setUsers(json.data);
       }
     } catch (err) {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
       console.error("Fetch users error:", err);
-=======
-      console.error(" Fetch users error:", err);
->>>>>>> Stashed changes
-=======
-      console.error(" Fetch users error:", err);
->>>>>>> Stashed changes
     }
   };
 
@@ -205,18 +168,8 @@ export default function PostDetailDialog({ postId, open, onClose }) {
             {/* Bình luận */}
             <div className="border-t pt-4 mt-6">
               <div
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
                 className="cursor-pointer mb-2"
                 onClick={() => setShowComments(!showComments)}
-=======
-                className="cursor-pointer mb-2" 
-                onClick={() => setShowComments(!showComments)} 
->>>>>>> Stashed changes
-=======
-                className="cursor-pointer mb-2" 
-                onClick={() => setShowComments(!showComments)} 
->>>>>>> Stashed changes
               >
                 <Typography variant="h5" className="text-blue-800">
                   Bình luận
@@ -227,8 +180,6 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                       <Typography>Đang tải bình luận...</Typography>
                     ) : comments.length > 0 ? (
                       comments.map((cmt) => (
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
                         <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
                           <Avatar
                             src={
@@ -275,62 +226,6 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                           </div>
                         </div>
                       ))
-=======
-=======
->>>>>>> Stashed changes
-  <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
-    <Avatar
-      src={
-        cmt.userId?.avatar?.startsWith("http")
-          ? cmt.userId.avatar
-          : `${BASE_URL}${cmt.userId?.avatar || ""}`
-      }
-      alt={cmt.userId?.fullName}
-    />
-    <div className="flex-1">
-      <div className="flex justify-between">
-        <Typography className="font-medium">
-          {cmt.userId?.fullName || "Ẩn danh"}
-        </Typography>
-      </div>
-      <Typography className="text-gray-700">{cmt.comment}</Typography>
-
-      {/* Replies */}
-      {cmt.replies?.length > 0 && (
-        <div className="ml-4 mt-2 border-l-2 pl-2 border-blue-200">
-          {cmt.replies.map((rep) => (
-            <div
-              key={rep._id}
-              className="flex items-start gap-2 mt-1"
-            >
-              <Avatar
-                src={
-                  rep.userId?.avatar?.startsWith("http")
-                    ? rep.userId.avatar
-                    : `${BASE_URL}${rep.userId?.avatar || ""}`
-                }
-                alt={rep.userId?.fullName}
-                size="xs"
-              />
-              <div className="flex-1">
-                <div className="flex justify-between">
-                  <Typography className="font-semibold">
-                    {rep.userId?.fullName || "Ẩn danh"}:
-                  </Typography>
-                </div>
-                <Typography className="text-sm">{rep.comment}</Typography>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </div>
-))
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
                     ) : (
                       <Typography>Không có bình luận</Typography>
                     )}
