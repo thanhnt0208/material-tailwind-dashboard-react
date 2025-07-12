@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, IconButton, Menu,
-  MenuHandler, MenuList, MenuItem, Dialog, DialogHeader,
-  DialogBody, DialogFooter, Input, Select, Option, Button, Spinner, Avatar
+  Typography, IconButton, Menu,
+  MenuHandler, MenuList, MenuItem, Dialog,
+  DialogHeader, DialogBody, DialogFooter, Input,
+  Select, Option, Button, Spinner, Avatar
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
@@ -17,9 +18,15 @@ export function Users() {
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', phone: '', isActive: false });
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    isActive: true,
+    address: ""
+  });
   const [selectedRole, setSelectedRole] = useState("Farmer");
-  const [addresses, setAddresses] = useState([]);
+  const [counts, setCounts] = useState({});
 
   const token = localStorage.getItem("token");
 
@@ -29,7 +36,45 @@ export function Users() {
       const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setUsers(Array.isArray(res.data) ? res.data : []);
+      const usersData = Array.isArray(res.data) ? res.data : [];
+      setUsers(usersData);
+
+      // Lấy farms và videos trước
+      const farmsRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const videosRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const countsObj = {};
+      for (const user of usersData) {
+        const userId = user.id;
+        const farmsCount = farmsRes.data.filter(f => f.ownerId === userId).length;
+        const videosCount = videosRes.data.filter(v => v.uploadedBy?.id === userId).length;
+
+        let postsCount = 0;
+        try {
+          const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log("Posts response for user", userId, postsRes.data);
+          if (Array.isArray(postsRes.data)) {
+            postsCount = postsRes.data.length;
+          } else if (postsRes.data?.data && Array.isArray(postsRes.data.data)) {
+            postsCount = postsRes.data.data.length;
+          } else {
+            postsCount = 0;
+          }
+        } catch (error) {
+          console.error("Lỗi lấy posts cho user", userId, error);
+          postsCount = 0;
+        }
+
+        countsObj[userId] = { farms: farmsCount, videos: videosCount, posts: postsCount };
+      }
+
+      setCounts(countsObj);
     } catch {
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
@@ -46,22 +91,15 @@ export function Users() {
     fetchUsers();
   }, [token]);
 
-  const openEdit = async (user) => {
+  const openEdit = (user) => {
     setSelectedUser(user);
     setFormData({
       fullName: user.fullName,
-      phone: user.phone || '',
-      isActive: user.isActive || false,
+      email: user.email,
+      phone: user.phone || "",
+      isActive: user.isActive,
+      address: user.addresses?.[0]?.address || ""
     });
-    try {
-      const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/user-addresses?userId=${user.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setAddresses(res.data || []);
-      console.log("Địa chỉ:", res.data);
-    } catch {
-      setAddresses([]);
-    }
     setEditOpen(true);
   };
 
@@ -69,27 +107,25 @@ export function Users() {
     if (!token || !selectedUser) return;
     try {
       await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
-        { fullName: formData.fullName, phone: formData.phone, isActive: formData.isActive },
+        {
+          fullName: formData.fullName,
+          phone: formData.phone,
+          isActive: formData.isActive
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      for (const addr of addresses) {
-        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${addr.id}`,
-          {
-            addressName: addr.addressName,
-            address: addr.address,
-            ward: addr.ward,
-            province: addr.province,
-          },
+      // Update địa chỉ (nếu có)
+      if (selectedUser.addresses?.[0]?.id) {
+        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
+          { address: formData.address },
           { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-
-      alert("Cập nhật Thất Bại!");
+      alert("Cập nhật thành công!");
       fetchUsers();
       setEditOpen(false);
     } catch {
-      alert("Cập nhật thành công!");
+      alert("Cập nhật thất bại!");
     }
   };
 
@@ -123,13 +159,15 @@ export function Users() {
     }
   };
 
+  const handleView = (user) => {
+    navigate(`/dashboard/users/${user.id}`);
+  };
+
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc muốn xoá?")) return;
     try {
-      await axios.delete(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } });
       alert("Đã xoá người dùng!");
       fetchUsers();
     } catch {
@@ -147,7 +185,7 @@ export function Users() {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Farm", "Post", "Video", "Trạng thái", "Thao tác"].map((head) => (
+              {["Avatar", "Tên", "Email", "Phone", "Posts", "Farms", "Videos", "Trạng thái", "Thao tác"].map(head => (
                 <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
               ))}
             </tr>
@@ -161,9 +199,9 @@ export function Users() {
                 <td className="p-2">{user.fullName}</td>
                 <td className="p-2">{user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
-                <td className="p-2">{user.farmsCount || 0}</td>
-                <td className="p-2">{user.postsCount || 0}</td>
-                <td className="p-2">{user.videosCount || 0}</td>
+                <td className="p-2">{counts[user.id]?.posts || 0}</td>
+                <td className="p-2">{counts[user.id]?.farms || 0}</td>
+                <td className="p-2">{counts[user.id]?.videos || 0}</td>
                 <td className="p-2">
                   {user.isActive ? (
                     <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">ĐÃ CẤP QUYỀN</span>
@@ -177,6 +215,7 @@ export function Users() {
                       <IconButton variant="text"><EllipsisVerticalIcon className="h-5 w-5" /></IconButton>
                     </MenuHandler>
                     <MenuList>
+                      <MenuItem onClick={() => handleView(user)}>Xem</MenuItem>
                       <MenuItem onClick={() => openEdit(user)}>Sửa</MenuItem>
                       <MenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Xoá</MenuItem>
                     </MenuList>
@@ -192,12 +231,14 @@ export function Users() {
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
           <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input label="Email (chỉ xem)" value={selectedUser?.email} disabled />
+          <Input label="Email" value={formData.email} disabled />
           <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
-          <Select label="Trạng thái" value={formData.isActive ? "true" : "false"} onChange={(val) => setFormData({ ...formData, isActive: val === "true" })}>
-            <Option value="true">Đã cấp quyền</Option>
-            <Option value="false">Chưa cấp quyền</Option>
+          <Select label="Trạng thái" value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
+            onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}>
+            <Option>Đã cấp quyền</Option>
+            <Option>Chưa cấp quyền</Option>
           </Select>
+          <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
 
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
@@ -212,32 +253,6 @@ export function Users() {
               </span>
             ))}
           </div>
-
-          {/* <Typography className="font-bold">Địa chỉ</Typography>
-          {addresses.map((addr, idx) => (
-            <div key={addr.id} className="space-y-1">
-              <Input label="Tên địa chỉ" value={addr.addressName} onChange={e => {
-                const update = [...addresses];
-                update[idx].addressName = e.target.value;
-                setAddresses(update);
-              }} />
-              <Input label="Địa chỉ" value={addr.address} onChange={e => {
-                const update = [...addresses];
-                update[idx].address = e.target.value;
-                setAddresses(update);
-              }} />
-              <Input label="Phường/Xã" value={addr.ward} onChange={e => {
-                const update = [...addresses];
-                update[idx].ward = e.target.value;
-                setAddresses(update);
-              }} />
-              <Input label="Tỉnh/TP" value={addr.province} onChange={e => {
-                const update = [...addresses];
-                update[idx].province = e.target.value;
-                setAddresses(update);
-              }} />
-            </div>
-          ))} */}
         </DialogBody>
         <DialogFooter>
           <Button variant="text" onClick={() => setEditOpen(false)}>Huỷ</Button>
