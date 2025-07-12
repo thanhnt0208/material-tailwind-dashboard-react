@@ -8,8 +8,8 @@ import { Audio } from 'react-loader-spinner'
 export const CommentPostbyIdPost = () => {
 
   const [CommentByIdPost,setCommentByIdPost]=useState([])
-        const [loading, setLoading] = useState(true)
-      const tokenUser = localStorage.getItem('token');
+     const [loading, setLoading] = useState(true)
+    const tokenUser = localStorage.getItem('token');
     const {postId}=useParams()
    const getCommentById=async()=>{
 try {

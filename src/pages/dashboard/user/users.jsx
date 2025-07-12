@@ -30,18 +30,58 @@ export function Users() {
   const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setUsers(Array.isArray(res.data) ? res.data : []);
-    } catch {
-      setError("Lỗi khi tải danh sách người dùng.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    const fetchedUsers = Array.isArray(res.data) ? res.data : [];
+
+    const farmRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const farmData = farmRes.data;
+
+    const videoRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const videoData = videoRes.data;
+    console.log("Video Data:", videoData);
+    
+    const postRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const postData = Array.isArray(postRes.data.data) ? postRes.data.data : [];
+
+    const userPostCounts = {};
+    postData.forEach(post => {
+      const authorId = post.authorId;
+      if (userPostCounts[authorId]) {
+        userPostCounts[authorId]++;
+      } else {
+        userPostCounts[authorId] = 1;
+      }
+    });
+
+    console.log("✅ Post count by user:", userPostCounts);
+
+
+    const usersWithCounts = fetchedUsers.map(user => {
+      const farmCount = farmData.filter(farm => farm.ownerId === user.id).length;
+      const videoCount = videoData.filter(video => video.uploadedBy?.id === user.id).length;
+      const postCount = userPostCounts[user.id] || 0;
+      return { ...user, farmCount, videoCount, postCount };
+    });
+
+    setUsers(usersWithCounts);
+  } catch {
+    setError("Lỗi khi tải danh sách người dùng.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     if (!token) {
@@ -146,7 +186,7 @@ const handleView = (user) => {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Roles", "Trạng thái", "Thao tác"].map((head) => (
+              {["Avatar", "Tên", "Email", "Phone", "Farms", "Posts", "Videos", "Roles", "Trạng thái", "Thao tác"].map((head) => (
                 <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
               ))}
             </tr>
@@ -160,6 +200,9 @@ const handleView = (user) => {
                 <td className="p-2">{user.fullName}</td>
                 <td className="p-2">{user.email.length > 25 ? user.email.slice(0, 20) + "..." : user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
+                <td className="p-2 text-center">{user.farmCount}</td> 
+                <td className="p-2 text-center">{user.postCount}</td> 
+                <td className="p-2 text-center">{user.videoCount}</td>
                 <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
                 <td className="p-2">
                   {user.isActive ? (
@@ -191,7 +234,13 @@ const handleView = (user) => {
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
           <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input label="Email" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+          <Input
+            label="Email"
+            value={formData.email}
+            disabled
+            readOnly
+            className="cursor-not-allowed bg-gray-100"
+          />
           <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
@@ -252,12 +301,12 @@ const handleView = (user) => {
         </DialogFooter>
       </Dialog>
 
-      <FarmForm
+      {/* <FarmForm
         open={openFarmForm}
         onClose={() => setOpenFarmForm(false)}
         initialData={farmFormData}
         onSubmit={handleCreateFarm}
-      />
+      /> */}
     </div>
   );
 }

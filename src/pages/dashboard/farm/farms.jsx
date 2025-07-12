@@ -19,7 +19,6 @@ import {
   DialogBody,
   IconButton,
 } from "@material-tailwind/react";
-import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 
 import FarmForm from "../user/FarmForm";
 import FarmDetail from "./FarmDetail";
@@ -44,6 +43,9 @@ export function Farms() {
 
   const [openDetail, setOpenDetail] = useState(false);
   const [selectedFarmId, setSelectedFarmId] = useState(null);
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingFarmId, setDeletingFarmId] = useState(null);
 
   const fetchFarms = async () => {
     try {
@@ -76,7 +78,6 @@ export function Farms() {
   };
 
   const deleteFarm = async (id) => {
-    if (!window.confirm("Bạn có chắc chắn muốn xoá farm này?")) return;
     try {
       await axios.delete(`${BASE_URL}/adminfarms/${id}`, getOpts());
       setFarms((prev) => prev.filter((farm) => farm._id !== id));
@@ -174,15 +175,29 @@ export function Farms() {
                     <td className="px-2 py-2">{farm.area} m²</td>
                     <td className="px-2 py-2">
                       <Chip
-                        value={farm.status === "pending" ? "Chờ duyệt" : farm.status === "active" ? "Đang hoạt động" : "Đã khóa"}
-                        color={farm.status === "pending" ? "amber" : farm.status === "inactive" ? "red" : "teal"}
+                        value={
+                          farm.status === "pending"
+                            ? "Chờ duyệt"
+                            : farm.status === "active"
+                            ? "Đang hoạt động"
+                            : "Đã khóa"
+                        }
+                        color={
+                          farm.status === "pending"
+                            ? "amber"
+                            : farm.status === "inactive"
+                            ? "red"
+                            : "teal"
+                        }
                         size="sm"
                       />
                     </td>
                     <td className="px-2 py-2" onClick={(e) => e.stopPropagation()}>
                       <Menu
                         open={openMenuId === farm._id}
-                        handler={() => setOpenMenuId(openMenuId === farm._id ? null : farm._id)}
+                        handler={() =>
+                          setOpenMenuId(openMenuId === farm._id ? null : farm._id)
+                        }
                         allowHover={false}
                         placement="left-start"
                       >
@@ -191,11 +206,11 @@ export function Farms() {
                             size="sm"
                             className="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 min-w-[36px]"
                           >
-                            <EllipsisVerticalIcon className="h-5 w-5" />
+                            •••
                           </Button>
                         </MenuHandler>
 
-                        <MenuList className="z-[999] p-2 min-w-[120px]">
+                        <MenuList className="z-[999] p-2 min-w-[140px]">
                           <MenuItem
                             onClick={() => {
                               setEditingFarm(farm);
@@ -207,8 +222,10 @@ export function Farms() {
                           </MenuItem>
 
                           <MenuItem
+                            className="text-red-500 font-semibold"
                             onClick={() => {
-                              deleteFarm(farm._id);
+                              setDeletingFarmId(farm._id);
+                              setDeleteConfirmOpen(true);
                               setOpenMenuId(null);
                             }}
                           >
@@ -267,6 +284,25 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
+
+      {/* Dialog chỉnh sửa hoặc thêm farm */}
+      <FarmForm
+        open={openForm}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingFarm(null);
+        }}
+        initialData={editingFarm}
+        onSubmit={(data) => {
+          if (editingFarm) {
+            editFarm(editingFarm._id, data);
+          } else {
+            addFarm(data);
+          }
+        }}
+      />
+
+      {/* Dialog xem chi tiết */}
       <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
         <DialogHeader className="justify-between">
           Chi tiết nông trại
@@ -275,12 +311,34 @@ export function Farms() {
           </IconButton>
         </DialogHeader>
         <DialogBody className="p-4">
-         <FarmDetail
-  open={openDetail}
-  onClose={() => setOpenDetail(false)}
-  farmId={selectedFarmId}
-/>
+          <FarmDetail
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            farmId={selectedFarmId}
+          />
         </DialogBody>
+      </Dialog>
+
+      {/* Dialog xác nhận xoá */}
+      <Dialog open={deleteConfirmOpen} handler={setDeleteConfirmOpen} size="sm">
+        <DialogHeader>Xác nhận xoá</DialogHeader>
+        <DialogBody>
+          Bạn có chắc chắn muốn xoá nông trại này? Hành động này không thể hoàn tác.
+        </DialogBody>
+        <div className="flex justify-end gap-2 p-4">
+          <Button color="gray" onClick={() => setDeleteConfirmOpen(false)}>
+            Huỷ
+          </Button>
+          <Button
+            color="red"
+            onClick={() => {
+              deleteFarm(deletingFarmId);
+              setDeleteConfirmOpen(false);
+            }}
+          >
+            Xoá
+          </Button>
+        </div>
       </Dialog>
     </>
   );

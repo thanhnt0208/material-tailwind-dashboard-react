@@ -85,7 +85,7 @@ export function PostList() {
           }
         })
       );
-
+      console.log("📥 Data fetch xong:", withCommentCounts);
       setPosts(withCommentCounts);
     } catch (err) {
       console.error("Fetch posts error:", err);
@@ -103,45 +103,76 @@ export function PostList() {
   const findUser = (id) => users.find((u) => u.id === id);
 
   const handleEditClick = (post) => {
+  setSelectedPost({
+    ...post,
+    tagsInput: Array.isArray(post.tags) ? post.tags.join(", ") : "",
+  });
+  setOpenEdit(true);
+};
 
-    setSelectedPost({
-      ...post,
-      tagsInput: post.tags?.join(", ") || "",
-    });
-    setOpenEdit(true);
-  };
 
   const updatePost = async () => {
   try {
     const token = localStorage.getItem("token");
+
+
+    const payload = {
+      title: selectedPost.title,
+      description: selectedPost.description,
+      status: Boolean(selectedPost.status), 
+      tags: (selectedPost.tagsInput || "")
+        .split(",") 
+        .map((tag) => tag.trim()) 
+        .filter((tag) => tag !== ""), 
+      images: selectedPost.images,
+      authorId: selectedPost.authorId,
+    };
+
+    console.log("👉 Payload gửi PUT:", payload);  
+
     const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        title: selectedPost.title,
-        description: selectedPost.description,
-        status: selectedPost.status,
-        tags: (selectedPost.tagsInput || "")
-          .split(",") 
-          .map((tag) => tag.trim()) 
-          .filter((tag) => tag !== ""), 
-      }),
+      body: JSON.stringify(payload),
     });
 
     const json = await res.json();
+
     if (res.ok) {
-      alert("Cập nhật thành công!");
+      alert(" Cập nhật thành công!");
+
+      setPosts((prevPosts) =>
+      prevPosts.map((p) =>
+        p.id === selectedPost.id
+          ? {
+              ...p,
+              title: selectedPost.title,
+              description: selectedPost.description,
+              tags: selectedPost.tagsInput
+                .split(",")
+                .map((tag) => tag.trim())
+                .filter((tag) => tag !== ""),
+              status: selectedPost.status,
+              images: selectedPost.images,
+            }
+          : p
+      )
+    );
+      setSelectedPost(null);
       setOpenEdit(false);
-      fetchPosts();
+
+      
+      
     } else {
-      alert(json.message || "Cập nhật thất bại");
+      console.error(" PUT lỗi:", json);
+      alert(json.message || " Cập nhật thất bại");
     }
   } catch (err) {
-    console.error("PUT error:", err);
-    alert("Lỗi kết nối server khi cập nhật");
+    console.error(" PUT error:", err);
+    alert(" Lỗi kết nối server khi cập nhật");
   }
 };
 
@@ -193,7 +224,7 @@ export function PostList() {
                 <th className="p-2 border">Hình</th>
                 <th className="p-2 border">Tác giả</th>
                 <th className="p-2 border">Like</th>
-                <th className="p-2 border">Bình luận</th>
+                {/* <th className="p-2 border">Bình luận</th> */}
                 <th className="p-2 border">Trạng thái</th>
                 <th className="p-2 border">Hành động</th>
               </tr>
@@ -212,7 +243,7 @@ export function PostList() {
                       <p className="line-clamp-10 text-sm leading-snug break-words">
                         {post.description.length > 30
                           ? post.description.slice(0, 25) + "..."
-                          : post.description}
+                          : post.description || "Không có mô tả"}
                       </p>
                     </td>
                     <td className="p-2 border">
@@ -248,7 +279,7 @@ export function PostList() {
                       )}
                     </td>
                     <td className="p-2 border">{post.like}</td>
-                    <td className="p-2 border">{post.commentCount ?? 0}</td>
+                    {/* <td className="p-2 border">{post.commentCount ?? 0}</td> */}
                     <td className="p-2 border">
                       <Chip
                         value={post.status ? "Đang hoạt động" : "Đã ẩn"}
@@ -356,29 +387,24 @@ export function PostList() {
             label="Link hình ảnh (từ thư mục /uploads/post/...)"
             value={selectedPost?.images?.[0] || ""}
             onChange={(e) =>
-              setSelectedPost({ ...selectedPost, images: [e.target.value] }) // ✅ update vào images
+              setSelectedPost({ ...selectedPost, images: [e.target.value] }) 
             }
           />
 
 
-          <Input
-            label="Tác giả (nhập tên)"
-            value={
-              selectedPost?.authorId
-                ? users.find((u) => u.id === selectedPost.authorId)?.fullName || ""
-                : ""
-            }
-            onChange={(e) => {
-              const name = e.target.value;
-              const user = users.find((u) =>
-                u.fullName.toLowerCase().includes(name.toLowerCase())
-              );
-              setSelectedPost({
-                ...selectedPost,
-                authorId: user?.id || "",
-              });
-            }}
-          />
+          <div>
+            <Typography variant="small" color="gray">
+              Tác giả
+            </Typography>
+            <Typography
+              variant="paragraph"
+              className="p-2 border rounded bg-gray-50"
+            >
+              {selectedPost?.authorId
+                ? users.find((u) => u.id === selectedPost.authorId)?.fullName || "Không rõ"
+                : "Không rõ"}
+            </Typography>
+          </div>
 
           <select
             className="border p-2 w-full rounded"

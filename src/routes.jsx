@@ -11,7 +11,7 @@ import {
 } from "@heroicons/react/24/solid";
 
 import VideoLikeList from "@/pages/dashboard/VideoFarms/VideoLikeList";
-import { Home, Users, Farms, Questions, AnswersTable, VideoFarms, PostList, AdminReports,CommentPost  } from "@/pages/dashboard";
+import { Home, Users, Farms, Questions, AnswersTable, ListVideo, PostList, AdminReports,CommentPost  } from "@/pages/dashboard";
 import { SignIn, SignUp } from "@/pages/auth";
 
 import { ViewfinderCircleIcon,VideoCameraIcon,ChatBubbleOvalLeftEllipsisIcon  } from "@heroicons/react/24/outline";
@@ -58,9 +58,9 @@ export const routes = [
       },
         {
         icon: <VideoCameraIcon {...icon} />,
-        name: "VideoFarms",
-        path: "/VideoFarms",
-        element: <VideoFarms />,
+        name: "ListVideo",
+        path: "/ListVideo",
+        element: <ListVideo />,
       },
       {
         icon: <NewspaperIcon {...icon} />,
