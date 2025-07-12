@@ -80,15 +80,30 @@ export default function FarmDetail({ open, onClose, farmId }) {
     }
   };
 
+  // ✅ Ưu tiên: nếu có API riêng /adminfarms/:id/video-count
   const fetchFarmVideos = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
-      const count = res.data.filter((v) => v.farmId?.id === farmId).length;
-      setVideoCount(count);
+      const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}/video-count`, getOpts());
+      setVideoCount(res.data.count || 0);
     } catch (err) {
       console.error("Lỗi video:", err);
+      setVideoCount(0);
     }
   };
+
+  // ❌ Nếu chưa có API riêng, dùng cách này thay thế:
+  // const fetchFarmVideos = async () => {
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
+  //     const count = (res.data || []).filter(
+  //       (v) => v?.farmId?._id === farmId || v?.farmId === farmId
+  //     ).length;
+  //     setVideoCount(count);
+  //   } catch (err) {
+  //     console.error("Lỗi video:", err);
+  //     setVideoCount(0);
+  //   }
+  // };
 
   const fetchQuestions = async () => {
     setLoadingQuestions(true);
@@ -171,9 +186,16 @@ export default function FarmDetail({ open, onClose, farmId }) {
               <Info label="Tên nông trại" value={farm.name} />
               <Info label="Mã nông trại" value={farm.code} />
               <Info label="Tags" value={(farm.tags || []).join(", ")} />
-              <Info label="Trạng thái" value={
-                farm.status === "pending" ? "Chờ duyệt" :
-                farm.status === "active" ? "Đang hoạt động" : "Đã khóa"} />
+              <Info
+                label="Trạng thái"
+                value={
+                  farm.status === "pending"
+                    ? "Chờ duyệt"
+                    : farm.status === "active"
+                    ? "Đang hoạt động"
+                    : "Đã khóa"
+                }
+              />
               <Info label="Tỉnh/Thành phố" value={farm.province} />
               <Info label="Quận/Huyện" value={farm.district} />
               <Info label="Phường/Xã" value={farm.ward} />
@@ -191,8 +213,12 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
             {farm.description && (
               <div>
-                <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
-                <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">{farm.description}</Typography>
+                <Typography variant="h6" className="mb-2 text-blue-gray-900">
+                  Mô tả
+                </Typography>
+                <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">
+                  {farm.description}
+                </Typography>
               </div>
             )}
 

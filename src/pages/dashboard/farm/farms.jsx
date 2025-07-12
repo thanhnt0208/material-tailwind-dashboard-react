@@ -48,12 +48,23 @@ export function Farms() {
   const [deletingFarmId, setDeletingFarmId] = useState(null);
 
   const [currentPage, setCurrentPage] = useState(1);
-  const farmsPerPage = 5;
+  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
 
   const fetchFarms = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/adminfarms`, getOpts());
-      setFarms(res.data.data);
+      const res = await axios.get(`${BASE_URL}/adminfarms`, {
+        ...getOpts(),
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+          search: search || undefined,
+          status: tab !== "all" ? tab : undefined,
+        },
+      });
+      setFarms(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -83,7 +94,7 @@ export function Farms() {
   const deleteFarm = async (id) => {
     try {
       await axios.delete(`${BASE_URL}/adminfarms/${id}`, getOpts());
-      setFarms((prev) => prev.filter((farm) => farm._id !== id));
+      await fetchFarms();
     } catch (err) {
       alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
     }
@@ -112,31 +123,11 @@ export function Farms() {
 
   useEffect(() => {
     fetchFarms();
-  }, []);
+  }, [currentPage, tab, search]);
 
-  // Reset phân trang khi tab hoặc search thay đổi
   useEffect(() => {
     setCurrentPage(1);
   }, [search, tab]);
-
-const filteredFarms = farms
-  .filter((farm) => (tab === "all" ? true : farm.status === tab))
-  .filter((farm) => {
-    const query = search.toLowerCase();
-    return (
-      farm.name?.toLowerCase().includes(query) ||
-      farm.code?.toLowerCase().includes(query) ||
-      farm.ownerInfo?.name?.toLowerCase().includes(query) ||
-      farm.phone?.toLowerCase().includes(query) ||
-      farm.location?.toLowerCase().includes(query)
-    );
-  });
-
-  const totalPages = Math.ceil(filteredFarms.length / farmsPerPage);
-  const displayedFarms = filteredFarms.slice(
-    (currentPage - 1) * farmsPerPage,
-    currentPage * farmsPerPage
-  );
 
   return (
     <>
@@ -177,13 +168,13 @@ const filteredFarms = farms
                   <th className="px-2 py-2 font-bold uppercase">Chủ sở hữu</th>
                   <th className="px-2 py-2 font-bold uppercase">SĐT</th>
                   <th className="px-2 py-2 font-bold uppercase">Địa chỉ</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Diện tích</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Trạng thái</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Thao tác</th>
+                  <th className="px-2 py-2 font-bold uppercase">Diện tích</th>
+                  <th className="px-2 py-2 font-bold uppercase">Trạng thái</th>
+                  <th className="px-2 py-2 font-bold uppercase">Thao tác</th>
                 </tr>
               </thead>
               <tbody>
-                {displayedFarms.map((farm) => (
+                {farms.map((farm) => (
                   <tr
                     key={farm._id}
                     className="border-b hover:bg-indigo-50 transition text-base cursor-pointer"
@@ -301,7 +292,7 @@ const filteredFarms = farms
 
             {/* Phân trang */}
             {totalPages > 1 && (
-              <div className="flex justify-center gap-2 mt-4">
+              <div className="flex justify-center gap-2 mt-4 flex-wrap">
                 {Array.from({ length: totalPages }, (_, i) => (
                   <Button
                     key={i}
