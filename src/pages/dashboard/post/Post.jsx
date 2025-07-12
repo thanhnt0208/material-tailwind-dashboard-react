@@ -224,7 +224,7 @@ export function PostList() {
                 <th className="p-2 border">Hình</th>
                 <th className="p-2 border">Tác giả</th>
                 <th className="p-2 border">Like</th>
-                <th className="p-2 border">Bình luận</th>
+                {/* <th className="p-2 border">Bình luận</th> */}
                 <th className="p-2 border">Trạng thái</th>
                 <th className="p-2 border">Hành động</th>
               </tr>
@@ -279,7 +279,7 @@ export function PostList() {
                       )}
                     </td>
                     <td className="p-2 border">{post.like}</td>
-                    <td className="p-2 border">{post.commentCount ?? 0}</td>
+                    {/* <td className="p-2 border">{post.commentCount ?? 0}</td> */}
                     <td className="p-2 border">
                       <Chip
                         value={post.status ? "Đang hoạt động" : "Đã ẩn"}
