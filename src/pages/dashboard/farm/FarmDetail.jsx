@@ -65,7 +65,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      setFarm(res.data);
+      setFarm(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
