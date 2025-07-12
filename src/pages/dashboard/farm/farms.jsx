@@ -123,9 +123,14 @@ const filteredFarms = farms
   .filter((farm) => (tab === "all" ? true : farm.status === tab))
   .filter((farm) => {
     const query = search.toLowerCase();
-    return farm.name?.toLowerCase().includes(query);
+    return (
+      farm.name?.toLowerCase().includes(query) ||
+      farm.code?.toLowerCase().includes(query) ||
+      farm.ownerInfo?.name?.toLowerCase().includes(query) ||
+      farm.phone?.toLowerCase().includes(query) ||
+      farm.location?.toLowerCase().includes(query)
+    );
   });
-
 
   const totalPages = Math.ceil(filteredFarms.length / farmsPerPage);
   const displayedFarms = filteredFarms.slice(
