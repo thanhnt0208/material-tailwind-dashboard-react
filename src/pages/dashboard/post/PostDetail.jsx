@@ -8,11 +8,17 @@ import {
   DialogHeader,
   DialogBody,
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
   Menu,
   MenuHandler,
   MenuList,
   MenuItem,
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 } from "@material-tailwind/react";
 import { Audio } from "react-loader-spinner";
@@ -45,7 +51,11 @@ export default function PostDetailDialog({ postId, open, onClose }) {
       }
     } catch (err) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       console.error("Fetch post error:", err);
+=======
+      console.error(" Fetch post error:", err);
+>>>>>>> Stashed changes
 =======
       console.error(" Fetch post error:", err);
 >>>>>>> Stashed changes
@@ -66,7 +76,11 @@ export default function PostDetailDialog({ postId, open, onClose }) {
       }
     } catch (err) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       console.error("Fetch comments error:", err);
+=======
+      console.error(" Fetch comments error:", err);
+>>>>>>> Stashed changes
 =======
       console.error(" Fetch comments error:", err);
 >>>>>>> Stashed changes
@@ -88,7 +102,11 @@ export default function PostDetailDialog({ postId, open, onClose }) {
       }
     } catch (err) {
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
       console.error("Fetch users error:", err);
+=======
+      console.error(" Fetch users error:", err);
+>>>>>>> Stashed changes
 =======
       console.error(" Fetch users error:", err);
 >>>>>>> Stashed changes
@@ -188,8 +206,13 @@ export default function PostDetailDialog({ postId, open, onClose }) {
             <div className="border-t pt-4 mt-6">
               <div
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
                 className="cursor-pointer mb-2"
                 onClick={() => setShowComments(!showComments)}
+=======
+                className="cursor-pointer mb-2" 
+                onClick={() => setShowComments(!showComments)} 
+>>>>>>> Stashed changes
 =======
                 className="cursor-pointer mb-2" 
                 onClick={() => setShowComments(!showComments)} 
@@ -204,6 +227,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                       <Typography>Đang tải bình luận...</Typography>
                     ) : comments.length > 0 ? (
                       comments.map((cmt) => (
+<<<<<<< Updated upstream
 <<<<<<< Updated upstream
                         <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
                           <Avatar
@@ -252,6 +276,8 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                         </div>
                       ))
 =======
+=======
+>>>>>>> Stashed changes
   <div key={cmt._id} className="border-b py-3 flex items-start gap-3">
     <Avatar
       src={
@@ -301,6 +327,9 @@ export default function PostDetailDialog({ postId, open, onClose }) {
     </div>
   </div>
 ))
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
                     ) : (
                       <Typography>Không có bình luận</Typography>
