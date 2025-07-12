@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Typography, IconButton, Menu,
-  MenuHandler, MenuList, MenuItem, Dialog,
-  DialogHeader, DialogBody, DialogFooter, Input,
-  Select, Option, Button, Spinner, Avatar
+  Typography, IconButton, Menu, MenuHandler, MenuList, MenuItem,
+  Dialog, DialogHeader, DialogBody, DialogFooter,
+  Input, Select, Option, Button, Spinner, Avatar
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
@@ -19,63 +18,71 @@ export function Users() {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    isActive: true,
-    address: ""
+    fullName: "", email: "", phone: "", isActive: true, address: ""
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
   const [counts, setCounts] = useState({});
+
+  // Phân trang
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
+
+  // Lọc & tìm kiếm
+  const [filterRole, setFilterRole] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchText, setSearchText] = useState("");
 
   const token = localStorage.getItem("token");
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      const params = { page, limit };
+      if (filterRole) params.role = filterRole;
+      if (filterStatus) params.isActive = filterStatus === "Đã cấp quyền";
+      if (searchText) params.search = searchText;
+
       const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }, params
       });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
+      setTotalPages(res.data.totalPages || 1);
 
-      // Lấy farms và videos trước
+      // Lấy thêm farms & videos
       const farmsRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const videosRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
         headers: { Authorization: `Bearer ${token}` }
       });
+      const farms = Array.isArray(farmsRes.data) ? farmsRes.data : farmsRes.data?.data || [];
+      const videos = Array.isArray(videosRes.data) ? videosRes.data : videosRes.data?.data || [];
 
       const countsObj = {};
       for (const user of usersData) {
         const userId = user.id;
-        const farmsCount = farmsRes.data.filter(f => f.ownerId === userId).length;
-        const videosCount = videosRes.data.filter(v => v.uploadedBy?.id === userId).length;
+        const farmsCount = farms.filter(f => f.ownerId === userId).length;
+        const videosCount = videos.filter(v => v.uploadedBy?.id === userId).length;
 
         let postsCount = 0;
         try {
-          const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          console.log("Posts response for user", userId, postsRes.data);
-          if (Array.isArray(postsRes.data)) {
-            postsCount = postsRes.data.length;
-          } else if (postsRes.data?.data && Array.isArray(postsRes.data.data)) {
-            postsCount = postsRes.data.data.length;
-          } else {
-            postsCount = 0;
-          }
+          const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`,
+            { headers: { Authorization: `Bearer ${token}` } });
+          console.log("PostsRes data for user", userId, postsRes.data);
+          if (Array.isArray(postsRes.data)) postsCount = postsRes.data.length;
+          else if (Array.isArray(postsRes.data?.data)) postsCount = postsRes.data.data.length;
+          else console.warn("Không nhận được mảng bài post cho user:", userId, postsRes.data);
         } catch (error) {
           console.error("Lỗi lấy posts cho user", userId, error);
-          postsCount = 0;
         }
 
         countsObj[userId] = { farms: farmsCount, videos: videosCount, posts: postsCount };
       }
-
       setCounts(countsObj);
-    } catch {
+    } catch (error) {
+      console.error("Lỗi khi tải danh sách người dùng:", error);
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
       setLoading(false);
@@ -89,15 +96,18 @@ export function Users() {
       return;
     }
     fetchUsers();
-  }, [token]);
+  }, [token, page, filterRole, filterStatus]);
+
+  const handleSearch = () => {
+    setPage(1);
+    fetchUsers();
+  };
 
   const openEdit = (user) => {
     setSelectedUser(user);
     setFormData({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone || "",
-      isActive: user.isActive,
+      fullName: user.fullName, email: user.email,
+      phone: user.phone || "", isActive: user.isActive,
       address: user.addresses?.[0]?.address || ""
     });
     setEditOpen(true);
@@ -107,77 +117,63 @@ export function Users() {
     if (!token || !selectedUser) return;
     try {
       await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
-        {
-          fullName: formData.fullName,
-          phone: formData.phone,
-          isActive: formData.isActive
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      // Update địa chỉ (nếu có)
+        { fullName: formData.fullName, phone: formData.phone, isActive: formData.isActive },
+        { headers: { Authorization: `Bearer ${token}` } });
       if (selectedUser.addresses?.[0]?.id) {
         await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
-          { address: formData.address },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+          { address: formData.address }, { headers: { Authorization: `Bearer ${token}` } });
       }
-      alert("Cập nhật thành công!");
-      fetchUsers();
-      setEditOpen(false);
-    } catch {
-      alert("Cập nhật thất bại!");
-    }
+      alert("Cập nhật thành công!"); fetchUsers(); setEditOpen(false);
+    } catch { alert("Cập nhật thất bại!"); }
   };
 
   const handleAddRole = async () => {
     if (!selectedUser) return;
     try {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
-        { role: selectedRole },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Thêm role thành công!");
-      fetchUsers();
-    } catch {
-      alert("Không thể thêm role!");
-    }
+      await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
+        { role: selectedRole }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Thêm role thành công!"); fetchUsers();
+    } catch { alert("Không thể thêm role!"); }
   };
 
   const handleRemoveRole = async (role) => {
     if (!selectedUser) return;
     try {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
-        { roles: [role] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Xoá role thành công!");
-      fetchUsers();
-    } catch {
-      alert("Không thể xoá role!");
-    }
+      await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
+        { roles: [role] }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Xoá role thành công!"); fetchUsers();
+    } catch { alert("Không thể xoá role!"); }
   };
 
-  const handleView = (user) => {
-    navigate(`/dashboard/users/${user.id}`);
-  };
-
+  const handleView = (user) => navigate(`/dashboard/users/${user.id}`);
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc muốn xoá?")) return;
     try {
       await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } });
-      alert("Đã xoá người dùng!");
-      fetchUsers();
-    } catch {
-      alert("Xoá thất bại!");
-    }
+      alert("Đã xoá người dùng!"); fetchUsers();
+    } catch { alert("Xoá thất bại!"); }
   };
 
   return (
     <div className="p-4">
       <Typography variant="h6" color="blue-gray" className="mb-4">Quản lý người dùng</Typography>
+
+      {/* Tìm kiếm & lọc */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Input label="Tìm kiếm theo tên, phone, email" value={searchText} onChange={e => setSearchText(e.target.value)} />
+        <Select label="Lọc theo role" value={filterRole} onChange={setFilterRole}>
+          <Option value="">Tất cả</Option>
+          {roles.map(r => <Option key={r} value={r}>{r}</Option>)}
+        </Select>
+        <Select label="Trạng thái" value={filterStatus} onChange={setFilterStatus}>
+          <Option value="">Tất cả</Option>
+          <Option>Đã cấp quyền</Option>
+          <Option>Chưa cấp quyền</Option>
+        </Select>
+        <Button onClick={handleSearch}>Tìm kiếm</Button>
+      </div>
+
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
 
@@ -185,7 +181,7 @@ export function Users() {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Posts", "Farms", "Videos", "Trạng thái", "Thao tác"].map(head => (
+              {["Avatar", "Tên", "Email", "Phone", "Role", "Posts", "Farms", "Videos", "Trạng thái", "Thao tác"].map(head => (
                 <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
               ))}
             </tr>
@@ -193,12 +189,11 @@ export function Users() {
           <tbody>
             {users.map(user => (
               <tr key={user.id} className="border-t">
-                <td className="p-2">
-                  <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" />
-                </td>
+                <td className="p-2"><Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" /></td>
                 <td className="p-2">{user.fullName}</td>
                 <td className="p-2">{user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
+                <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
                 <td className="p-2">{counts[user.id]?.posts || 0}</td>
                 <td className="p-2">{counts[user.id]?.farms || 0}</td>
                 <td className="p-2">{counts[user.id]?.videos || 0}</td>
@@ -227,6 +222,14 @@ export function Users() {
         </table>
       </div>
 
+      {/* Phân trang */}
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button size="sm" variant="outlined" disabled={page <= 1} onClick={() => setPage(prev => prev - 1)}>Trang trước</Button>
+        <span>Trang {page} / {totalPages}</span>
+        <Button size="sm" variant="outlined" disabled={page >= totalPages} onClick={() => setPage(prev => prev + 1)}>Trang sau</Button>
+      </div>
+
+      {/* Dialog chỉnh sửa */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
@@ -239,7 +242,6 @@ export function Users() {
             <Option>Chưa cấp quyền</Option>
           </Select>
           <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
-
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
             {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
