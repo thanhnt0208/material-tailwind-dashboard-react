@@ -166,7 +166,6 @@ export default function UserDetail() {
               {farms.map(farm => (
                 <tr key={farm.id} className="border-t">
                   <td className="p-2">{farm.name}</td>
-                  <td className="p-2">{farm.address}</td>
                   <td className="p-2">{new Date(farm.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))}
