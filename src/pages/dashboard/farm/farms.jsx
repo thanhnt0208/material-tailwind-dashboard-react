@@ -110,8 +110,7 @@ export function Farms() {
   useEffect(() => {
     fetchFarms();
   }, []);
-
-  const displayedFarms = farms
+const displayedFarms = farms
     .filter((farm) => (tab === "all" ? true : farm.status === tab))
     .filter((farm) => farm.name?.toLowerCase().includes(search.toLowerCase()));
 
@@ -172,7 +171,7 @@ export function Farms() {
                     <td className="px-2 py-2">{farm.ownerInfo?.name || "—"}</td>
                     <td className="px-2 py-2">{farm.phone || "—"}</td>
                     <td className="px-2 py-2">{farm.location}</td>
-                    <td className="px-2 py-2">{farm.area} m²</td>
+<td className="px-2 py-2">{farm.area} m²</td>
                     <td className="px-2 py-2">
                       <Chip
                         value={
@@ -212,15 +211,14 @@ export function Farms() {
 
                         <MenuList className="z-[999] p-2 min-w-[140px]">
                           <MenuItem
-                              onClick={() => {
-                                setEditingFarm(farm);
-                                setOpenForm(true);
-                                setOpenMenuId(null);
+                            onClick={() => {
+                              setEditingFarm(farm);
+                              setOpenForm(true);
+                              setOpenMenuId(null);
                             }}
-                            >
-                              Sửa
-                            </MenuItem>
-
+                          >
+                            Sửa
+                          </MenuItem>
 
                           <MenuItem
                             className="text-red-500 font-semibold"
@@ -244,7 +242,7 @@ export function Farms() {
                                 Duyệt
                               </MenuItem>
                               <MenuItem
-                                onClick={() => {
+onClick={() => {
                                   changeStatus(farm._id, "deactivate");
                                   setOpenMenuId(null);
                                 }}
@@ -285,22 +283,23 @@ export function Farms() {
           </CardBody>
         )}
       </Card>
-{/* Dialog chỉnh sửa hoặc thêm farm */}
-<FarmForm
-  open={openForm}
-  onClose={() => {
-    setOpenForm(false);
-    setEditingFarm(null);
-  }}
-  initialData={editingFarm}
-  onSubmit={(data) => {
-    if (editingFarm) {
-      editFarm(editingFarm._id, data);
-    } else {
-      addFarm(data);
-    }
-  }}
-/>
+
+      {/* Dialog chỉnh sửa hoặc thêm farm */}
+      <FarmForm
+        open={openForm}
+        onClose={() => {
+          setOpenForm(false);
+          setEditingFarm(null);
+        }}
+        initialData={editingFarm}
+        onSubmit={(data) => {
+          if (editingFarm) {
+            editFarm(editingFarm._id, data);
+          } else {
+            addFarm(data);
+          }
+        }}
+      />
 
       {/* Dialog xem chi tiết */}
       <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
@@ -311,15 +310,11 @@ export function Farms() {
           </IconButton>
         </DialogHeader>
         <DialogBody className="p-4">
-<<<<<<< HEAD
-          <FarmDetail open={openDetail} onClose={() => setOpenDetail(false)} farmId={selectedFarmId} />
-=======
-         <FarmDetail
-          open={openDetail}
-          onClose={() => setOpenDetail(false)}
-          farmId={selectedFarmId}
-        />
->>>>>>> 207daaf3f9a46e0d104a69f82ceba181d1c7a837
+          <FarmDetail
+            open={openDetail}
+            onClose={() => setOpenDetail(false)}
+            farmId={selectedFarmId}
+          />
         </DialogBody>
       </Dialog>
 
@@ -334,7 +329,7 @@ export function Farms() {
             Huỷ
           </Button>
           <Button
-            color="red"
+color="red"
             onClick={() => {
               deleteFarm(deletingFarmId);
               setDeleteConfirmOpen(false);
