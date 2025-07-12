@@ -32,7 +32,7 @@ export const Questions = () => {
         headers: { Authorization: `Bearer ${tokenUser}` },
       });
       if (res.status === 200) {
-        setQuestions(res.data);
+        setQuestions(res.data.data);
       }
     } catch (error) {
       console.log('Lỗi nè:', error);

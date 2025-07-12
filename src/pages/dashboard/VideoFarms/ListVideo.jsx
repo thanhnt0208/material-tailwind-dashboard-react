@@ -11,8 +11,25 @@ export const ListVideo = () => {
     const [videos, setVideos] = useState([])
   const [filterStatus, setFilterStatus] = useState(""); 
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+const videosPerPage = 10;
+const [searchText, setSearchText] = useState("");
   const tokenUser = localStorage.getItem('token');
-  const navigate = useNavigate();
+  const navigate = useNavigate()
+const indexOfLastVideo = currentPage * videosPerPage;
+const indexOfFirstVideo = indexOfLastVideo - videosPerPage;
+const filteredVideos = filterStatus
+  ? videos.filter(v => v.status === filterStatus)
+  : videos;
+
+const searchedVideos = filteredVideos.filter(
+  v =>
+    v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+    v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
+);
+  const totalPages = Math.ceil(searchedVideos.length / videosPerPage);
+
+const paginatedVideos = searchedVideos.slice(indexOfFirstVideo, indexOfLastVideo);
 
   const getAllVideos = async () => {
     try {
@@ -21,7 +38,7 @@ export const ListVideo = () => {
       headers: { Authorization: `Bearer ${tokenUser}` }
     })
       if (res.status === 200) { 
-        setVideos(res.data)
+        setVideos(res.data.data)
         setLoading(false)
       }
     } catch (error) {
@@ -36,15 +53,23 @@ const gotoVideoById =(id)=>{
 
 const statusList = Array.from(new Set(videos.map(v => v.status))).filter(Boolean);
 
-const filteredVideos = filterStatus
-  ? videos.filter(v => v.status === filterStatus)
-  : videos;
+
   useEffect(() => {
 getAllVideos()
   }, []);
   return (
   <div className="p-4">
     <div className="flex justify-end mb-4">
+      <input
+    type="text"
+    className="border rounded px-3 py-1 w-64"
+    placeholder="Tìm kiếm video..."
+    value={searchText}
+    onChange={e => {
+      setSearchText(e.target.value);
+      setCurrentPage(1); 
+    }}
+  />
       <select
         className="border rounded px-3 py-1"
         value={filterStatus}
@@ -82,7 +107,7 @@ getAllVideos()
             </tr>
           </thead>
           <tbody>
-          {filteredVideos.map((item) => (
+          {paginatedVideos.map((item) => (
               <tr key={item._id} className="border-b hover:bg-gray-50 cursor-pointer" onClick={(e) => {
                 e.stopPropagation();
                 gotoVideoById(item._id);
@@ -102,6 +127,25 @@ getAllVideos()
 
       </div>
     )}
+    <div className="flex justify-center items-center gap-2 mt-4">
+  <button
+    className="px-3 py-1 rounded bg-blue-500 text-white disabled:bg-gray-300"
+    disabled={currentPage === 1}
+    onClick={() => setCurrentPage(currentPage - 1)}
+  >
+    Trang trước
+  </button>
+  <span>
+    {currentPage} / {totalPages}
+  </span>
+  <button
+    className="px-3 py-1 rounded bg-blue-500 text-white disabled:bg-gray-300"
+    disabled={currentPage === totalPages || totalPages === 0}
+    onClick={() => setCurrentPage(currentPage + 1)}
+  >
+    Trang sau
+  </button>
+</div>
   </div>
 );
 };
