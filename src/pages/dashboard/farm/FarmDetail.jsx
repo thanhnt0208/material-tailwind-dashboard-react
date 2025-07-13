@@ -42,8 +42,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const [farm, setFarm] = useState(null);
   const [error, setError] = useState(null);
   const [images, setImages] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
   const [videoCount, setVideoCount] = useState(0);
   const [showChanges, setShowChanges] = useState(false);
   const [questions, setQuestions] = useState([]);
@@ -51,23 +49,23 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [loadingAnswers, setLoadingAnswers] = useState(true);
 
-  const getOpts = () => {
-    const token = localStorage.getItem("token");
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    };
-  };
+  const getOpts = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "application/json",
+    },
+  });
 
   const fetchDetail = async () => {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      setFarm(res.data.data);
+      const data = res.data?.data || res.data;
+      setFarm(data);
     } catch (err) {
+      console.error("❌ Lỗi fetchDetail:", err);
       setError(err.response?.data?.message || err.message);
+      setFarm(null);
     }
   };
 
@@ -80,7 +78,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
     }
   };
 
-  // ✅ Ưu tiên: nếu có API riêng /adminfarms/:id/video-count
   const fetchFarmVideos = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}/video-count`, getOpts());
@@ -90,20 +87,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
       setVideoCount(0);
     }
   };
-
-  // ❌ Nếu chưa có API riêng, dùng cách này thay thế:
-  // const fetchFarmVideos = async () => {
-  //   try {
-  //     const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
-  //     const count = (res.data || []).filter(
-  //       (v) => v?.farmId?._id === farmId || v?.farmId === farmId
-  //     ).length;
-  //     setVideoCount(count);
-  //   } catch (err) {
-  //     console.error("Lỗi video:", err);
-  //     setVideoCount(0);
-  //   }
-  // };
 
   const fetchQuestions = async () => {
     setLoadingQuestions(true);
@@ -137,33 +120,8 @@ export default function FarmDetail({ open, onClose, farmId }) {
     setShowChanges(!showChanges);
   };
 
-  const handleFileChange = (e) => setSelectedFiles([...e.target.files]);
-
-  const handleUpload = async () => {
-    if (!selectedFiles.length || !farmId) return;
-    setUploading(true);
-    try {
-      for (const file of selectedFiles) {
-        const formData = new FormData();
-        formData.append("file", file);
-        await axios.post(`${BASE_URL}/farm-pictures/${farmId}`, formData, {
-          ...getOpts(),
-          headers: {
-            ...getOpts().headers,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      }
-      setSelectedFiles([]);
-      await fetchImages();
-    } catch (err) {
-      alert("Upload thất bại: " + (err.response?.data?.message || err.message));
-    } finally {
-      setUploading(false);
-    }
-  };
-
   useEffect(() => {
+    console.log("📌 Dialog open =", open, "| farmId =", farmId);
     if (open && farmId) {
       fetchDetail();
       fetchImages();
@@ -178,8 +136,10 @@ export default function FarmDetail({ open, onClose, farmId }) {
       <div className="max-w-6xl mx-auto space-y-6">
         {error && <Typography color="red">{error}</Typography>}
 
-        {!farm ? (
+        {farm === null ? (
           <Typography className="text-indigo-500">Đang tải...</Typography>
+        ) : !farm ? (
+          <Typography color="red">Không tìm thấy dữ liệu</Typography>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -213,9 +173,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
             {farm.description && (
               <div>
-                <Typography variant="h6" className="mb-2 text-blue-gray-900">
-                  Mô tả
-                </Typography>
+                <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
                 <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">
                   {farm.description}
                 </Typography>
@@ -257,11 +215,11 @@ export default function FarmDetail({ open, onClose, farmId }) {
                 ) : (
                   <div className="space-y-4">
                     {questions.map((q, idx) => {
-                      const match = answers.find((a) => a.question?.id === q.id);
+                      const match = answers.find((a) => a.question?._id === q._id);
                       const ans = match?.answer;
 
                       return (
-                        <div key={q.id} className="border p-3 rounded-lg bg-gray-50">
+                        <div key={q._id} className="border p-3 rounded-lg bg-gray-50">
                           <Typography className="text-sm font-semibold text-gray-800">
                             {idx + 1}. {q.text}
                           </Typography>
