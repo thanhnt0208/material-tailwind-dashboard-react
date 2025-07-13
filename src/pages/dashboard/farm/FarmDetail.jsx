@@ -32,7 +32,7 @@ const serviceOptions = [
 const featureOptions = [
   { label: "Mô hình aquaponic", value: "aquaponic_model" },
   { label: "Chứng nhận VietGAP", value: "viet_gap_cert" },
-  { label: "Chứng nhận hữu cơ", value: "organic_cert" },  
+  { label: "Chứng nhận hữu cơ", value: "organic_cert" },
   { label: "Nông trại thông minh", value: "smart_farm" },
   { label: "Tự động hóa", value: "automation" },
   { label: "Sử dụng IoT", value: "iot_enabled" },
@@ -65,7 +65,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      setFarm(res.data);
+      setFarm(res.data.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     }
@@ -80,15 +80,30 @@ export default function FarmDetail({ open, onClose, farmId }) {
     }
   };
 
+  // ✅ Ưu tiên: nếu có API riêng /adminfarms/:id/video-count
   const fetchFarmVideos = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
-      const count = res.data.filter((v) => v.farmId?.id === farmId).length;
-      setVideoCount(count);
+      const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}/video-count`, getOpts());
+      setVideoCount(res.data.count || 0);
     } catch (err) {
       console.error("Lỗi video:", err);
+      setVideoCount(0);
     }
   };
+
+  // ❌ Nếu chưa có API riêng, dùng cách này thay thế:
+  // const fetchFarmVideos = async () => {
+  //   try {
+  //     const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
+  //     const count = (res.data || []).filter(
+  //       (v) => v?.farmId?._id === farmId || v?.farmId === farmId
+  //     ).length;
+  //     setVideoCount(count);
+  //   } catch (err) {
+  //     console.error("Lỗi video:", err);
+  //     setVideoCount(0);
+  //   }
+  // };
 
   const fetchQuestions = async () => {
     setLoadingQuestions(true);
@@ -105,7 +120,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const fetchAnswers = async () => {
     setLoadingAnswers(true);
     try {
-      const res = await axios.get(`${BASE_URL}/answers?farmId=${farmId}`, getOpts());
+      const res = await axios.get(`${BASE_URL}/answers/by-farm/${farmId}`, getOpts());
       setAnswers(res.data || []);
     } catch (err) {
       console.error("Lỗi câu trả lời:", err);
@@ -167,7 +182,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
           <Typography className="text-indigo-500">Đang tải...</Typography>
         ) : (
           <>
-            {/* Thông tin nông trại */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Info label="Tên nông trại" value={farm.name} />
               <Info label="Mã nông trại" value={farm.code} />
@@ -199,14 +213,15 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
             {farm.description && (
               <div>
-                <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
+                <Typography variant="h6" className="mb-2 text-blue-gray-900">
+                  Mô tả
+                </Typography>
                 <Typography className="text-sm text-blue-gray-700 whitespace-pre-wrap">
                   {farm.description}
                 </Typography>
               </div>
             )}
 
-            {/* Hình ảnh */}
             <div>
               <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
               {images.length > 0 ? (
@@ -226,14 +241,12 @@ export default function FarmDetail({ open, onClose, farmId }) {
               )}
             </div>
 
-            {/* Nút biến động */}
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
                 {showChanges ? "Ẩn biến động" : "Xem biến động"}
               </Button>
             </div>
 
-            {/* Câu hỏi + câu trả lời */}
             {showChanges && (
               <div className="space-y-6 p-4 border border-gray-200 rounded-lg bg-white shadow-inner">
                 <Typography variant="h6" className="text-blue-gray-900">Danh sách câu hỏi và câu trả lời</Typography>
@@ -244,28 +257,41 @@ export default function FarmDetail({ open, onClose, farmId }) {
                 ) : (
                   <div className="space-y-4">
                     {questions.map((q, idx) => {
-                      const answer = answers.find((a) => a.questionId === q.id);
+                      const match = answers.find((a) => a.question?.id === q.id);
+                      const ans = match?.answer;
+
                       return (
                         <div key={q.id} className="border p-3 rounded-lg bg-gray-50">
                           <Typography className="text-sm font-semibold text-gray-800">
                             {idx + 1}. {q.text}
                           </Typography>
 
-                          {answer ? (
-                            <>
-                              <Typography className="text-sm text-blue-gray-700 mt-1">
-                                Trả lời: {answer.text}
-                              </Typography>
-                              {answer.image && (
-                                <img
-                                  src={`https://api-ndolv2.nongdanonline.cc${answer.image}`}
-                                  alt={`Ảnh trả lời ${idx + 1}`}
-                                  className="w-40 h-32 mt-2 object-cover rounded"
-                                />
+                          {ans ? (
+                            <div className="mt-1 space-y-1 text-sm text-blue-gray-700">
+                              {ans.selectedOptions?.length > 0 && (
+                                <div>Chọn: {ans.selectedOptions.join(", ")}</div>
                               )}
-                            </>
+                              {ans.otherText && <div>Khác: {ans.otherText}</div>}
+                              {ans.uploadedFiles?.length > 0 && (
+                                <div className="space-y-1">
+                                  {ans.uploadedFiles.map((f, i) => (
+                                    <a
+                                      key={i}
+                                      href={f}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-500 underline block"
+                                    >
+                                      File {i + 1}
+                                    </a>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           ) : (
-                            <Typography className="text-sm text-red-500 italic mt-1">Chưa có câu trả lời</Typography>
+                            <Typography className="text-sm text-red-500 italic mt-1">
+                              Chưa có câu trả lời
+                            </Typography>
                           )}
                         </div>
                       );

@@ -15,7 +15,7 @@ export function SignIn() {
   const emailRef = useRef();
   const passwordRef = useRef();
 
-  // Đăng nhập
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -47,7 +47,6 @@ export function SignIn() {
         localStorage.setItem("token", data.accessToken);
         localStorage.setItem("refreshToken", data.refreshToken);
         setAuthStatus(dispatch, true);
-        alert("Đăng nhập thành công!");
         navigate("/dashboard/home");
       } else {
         alert(data.message || "Đăng nhập thất bại");

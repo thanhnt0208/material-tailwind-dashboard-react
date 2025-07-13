@@ -7,6 +7,7 @@ import {
   Dialog,
   Input,
 } from "@material-tailwind/react";
+import PostDetailDialog from "./PostDetail";
 import { useNavigate } from "react-router-dom";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
@@ -19,6 +20,15 @@ export function PostList() {
   const [users, setUsers] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 10;
+
+  const [filterUserId, setFilterUserId] = useState(""); 
+  const [filterTitle, setFilterTitle] = useState(""); 
+  const [filterSortLikes, setFilterSortLikes] = useState(""); 
+  const [filterSortComments, setFilterSortComments] = useState(""); 
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedPostId, setSelectedPostId] = useState(null);
+  const [filterTag, setFilterTag] = useState(""); 
+  const [filterStatus, setFilterStatus] = useState("");
 
   const navigate = useNavigate();
 
@@ -43,57 +53,127 @@ export function PostList() {
     }
   };
 
-  const fetchPosts = async () => {
+const fetchPosts = async () => {
+  setLoading(true);
+  const token = localStorage.getItem("token");
+  const limit = 10;
+  const totalToFetch = 100;
+  const totalPagesToFetch = Math.ceil(totalToFetch / limit);
+
+  try {
+    const fetchPage = async (page) => {
+      const res = await fetch(`${BASE_URL}/admin-post-feed?page=${page}&limit=${limit}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const json = await res.json();
+      if (res.ok) return json.data || [];
+      else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
+    };
+
+    const allPages = await Promise.all(
+      Array.from({ length: totalPagesToFetch }, (_, i) => fetchPage(i + 1))
+    );
+    const allPosts = allPages.flat();
+
+    const resComments = await fetch(`${BASE_URL}/admin-comment-post`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const jsonComments = await resComments.json();
+    const allComments = Array.isArray(jsonComments.data) ? jsonComments.data : [];
+
+    const commentCountMap = allComments.reduce((acc, commentGroup) => {
+      const postId = commentGroup.postId;
+
+      
+      const parentCount = Array.isArray(commentGroup.comments)
+        ? commentGroup.comments.length
+        : 0;
+
+      
+      const replyCount = commentGroup.comments.reduce((sum, cmt) => {
+        return sum + (Array.isArray(cmt.replies) ? cmt.replies.length : 0);
+      }, 0);
+
+      
+      acc[postId] = parentCount + replyCount;
+      return acc;
+    }, {});
+
+     const withCommentCounts = allPosts.map((post) => ({
+      ...post,
+      id: post._id || post.id,
+      commentCount: commentCountMap[post._id || post.id] || 0, 
+    }));
+
+
+    console.log(" Data fetch xong:", withCommentCounts);
+    setPosts(withCommentCounts);
+  } catch (err) {
+    console.error("Fetch posts error:", err);
+    alert("Không thể lấy danh sách bài viết: " + err.message);
+  }
+
+  setLoading(false);
+};
+
+const fetchPostsByUser = async ({ userId, title, tags, status, sortLikes, sortComments, page = 1, limit = 10 }) => {
     setLoading(true);
-    const token = localStorage.getItem("token");
-    const limit = 10;
-    const totalToFetch = 100;
-    const totalPagesToFetch = Math.ceil(totalToFetch / limit);
+  const token = localStorage.getItem("token");
 
-    try {
-      const fetchPage = async (page) => {
-        const res = await fetch(`${BASE_URL}/admin-post-feed?page=${page}&limit=${limit}`, {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const json = await res.json();
-        if (res.ok) return json.data || [];
-        else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
-      };
+  const queryParams = new URLSearchParams();
+  if (title) queryParams.append("title", title);
+  if (status) queryParams.append("status", status);
+  if (userId) queryParams.append("authorId", userId);
+  if (sortLikes) queryParams.append("sortLikes", sortLikes);
+  if (sortComments) queryParams.append("sortComments", sortComments);
+  if (tags && tags.length > 0) tags.forEach(tag => queryParams.append("tags", tag));
+  queryParams.append("page", page);
+  queryParams.append("limit", limit);
 
-      const allPages = await Promise.all(
-        Array.from({ length: totalPagesToFetch }, (_, i) => fetchPage(i + 1))
-      );
+  try {
+    const res = await fetch(`${BASE_URL}/admin-post-feed?${queryParams.toString()}`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const json = await res.json();
+    const fetchedPosts = json.data || [];
 
-      const allPosts = allPages.flat();
+    const resComments = await fetch(`${BASE_URL}/admin-comment-post`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const jsonComments = await resComments.json();
+    const allComments = Array.isArray(jsonComments.data) ? jsonComments.data : [];
 
-      const withCommentCounts = await Promise.all(
-        allPosts.map(async (post) => {
-          const postId = post._id || post.id;
-          try {
-            const res = await fetch(`${BASE_URL}/admin-comment-post/post/${postId}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            const json = await res.json();
-            const comments = Array.isArray(json.data) ? json.data : [];
-            return { ...post, id: postId, commentCount: comments.length };
-          } catch (err) {
-            console.warn("Lỗi khi lấy comment cho post:", postId, err);
-            return { ...post, id: postId, commentCount: 0 };
-          }
-        })
-      );
-      console.log("📥 Data fetch xong:", withCommentCounts);
-      setPosts(withCommentCounts);
-    } catch (err) {
-      console.error("Fetch posts error:", err);
-      alert("Không thể lấy danh sách bài viết: " + err.message);
-    }
+    const commentCountMap = allComments.reduce((acc, commentGroup) => {
+      const postId = commentGroup.postId;
+      const parentCount = Array.isArray(commentGroup.comments) ? commentGroup.comments.length : 0;
+      const replyCount = commentGroup.comments.reduce((sum, cmt) => {
+        return sum + (Array.isArray(cmt.replies) ? cmt.replies.length : 0);
+      }, 0);
+      acc[postId] = parentCount + replyCount;
+      return acc;
+    }, {});
 
-    setLoading(false);
-  };
+    const withCommentCounts = fetchedPosts.map((post) => ({
+      ...post,
+      id: post._id || post.id,
+      commentCount: commentCountMap[post._id || post.id] || 0,
+    }));
+
+    setPosts(withCommentCounts);
+  } catch (err) {
+    console.error("Lỗi khi lọc post:", err);
+    alert("Lỗi khi lọc bài viết: " + err.message);
+  }
+
+  setLoading(false);
+};
+
 
   useEffect(() => {
     fetchUsers();
@@ -211,6 +291,102 @@ export function PostList() {
         Danh sách bài post
       </Typography>
 
+      <div className="flex flex-wrap items-end gap-2 mb-4">
+        <Input
+          label="User ID"
+          value={filterUserId}
+          onChange={(e) => setFilterUserId(e.target.value)}
+          className="min-w-[150px]"
+        />
+        <Input
+          label="Title"
+          value={filterTitle}
+          onChange={(e) => setFilterTitle(e.target.value)}
+          className="min-w-[150px]"
+        />
+
+        
+        {/* <div className="flex flex-col">
+          <label className="text-sm text-gray-700">Trạng thái</label>
+          <select
+            className="border h-10 rounded px-2 text-sm"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="">Tất cả trạng thái</option>
+            <option value="draft">Nháp</option>
+            <option value="pending">Chờ duyệt</option>
+            <option value="published">Đã đăng</option>
+            <option value="archived">Đã lưu trữ</option>
+          </select>
+        </div>
+
+        
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-700">Sắp xếp Like</label>
+          <select
+            className="border h-10 rounded px-2 text-sm"
+            value={filterSortLikes}
+            onChange={(e) => setFilterSortLikes(e.target.value)}
+          >
+            <option value="">---</option>
+            <option value="asc">Tăng dần</option>
+            <option value="desc">Giảm dần</option>
+          </select>
+        </div>
+
+        
+        <div className="flex flex-col">
+          <label className="text-sm text-gray-700">Sắp xếp Bình luận</label>
+          <select
+            className="border h-10 rounded px-2 text-sm"
+            value={filterSortComments}
+            onChange={(e) => setFilterSortComments(e.target.value)}
+          >
+            <option value="">---</option>
+            <option value="asc">Tăng dần</option>
+            <option value="desc">Giảm dần</option>
+          </select>
+        </div> */}
+
+        {/* 🔵 Button Lọc + Xoá */}
+        <div className="flex gap-2">
+          <Button
+            color="blue"
+            className="h-10"
+            onClick={() =>
+              fetchPostsByUser({
+                userId: filterUserId,
+                page: 1,
+                limit: postsPerPage,
+                title: filterTitle,
+                status: filterStatus,
+                sortLikes: filterSortLikes,
+                sortComments: filterSortComments,
+                tags: filterTag ? [filterTag] : [],
+              })
+            }
+          >
+            LỌC
+          </Button>
+          <Button
+            color="black"
+            className="h-10"
+            onClick={() => {
+              setFilterUserId("");
+              setFilterTitle("");
+              setFilterStatus("");
+              setFilterSortLikes("");
+              setFilterSortComments("");
+              fetchPosts();
+            }}
+          >
+            XOÁ BỘ LỌC
+          </Button>
+        </div>
+      </div>
+
+
       {loading ? (
         <Typography>Đang tải dữ liệu...</Typography>
       ) : (
@@ -218,15 +394,15 @@ export function PostList() {
           <table className="min-w-full text-left border border-gray-200 rounded">
             <thead>
               <tr className="bg-gray-100">
-                <th className="p-2 border">Tiêu đề</th>
+                <th className="p-2 border w-44">Tiêu đề</th>
                 <th className="p-2 border">Mô tả</th>
-                <th className="p-2 border">Tags</th>
-                <th className="p-2 border">Hình</th>
-                <th className="p-2 border">Tác giả</th>
-                <th className="p-2 border">Like</th>
-                {/* <th className="p-2 border">Bình luận</th> */}
-                <th className="p-2 border">Trạng thái</th>
-                <th className="p-2 border">Hành động</th>
+                <th className="p-2 border w-28">Tags</th>
+                <th className="p-2 border w-28">Hình</th>
+                <th className="p-2 border w-28">Tác giả</th>
+                <th className="p-2 border w-20 text-center">Like</th>
+                <th className="p-2 border w-24">Bình luận</th>
+                <th className="p-2 border w-36">Trạng thái</th>
+                <th className="p-2 border w-40  ">Hành động</th>
               </tr>
             </thead>
             <tbody>
@@ -235,7 +411,7 @@ export function PostList() {
                 return (
                   <tr
                     key={post.id}
-                    onClick={() => navigate(`/dashboard/post/${post.id}`)}
+                    onClick={() => {setSelectedPostId(post.id); setIsDetailOpen(true);}}
                     className="hover:bg-gray-50 cursor-pointer transition"
                   >
                     <td className="p-2 border">{post.title}</td>
@@ -278,8 +454,8 @@ export function PostList() {
                         <span>Không rõ</span>
                       )}
                     </td>
-                    <td className="p-2 border">{post.like}</td>
-                    {/* <td className="p-2 border">{post.commentCount ?? 0}</td> */}
+                    <td className="p-2 border text-center">{post.like}</td>
+                    <td className="p-2 border text-center">{post.commentCount ?? 0}</td>
                     <td className="p-2 border">
                       <Chip
                         value={post.status ? "Đang hoạt động" : "Đã ẩn"}
@@ -430,6 +606,12 @@ export function PostList() {
           </div>
         </div>
       </Dialog>
+
+      <PostDetailDialog
+        postId={selectedPostId}
+        open={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+      />
     </div>
   );
 }

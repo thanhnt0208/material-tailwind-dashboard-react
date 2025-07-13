@@ -47,11 +47,24 @@ export function Farms() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingFarmId, setDeletingFarmId] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const [totalPages, setTotalPages] = useState(1);
+
   const fetchFarms = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get(`${BASE_URL}/adminfarms`, getOpts());
-      console.log("👉 API trả về:", res.data);
-      setFarms(res.data.data);
+      const res = await axios.get(`${BASE_URL}/adminfarms`, {
+        ...getOpts(),
+        params: {
+          page: currentPage,
+          limit: itemsPerPage,
+          search: search || undefined,
+          status: tab !== "all" ? tab : undefined,
+        },
+      });
+      setFarms(res.data.data || []);
+      setTotalPages(res.data.totalPages || 1);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -81,7 +94,7 @@ export function Farms() {
   const deleteFarm = async (id) => {
     try {
       await axios.delete(`${BASE_URL}/adminfarms/${id}`, getOpts());
-      setFarms((prev) => prev.filter((farm) => farm._id !== id));
+      await fetchFarms();
     } catch (err) {
       alert("Lỗi xoá: " + (err.response?.data?.message || err.message));
     }
@@ -110,10 +123,11 @@ export function Farms() {
 
   useEffect(() => {
     fetchFarms();
-  }, []);
-const displayedFarms = farms
-    .filter((farm) => (tab === "all" ? true : farm.status === tab))
-    .filter((farm) => farm.name?.toLowerCase().includes(search.toLowerCase()));
+  }, [currentPage, tab, search]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, tab]);
 
   return (
     <>
@@ -154,14 +168,13 @@ const displayedFarms = farms
                   <th className="px-2 py-2 font-bold uppercase">Chủ sở hữu</th>
                   <th className="px-2 py-2 font-bold uppercase">SĐT</th>
                   <th className="px-2 py-2 font-bold uppercase">Địa chỉ</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Diện tích</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Trạng thái</th>
-                  <th className="px-2 py-2 font-bold uppercase whitespace-nowrap">Thao tác</th>
+                  <th className="px-2 py-2 font-bold uppercase">Diện tích</th>
+                  <th className="px-2 py-2 font-bold uppercase">Trạng thái</th>
+                  <th className="px-2 py-2 font-bold uppercase">Thao tác</th>
                 </tr>
               </thead>
-
               <tbody>
-                {displayedFarms.map((farm) => (
+                {farms.map((farm) => (
                   <tr
                     key={farm._id}
                     className="border-b hover:bg-indigo-50 transition text-base cursor-pointer"
@@ -172,7 +185,7 @@ const displayedFarms = farms
                     <td className="px-2 py-2">{farm.ownerInfo?.name || "—"}</td>
                     <td className="px-2 py-2">{farm.phone || "—"}</td>
                     <td className="px-2 py-2">{farm.location}</td>
-<td className="px-2 py-2">{farm.area} m²</td>
+                    <td className="px-2 py-2">{farm.area} m²</td>
                     <td className="px-2 py-2">
                       <Chip
                         value={
@@ -209,7 +222,6 @@ const displayedFarms = farms
                             •••
                           </Button>
                         </MenuHandler>
-
                         <MenuList className="z-[999] p-2 min-w-[140px]">
                           <MenuItem
                             onClick={() => {
@@ -220,7 +232,6 @@ const displayedFarms = farms
                           >
                             Sửa
                           </MenuItem>
-
                           <MenuItem
                             className="text-red-500 font-semibold"
                             onClick={() => {
@@ -231,7 +242,6 @@ const displayedFarms = farms
                           >
                             Xoá
                           </MenuItem>
-
                           {farm.status === "pending" && (
                             <>
                               <MenuItem
@@ -243,7 +253,7 @@ const displayedFarms = farms
                                 Duyệt
                               </MenuItem>
                               <MenuItem
-onClick={() => {
+                                onClick={() => {
                                   changeStatus(farm._id, "deactivate");
                                   setOpenMenuId(null);
                                 }}
@@ -252,7 +262,6 @@ onClick={() => {
                               </MenuItem>
                             </>
                           )}
-
                           {farm.status === "active" && (
                             <MenuItem
                               onClick={() => {
@@ -263,7 +272,6 @@ onClick={() => {
                               Khóa
                             </MenuItem>
                           )}
-
                           {farm.status === "inactive" && (
                             <MenuItem
                               onClick={() => {
@@ -281,11 +289,28 @@ onClick={() => {
                 ))}
               </tbody>
             </table>
+
+            {/* Phân trang */}
+            {totalPages > 1 && (
+              <div className="flex justify-center gap-2 mt-4 flex-wrap">
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <Button
+                    key={i}
+                    size="sm"
+                    variant={currentPage === i + 1 ? "filled" : "outlined"}
+                    color="indigo"
+                    onClick={() => setCurrentPage(i + 1)}
+                    className="rounded-full w-10 h-10 p-0"
+                  >
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
+            )}
           </CardBody>
         )}
       </Card>
 
-      {/* Dialog chỉnh sửa hoặc thêm farm */}
       <FarmForm
         open={openForm}
         onClose={() => {
@@ -302,7 +327,6 @@ onClick={() => {
         }}
       />
 
-      {/* Dialog xem chi tiết */}
       <Dialog open={openDetail} size="xl" handler={setOpenDetail} dismiss={{ outsidePress: false }}>
         <DialogHeader className="justify-between">
           Chi tiết nông trại
@@ -319,7 +343,6 @@ onClick={() => {
         </DialogBody>
       </Dialog>
 
-      {/* Dialog xác nhận xoá */}
       <Dialog open={deleteConfirmOpen} handler={setDeleteConfirmOpen} size="sm">
         <DialogHeader>Xác nhận xoá</DialogHeader>
         <DialogBody>
@@ -330,7 +353,7 @@ onClick={() => {
             Huỷ
           </Button>
           <Button
-color="red"
+            color="red"
             onClick={() => {
               deleteFarm(deletingFarmId);
               setDeleteConfirmOpen(false);

@@ -62,12 +62,12 @@ export default function VideoLikeList() {
         </ul>
       )}
 
-      <button
+      {/* <button
         onClick={() => navigate(-1)}
         className="mt-6 px-4 py-2 bg-blue-500 text-white rounded shadow hover:bg-blue-600"
       >
         Quay lại
-      </button>
+      </button> */}
     </div>
   );
 }
