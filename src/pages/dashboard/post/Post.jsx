@@ -21,15 +21,16 @@ export function PostList() {
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 10;
 
-  const [filterUserId, setFilterUserId] = useState(""); 
-  const [filterTitle, setFilterTitle] = useState(""); 
-  const [filterSortLikes, setFilterSortLikes] = useState(""); 
-  const [filterSortComments, setFilterSortComments] = useState(""); 
+  const [filterUserId, setFilterUserId] = useState("");
+  const [filterTitle, setFilterTitle] = useState("");
+  const [filterSortLikes, setFilterSortLikes] = useState("");
+  const [filterSortComments, setFilterSortComments] = useState("");
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedPostId, setSelectedPostId] = useState(null);
-  const [filterTag, setFilterTag] = useState(""); 
+  const [filterTag, setFilterTag] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
   const fetchUsers = async () => {
@@ -53,212 +54,167 @@ export function PostList() {
     }
   };
 
-const fetchPosts = async () => {
-  setLoading(true);
-  const token = localStorage.getItem("token");
-  const limit = 10;
-  const totalToFetch = 100;
-  const totalPagesToFetch = Math.ceil(totalToFetch / limit);
-
-  try {
-    const fetchPage = async (page) => {
-      const res = await fetch(`${BASE_URL}/admin-post-feed?page=${page}&limit=${limit}`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const json = await res.json();
-      if (res.ok) return json.data || [];
-      else throw new Error(json.message || "Lỗi khi gọi API trang " + page);
-    };
-
-    const allPages = await Promise.all(
-      Array.from({ length: totalPagesToFetch }, (_, i) => fetchPage(i + 1))
-    );
-    const allPosts = allPages.flat();
-
-    const resComments = await fetch(`${BASE_URL}/admin-comment-post`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const jsonComments = await resComments.json();
-    const allComments = Array.isArray(jsonComments.data) ? jsonComments.data : [];
-
-    const commentCountMap = allComments.reduce((acc, commentGroup) => {
-      const postId = commentGroup.postId;
-
-      
-      const parentCount = Array.isArray(commentGroup.comments)
-        ? commentGroup.comments.length
-        : 0;
-
-      
-      const replyCount = commentGroup.comments.reduce((sum, cmt) => {
-        return sum + (Array.isArray(cmt.replies) ? cmt.replies.length : 0);
-      }, 0);
-
-      
-      acc[postId] = parentCount + replyCount;
-      return acc;
-    }, {});
-
-     const withCommentCounts = allPosts.map((post) => ({
-      ...post,
-      id: post._id || post.id,
-      commentCount: commentCountMap[post._id || post.id] || 0, 
-    }));
-
-
-    console.log(" Data fetch xong:", withCommentCounts);
-    setPosts(withCommentCounts);
-  } catch (err) {
-    console.error("Fetch posts error:", err);
-    alert("Không thể lấy danh sách bài viết: " + err.message);
-  }
-
-  setLoading(false);
-};
-
-const fetchPostsByUser = async ({ userId, title, tags, status, sortLikes, sortComments, page = 1, limit = 10 }) => {
+  const fetchPosts = async () => {
     setLoading(true);
-  const token = localStorage.getItem("token");
-
-  const queryParams = new URLSearchParams();
-  if (title) queryParams.append("title", title);
-  if (status) queryParams.append("status", status);
-  if (userId) queryParams.append("authorId", userId);
-  if (sortLikes) queryParams.append("sortLikes", sortLikes);
-  if (sortComments) queryParams.append("sortComments", sortComments);
-  if (tags && tags.length > 0) tags.forEach(tag => queryParams.append("tags", tag));
-  queryParams.append("page", page);
-  queryParams.append("limit", limit);
-
-  try {
-    const res = await fetch(`${BASE_URL}/admin-post-feed?${queryParams.toString()}`, {
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+    const token = localStorage.getItem("token");
+    const queryParams = new URLSearchParams({
+      page: currentPage,
+      limit: postsPerPage,
     });
-    const json = await res.json();
-    const fetchedPosts = json.data || [];
 
-    const resComments = await fetch(`${BASE_URL}/admin-comment-post`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const jsonComments = await resComments.json();
-    const allComments = Array.isArray(jsonComments.data) ? jsonComments.data : [];
 
-    const commentCountMap = allComments.reduce((acc, commentGroup) => {
-      const postId = commentGroup.postId;
-      const parentCount = Array.isArray(commentGroup.comments) ? commentGroup.comments.length : 0;
-      const replyCount = commentGroup.comments.reduce((sum, cmt) => {
-        return sum + (Array.isArray(cmt.replies) ? cmt.replies.length : 0);
-      }, 0);
-      acc[postId] = parentCount + replyCount;
-      return acc;
-    }, {});
+    if (filterUserId) queryParams.append("userId", filterUserId);
+    if (filterTitle) queryParams.append("title", filterTitle);
+    if (filterStatus === "true") queryParams.append("status", true);
+    else if (filterStatus === "false") queryParams.append("status", false);
+    if (filterSortLikes) queryParams.append("sortLikes", filterSortLikes);
+    if (filterSortComments) queryParams.append("sortComments", filterSortComments);
+    if (filterTag) queryParams.append("tags", filterTag);
 
-    const withCommentCounts = fetchedPosts.map((post) => ({
-      ...post,
-      id: post._id || post.id,
-      commentCount: commentCountMap[post._id || post.id] || 0,
-    }));
+    try {
+      const res = await fetch(
+        `${BASE_URL}/admin-post-feed?${queryParams.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const json = await res.json();
+      if (res.ok) {
+        const fetchPosts = json.data || [];
+        const postsWithComments = await Promise.all(
+        fetchPosts.map(async (post) => {
+          try {
+            const commentRes = await fetch(
+              `${BASE_URL}/admin-comment-post/post/${post.id}`,
+              {
+                headers: { Authorization: `Bearer ${token}` },
+              }
+            );
+            const commentJson = await commentRes.json();
+            if (commentRes.ok) {
+              const comments = commentJson.comments || [];
+              let totalReplies = 0;
+              comments.forEach((c) => {
+                totalReplies += c.replies?.length || 0;
+              });
+              return {
+                ...post,
+                commentCount: comments.length + totalReplies,
+              };
+            } else {
+              console.warn("Không lấy được comment cho post:", post.id);
+              return { ...post, commentCount: 0 };
+            }
+          } catch (err) {
+            console.error("Fetch comment error:", err);
+            return { ...post, commentCount: 0 };
+          }
+        })
+      );
+        setPosts(postsWithComments);
+        setTotalPages(json.totalPages || 1);
+      } else {
+        console.error("API lỗi:", json.message);
+        alert("Không lấy được dữ liệu: " + json.message);
+      }
+    } catch (err) {
+      console.error("Fetch posts error:", err);
+      alert("Không thể lấy danh sách bài viết: " + err.message);
+    }
 
-    setPosts(withCommentCounts);
-  } catch (err) {
-    console.error("Lỗi khi lọc post:", err);
-    alert("Lỗi khi lọc bài viết: " + err.message);
-  }
+    setLoading(false);
+  };
 
-  setLoading(false);
-};
-
+  const handleFilter = () => {
+    setCurrentPage(1);
+    fetchPosts();
+  };
 
   useEffect(() => {
     fetchUsers();
     fetchPosts();
-  }, []);
+  }, [currentPage]);
 
   const findUser = (id) => users.find((u) => u.id === id);
 
   const handleEditClick = (post) => {
-  setSelectedPost({
-    ...post,
-    tagsInput: Array.isArray(post.tags) ? post.tags.join(", ") : "",
-  });
-  setOpenEdit(true);
-};
-
+    setSelectedPost({
+      ...post,
+      tagsInput: Array.isArray(post.tags) ? post.tags.join(", ") : "",
+    });
+    setOpenEdit(true);
+  };
 
   const updatePost = async () => {
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
+
+      const payload = {
+        title: selectedPost.title,
+        description: selectedPost.description,
+        status: Boolean(selectedPost.status),
+        tags: (selectedPost.tagsInput || "")
+          .split(",")
+          .map((tag) => tag.trim())
+          .filter((tag) => tag !== ""),
+        images: selectedPost.images,
+        authorId: selectedPost.authorId,
+      };
 
 
-    const payload = {
-      title: selectedPost.title,
-      description: selectedPost.description,
-      status: Boolean(selectedPost.status), 
-      tags: (selectedPost.tagsInput || "")
-        .split(",") 
-        .map((tag) => tag.trim()) 
-        .filter((tag) => tag !== ""), 
-      images: selectedPost.images,
-      authorId: selectedPost.authorId,
-    };
+      const res = await fetch(
+        `${BASE_URL}/admin-post-feed/${selectedPost.id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-    console.log("👉 Payload gửi PUT:", payload);  
+      const json = await res.json();
 
-    const res = await fetch(`${BASE_URL}/admin-post-feed/${selectedPost.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+      if (res.ok) {
+        alert("Cập nhật thành công!");
 
-    const json = await res.json();
-
-    if (res.ok) {
-      alert(" Cập nhật thành công!");
-
-      setPosts((prevPosts) =>
-      prevPosts.map((p) =>
-        p.id === selectedPost.id
-          ? {
-              ...p,
-              title: selectedPost.title,
-              description: selectedPost.description,
-              tags: selectedPost.tagsInput
-                .split(",")
-                .map((tag) => tag.trim())
-                .filter((tag) => tag !== ""),
-              status: selectedPost.status,
-              images: selectedPost.images,
-            }
-          : p
-      )
-    );
-      setSelectedPost(null);
-      setOpenEdit(false);
-
-      
-      
-    } else {
-      console.error(" PUT lỗi:", json);
-      alert(json.message || " Cập nhật thất bại");
+        setPosts((prevPosts) =>
+          prevPosts.map((p) =>
+            p.id === selectedPost.id
+              ? {
+                  ...p,
+                  title: selectedPost.title,
+                  description: selectedPost.description,
+                  tags: selectedPost.tagsInput
+                    .split(",")
+                    .map((tag) => tag.trim())
+                    .filter((tag) => tag !== ""),
+                  status: selectedPost.status,
+                  images: selectedPost.images,
+                }
+              : p
+          )
+        );
+        setSelectedPost(null);
+        setOpenEdit(false);
+      } else {
+        console.error("PUT lỗi:", json);
+        alert(json.message || "Cập nhật thất bại");
+      }
+    } catch (err) {
+      console.error("PUT error:", err);
+      alert("Lỗi kết nối server khi cập nhật");
     }
-  } catch (err) {
-    console.error(" PUT error:", err);
-    alert(" Lỗi kết nối server khi cập nhật");
-  }
-};
-
+  };
 
   const deletePost = async (id) => {
-    const confirmDelete = window.confirm("Bạn có chắc chắn muốn xoá bài post này?");
+    const confirmDelete = window.confirm(
+      "Bạn có chắc chắn muốn xoá bài post này?"
+    );
     if (!confirmDelete) return;
 
     try {
@@ -280,339 +236,218 @@ const fetchPostsByUser = async ({ userId, title, tags, status, sortLikes, sortCo
     }
   };
 
-  const indexOfLastPost = currentPage * postsPerPage;
-  const indexOfFirstPost = indexOfLastPost - postsPerPage;
-  const currentPosts = posts.slice(indexOfFirstPost, indexOfLastPost);
-  const totalPages = Math.ceil(posts.length / postsPerPage);
-
   return (
     <div className="p-4">
-      <Typography variant="h4" className="mb-4">
-        Danh sách bài post
-      </Typography>
+  <Typography variant="h4" className="mb-4 font-semibold text-gray-800">
+    Danh sách bài post
+  </Typography>
 
-      <div className="flex flex-wrap items-end gap-2 mb-4">
-        <Input
-          label="User ID"
-          value={filterUserId}
-          onChange={(e) => setFilterUserId(e.target.value)}
-          className="min-w-[150px]"
-        />
-        <Input
-          label="Title"
-          value={filterTitle}
-          onChange={(e) => setFilterTitle(e.target.value)}
-          className="min-w-[150px]"
-        />
+  {/* Bộ lọc */}
+  <div className="flex flex-wrap items-end gap-3 mb-4">
+    <Input
+      label="Tiêu đề"
+      value={filterTitle}
+      onChange={(e) => setFilterTitle(e.target.value)}
+      className="min-w-[180px]"
+      color="blue"
+    />
 
-        
-        {/* <div className="flex flex-col">
-          <label className="text-sm text-gray-700">Trạng thái</label>
-          <select
-            className="border h-10 rounded px-2 text-sm"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="">Tất cả trạng thái</option>
-            <option value="draft">Nháp</option>
-            <option value="pending">Chờ duyệt</option>
-            <option value="published">Đã đăng</option>
-            <option value="archived">Đã lưu trữ</option>
-          </select>
-        </div>
-
-        
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-700">Sắp xếp Like</label>
-          <select
-            className="border h-10 rounded px-2 text-sm"
-            value={filterSortLikes}
-            onChange={(e) => setFilterSortLikes(e.target.value)}
-          >
-            <option value="">---</option>
-            <option value="asc">Tăng dần</option>
-            <option value="desc">Giảm dần</option>
-          </select>
-        </div>
-
-        
-        <div className="flex flex-col">
-          <label className="text-sm text-gray-700">Sắp xếp Bình luận</label>
-          <select
-            className="border h-10 rounded px-2 text-sm"
-            value={filterSortComments}
-            onChange={(e) => setFilterSortComments(e.target.value)}
-          >
-            <option value="">---</option>
-            <option value="asc">Tăng dần</option>
-            <option value="desc">Giảm dần</option>
-          </select>
-        </div> */}
-
-        {/* 🔵 Button Lọc + Xoá */}
-        <div className="flex gap-2">
-          <Button
-            color="blue"
-            className="h-10"
-            onClick={() =>
-              fetchPostsByUser({
-                userId: filterUserId,
-                page: 1,
-                limit: postsPerPage,
-                title: filterTitle,
-                status: filterStatus,
-                sortLikes: filterSortLikes,
-                sortComments: filterSortComments,
-                tags: filterTag ? [filterTag] : [],
-              })
-            }
-          >
-            LỌC
-          </Button>
-          <Button
-            color="black"
-            className="h-10"
-            onClick={() => {
-              setFilterUserId("");
-              setFilterTitle("");
-              setFilterStatus("");
-              setFilterSortLikes("");
-              setFilterSortComments("");
-              fetchPosts();
-            }}
-          >
-            XOÁ BỘ LỌC
-          </Button>
-        </div>
-      </div>
-
-
-      {loading ? (
-        <Typography>Đang tải dữ liệu...</Typography>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left border border-gray-200 rounded">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2 border w-44">Tiêu đề</th>
-                <th className="p-2 border">Mô tả</th>
-                <th className="p-2 border w-28">Tags</th>
-                <th className="p-2 border w-28">Hình</th>
-                <th className="p-2 border w-28">Tác giả</th>
-                <th className="p-2 border w-20 text-center">Like</th>
-                <th className="p-2 border w-24">Bình luận</th>
-                <th className="p-2 border w-36">Trạng thái</th>
-                <th className="p-2 border w-40  ">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentPosts.map((post) => {
-                const author = findUser(post.authorId);
-                return (
-                  <tr
-                    key={post.id}
-                    onClick={() => {setSelectedPostId(post.id); setIsDetailOpen(true);}}
-                    className="hover:bg-gray-50 cursor-pointer transition"
-                  >
-                    <td className="p-2 border">{post.title}</td>
-                    <td className="p-2 border max-w-xs align-top">
-                      <p className="line-clamp-10 text-sm leading-snug break-words">
-                        {post.description.length > 30
-                          ? post.description.slice(0, 25) + "..."
-                          : post.description || "Không có mô tả"}
-                      </p>
-                    </td>
-                    <td className="p-2 border">
-                      {Array.isArray(post.tags) && post.tags.length > 0 && (
-                        <div className="flex items-center gap-1">
-                          <div className="px-1 py-0.5 text-s bg-gray-200 rounded">
-                            {post.tags[0]}
-                          </div>
-                          {post.tags.length > 1 && (
-                            <span className="text-xs text-gray-500">
-                              +{post.tags.length - 1}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-2 border">
-                      {post.images?.length > 0 ? (
-                        <img
-                          src={`${BASE_URL}${post.images[0]}`}
-                          alt="Hình ảnh"
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                      ) : (
-                        "Không có"
-                      )}
-                    </td>
-                    <td className="p-2 border flex items-center gap-2">
-                      {author ? (
-                        <span>{author.fullName}</span>
-                      ) : (
-                        <span>Không rõ</span>
-                      )}
-                    </td>
-                    <td className="p-2 border text-center">{post.like}</td>
-                    <td className="p-2 border text-center">{post.commentCount ?? 0}</td>
-                    <td className="p-2 border">
-                      <Chip
-                        value={post.status ? "Đang hoạt động" : "Đã ẩn"}
-                        color={post.status ? "green" : "red"}
-                        size="sm"
-                      />
-                    </td>
-                    <td className="flex gap-2 p-2 border">
-                      <Button
-                        color="blue"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditClick(post);
-                        }}
-                      >
-                        Sửa
-                      </Button>
-                      <Button
-                        color="red"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deletePost(post.id);
-                        }}
-                      >
-                        Xoá
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {posts.length === 0 && (
-                <tr>
-                  <td colSpan="9" className="p-2 text-center">
-                    Không có dữ liệu
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          <div className="flex justify-center mt-4 gap-2">
-            <Button
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(currentPage - 1)}
-            >
-              Trước
-            </Button>
-            {[...Array(totalPages)].map((_, i) => (
-              <Button
-                key={i}
-                size="sm"
-                color={currentPage === i + 1 ? "blue" : "gray"}
-                onClick={() => setCurrentPage(i + 1)}
-              >
-                {i + 1}
-              </Button>
-            ))}
-            <Button
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(currentPage + 1)}
-            >
-              Sau
-            </Button>
-          </div>
-        </div>
-      )}
-
-      <Dialog open={openEdit} handler={() => setOpenEdit(false)}>
-        <div className="p-6 space-y-4 mx-auto max-w-md bg-white rounded-lg shadow-lg">
-          <Typography variant="h5">Cập nhật bài post</Typography>
-
-          <Input
-            label="Tiêu đề"
-            value={selectedPost?.title || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, title: e.target.value })
-            }
-          />
-
-          <textarea
-            className="border p-2 w-full rounded h-32 resize-y"
-            placeholder="Mô tả"
-            value={selectedPost?.description || ""}
-            onChange={(e) => setSelectedPost({ ...selectedPost, description: e.target.value })}
-          />
-
-          {/* Tags */}
-          <Input
-          label="Tags (ngăn cách bởi dấu phẩy)"
-          value={selectedPost?.tagsInput || ""}
-          onChange={(e) =>
-            setSelectedPost({
-              ...selectedPost,
-              tagsInput: e.target.value, 
-            })
-            }
-          />
-
-          {/* Hình ảnh */}
-          <Input
-            label="Link hình ảnh (từ thư mục /uploads/post/...)"
-            value={selectedPost?.images?.[0] || ""}
-            onChange={(e) =>
-              setSelectedPost({ ...selectedPost, images: [e.target.value] }) 
-            }
-          />
-
-
-          <div>
-            <Typography variant="small" color="gray">
-              Tác giả
-            </Typography>
-            <Typography
-              variant="paragraph"
-              className="p-2 border rounded bg-gray-50"
-            >
-              {selectedPost?.authorId
-                ? users.find((u) => u.id === selectedPost.authorId)?.fullName || "Không rõ"
-                : "Không rõ"}
-            </Typography>
-          </div>
-
-          <select
-            className="border p-2 w-full rounded"
-            value={selectedPost?.status}
-            onChange={(e) =>
-              setSelectedPost({
-                ...selectedPost,
-                status: e.target.value === "true",
-              })
-            }
-          >
-            <option value="true">Đang hoạt động</option>
-            <option value="false">Đã ẩn</option>
-          </select>
-
-          <div className="flex justify-end gap-2 mt-4">
-            <Button onClick={() => setOpenEdit(false)} variant="outlined">
-              Hủy
-            </Button>
-            <Button onClick={updatePost} color="green">
-              Lưu thay đổi
-            </Button>
-          </div>
-        </div>
-      </Dialog>
-
-      <PostDetailDialog
-        postId={selectedPostId}
-        open={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-      />
+    <div className="flex flex-col">
+      <label className="text-sm text-gray-700">Trạng thái</label>
+      <select
+        className="border border-gray-300 h-10 rounded px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={filterStatus}
+        onChange={(e) => setFilterStatus(e.target.value)}
+      >
+        <option value="">Tất cả trạng thái</option>
+        <option value="true">Đang hoạt động</option>
+        <option value="false">Đã ẩn</option>
+      </select>
     </div>
+
+    <div className="flex flex-col">
+      <label className="text-sm text-gray-700">Sắp xếp Like</label>
+      <select
+        className="border border-gray-300 h-10 rounded px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        value={filterSortLikes}
+        onChange={(e) => setFilterSortLikes(e.target.value)}
+      >
+        <option value="">Không sắp xếp</option>
+        <option value="asc">Tăng dần</option>
+        <option value="desc">Giảm dần</option>
+      </select>
+    </div>
+
+    {/* Button Lọc + Xoá */}
+    <div className="flex gap-2">
+      <Button color="blue" size="sm" className="h-10 px-4" onClick={handleFilter}>
+        LỌC
+      </Button>
+      <Button
+        color="gray"
+        size="sm"
+        className="h-10 px-4"
+        onClick={() => {
+          setFilterUserId("");
+          setFilterTitle("");
+          setFilterStatus("");
+          setFilterSortLikes("");
+          setFilterSortComments("");
+          setFilterTag("");
+          fetchPosts();
+        }}
+      >
+        XOÁ BỘ LỌC
+      </Button>
+    </div>
+  </div>
+
+  {/* Table */}
+  {loading ? (
+    <Typography>Đang tải dữ liệu...</Typography>
+  ) : (
+    <div className="overflow-x-auto rounded-lg border border-gray-200">
+      <table className="min-w-full text-left border-collapse">
+        <thead className="bg-gray-100 text-gray-700">
+          <tr>
+            <th className="p-3 border">Tiêu đề</th>
+            <th className="p-3 border">Mô tả</th>
+            <th className="p-3 border">Tags</th>
+            <th className="p-3 border">Hình</th>
+            <th className="p-3 border">Tác giả</th>
+            <th className="p-3 border text-center">Like</th>
+            <th className="p-3 border text-center">Bình luận</th>
+            <th className="p-3 border text-center">Trạng thái</th>
+            <th className="p-3 border text-center">Hành động</th>
+          </tr>
+        </thead>
+        <tbody>
+          {posts.map((post) => {
+            const author = findUser(post.authorId);
+            return (
+              <tr
+                key={post.id}
+                className="hover:bg-gray-50 cursor-pointer transition"
+                onClick={() => {
+                  setSelectedPostId(post.id);
+                  setIsDetailOpen(true);
+                }}
+              >
+                <td className="p-3 border">{post.title}</td>
+                <td className="p-3 border max-w-xs">
+                  <p className="line-clamp-2 text-sm leading-snug break-words">
+                    {post.description?.length > 50
+                      ? post.description.slice(0, 50) + "..."
+                      : post.description || "Không có mô tả"}
+                  </p>
+                </td>
+                <td className="p-3 border">
+                  {Array.isArray(post.tags) && post.tags.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <div className="px-2 py-1 text-xs bg-gray-200 rounded">
+                        {post.tags[0]}
+                      </div>
+                      {post.tags.length > 1 && (
+                        <span className="text-xs text-gray-500">
+                          +{post.tags.length - 1}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </td>
+                <td className="p-3 border">
+                  {post.images?.length > 0 ? (
+                    <img
+                      src={`${BASE_URL}${post.images[0]}`}
+                      alt="Hình ảnh"
+                      className="w-10 h-10 object-cover rounded"
+                    />
+                  ) : (
+                    <span className="text-gray-400">Không có</span>
+                  )}
+                </td>
+                <td className="p-3 border">
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={author?.avatar || "/default-avatar.png"}
+                      alt="avatar"
+                      size="xs"
+                    />
+                    <span className="text-sm">{author?.fullName || "Không rõ"}</span>
+                  </div>
+                </td>
+                <td className="p-3 border text-center">{post.like}</td>
+                <td className="p-3 border text-center">{post.commentCount ?? 0}</td>
+                <td className="p-3 border text-center">
+                  <Chip
+                    value={post.status ? "Đang hoạt động" : "Đã ẩn"}
+                    color={post.status ? "green" : "red"}
+                    size="sm"
+                  />
+                </td>
+                <td className="p-3 border text-center">
+                  <div className="flex justify-center gap-2">
+                    <Button
+                      size="sm"
+                      color="blue"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditClick(post);
+                      }}
+                    >
+                      Sửa
+                    </Button>
+                    <Button
+                      size="sm"
+                      color="red"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deletePost(post.id);
+                      }}
+                    >
+                      Xoá
+                    </Button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+          {posts.length === 0 && (
+            <tr>
+              <td colSpan="9" className="p-3 text-center text-gray-500">
+                Không có dữ liệu
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {/* Pagination */}
+      <div className="flex justify-center items-center gap-2 mt-4">
+        <Button
+          size="sm"
+          variant="outlined"
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage(currentPage - 1)}
+        >
+          Trang trước
+        </Button>
+        <Typography variant="small" className="text-gray-600">
+          Trang {currentPage} / {totalPages}
+        </Typography>
+        <Button
+          size="sm"
+          variant="outlined"
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage(currentPage + 1)}
+        >
+          Trang sau
+        </Button>
+      </div>
+    </div>
+  )}
+</div>
+
   );
 }
 
