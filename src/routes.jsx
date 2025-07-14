@@ -6,7 +6,8 @@ import {
   ServerStackIcon,
   RectangleStackIcon,
   NewspaperIcon,
-  ReceiptPercentIcon
+  ReceiptPercentIcon,
+  ChatBubbleLeftEllipsisIcon
 } from "@heroicons/react/24/solid";
 
 import VideoLikeList from "@/pages/dashboard/VideoFarms/VideoLikeList";
@@ -50,7 +51,7 @@ export const routes = [
         element: <Questions />,
       },
       {
-        icon: <InformationCircleIcon {...icon} />,
+        icon: <ChatBubbleLeftEllipsisIcon {...icon} />,
         name: "AnswersTable",
         path: "/AnswersTable",
         element: <AnswersTable />,
