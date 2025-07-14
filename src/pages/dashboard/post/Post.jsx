@@ -249,64 +249,52 @@ export function PostList() {
   </Typography>
 
   {/* Bộ lọc */}
-  <div className="flex flex-wrap items-end gap-3 mb-4">
+  <div className="flex justify-end items-center flex-wrap gap-3 mb-4">
+  {/* Tiêu đề */}
+  <div className="h-10">
     <Input
-      label="Tiêu đề"
+      label=" "
+      placeholder="Tiêu đề"
       value={filterTitle}
       onChange={(e) => setFilterTitle(e.target.value)}
-      className="min-w-[180px]"
-      color="blue"
+      className="w-[180px]"
+      containerProps={{ className: "min-w-0" }}
     />
-
-    <div className="flex flex-col">
-      <label className="text-sm text-gray-700">Trạng thái</label>
-      <select
-        className="border border-gray-300 h-10 rounded px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={filterStatus}
-        onChange={(e) => setFilterStatus(e.target.value)}
-      >
-        <option value="">Tất cả trạng thái</option>
-        <option value="true">Đang hoạt động</option>
-        <option value="false">Đã ẩn</option>
-      </select>
-    </div>
-
-    <div className="flex flex-col">
-      <label className="text-sm text-gray-700">Sắp xếp Like</label>
-      <select
-        className="border border-gray-300 h-10 rounded px-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        value={filterSortLikes}
-        onChange={(e) => setFilterSortLikes(e.target.value)}
-      >
-        <option value="">Không sắp xếp</option>
-        <option value="asc">Tăng dần</option>
-        <option value="desc">Giảm dần</option>
-      </select>
-    </div>
-
-    {/* Button Lọc + Xoá */}
-    <div className="flex gap-2">
-      <Button color="blue" size="sm" className="h-10 px-4" onClick={handleFilter}>
-        LỌC
-      </Button>
-      <Button
-        color="gray"
-        size="sm"
-        className="h-10 px-4"
-        onClick={() => {
-          setFilterUserId("");
-          setFilterTitle("");
-          setFilterStatus("");
-          setFilterSortLikes("");
-          setFilterSortComments("");
-          setFilterTag("");
-          fetchPosts();
-        }}
-      >
-        XOÁ BỘ LỌC
-      </Button>
-    </div>
   </div>
+
+  {/* Trạng thái */}
+  <select
+    className="h-10 border border-gray-300 rounded px-2 text-sm text-gray-700"
+    value={filterStatus}
+    onChange={(e) => setFilterStatus(e.target.value)}
+  >
+    <option value="">Tất cả trạng thái</option>
+    <option value="true">Đang hoạt động</option>
+    <option value="false">Đã ẩn</option>
+  </select>
+
+  {/* Sắp xếp like */}
+  <select
+    className="h-10 border border-gray-300 rounded px-2 text-sm text-gray-700"
+    value={filterSortLikes}
+    onChange={(e) => setFilterSortLikes(e.target.value)}
+  >
+    <option value="">Không sắp xếp</option>
+    <option value="asc">Tăng dần</option>
+    <option value="desc">Giảm dần</option>
+  </select>
+
+  {/* Nút lọc */}
+  <Button
+    color="blue"
+    size="sm"
+    className="h-10 px-4"
+    onClick={handleFilter}
+  >
+    Tìm kiếm
+  </Button>
+</div>
+
 
   {/* Table */}
   {loading ? (

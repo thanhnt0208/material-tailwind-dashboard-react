@@ -22,11 +22,11 @@ function App() {
         <Route path="CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
         <Route path="VideoFarms/VideoById/:id" element={<VideoById />} />
         <Route path="users/:id" element={<UserDetail />} />
+        {/* <Route path="/dashboard/users/:id" element={<UserDetail />} /> */}
       </Route>
       <Route path="/auth/*" element={<Auth />} />
       <Route path="/admin/Farms" element={<Farms />} />
       <Route path="/admin/farms/:id" element={<FarmDetail />} />
-      <Route path="/dashboard/users/:id" element={<UserDetail />} />
       <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
 
     </Routes>
