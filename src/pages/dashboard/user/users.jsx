@@ -50,17 +50,17 @@ export default function Users() {
       setUsers(usersData);
       setTotalPages(res.data.totalPages || 1);
 
-      // Gọi 1 lần lấy tất cả farms, videos, posts
+      // Gọi counts
       const [farmsRes, videosRes, postsRes] = await Promise.all([
-        axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", { headers: { Authorization: `Bearer ${token}` } })
       ]);
+
       const farms = farmsRes.data?.data || [];
       const videos = videosRes.data?.data || [];
       const posts = postsRes.data?.data || [];
 
-      // Đếm posts theo user
       const postCountsMap = {};
       posts.forEach(p => {
         const uid = p.userId || p.authorId;
@@ -84,28 +84,43 @@ export default function Users() {
     }
   };
 
-  // Search
+  // handleSearch: tìm fullName, email, phone
   const handleSearch = async () => {
     if (!token) return;
     setLoading(true);
     try {
-      if (searchText.trim() !== "") {
-        const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        let allUsers = Array.isArray(res.data.data) ? res.data.data : [];
-        let filtered = allUsers.filter(u =>
-          (u.fullName?.toLowerCase().includes(searchText.toLowerCase())) ||
-          (u.email?.toLowerCase().includes(searchText.toLowerCase())) ||
-          (u.phone?.toLowerCase().includes(searchText.toLowerCase()))
-        );
-        setUsers(filtered);
-        setIsSearching(true);
-      } else {
-        setIsSearching(false);
-        setPage(1);
-        fetchUsers();
-      }
+      const paramsCommon = { page: 1, limit: 10 };
+      if (filterRole) paramsCommon.role = filterRole;
+      if (filterStatus) paramsCommon.isActive = filterStatus === "Active";
+
+      const [byName, byEmail, byPhone] = await Promise.all([
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...paramsCommon, fullName: searchText }
+        }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...paramsCommon, email: searchText }
+        }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { ...paramsCommon, phone: searchText }
+        }),
+      ]);
+
+      const merged = [
+        ...(byName.data.data || []),
+        ...(byEmail.data.data || []),
+        ...(byPhone.data.data || [])
+      ];
+      const unique = merged.filter(
+        (v, i, a) => a.findIndex(t => t.id === v.id) === i
+      );
+
+      setUsers(unique);
+      setTotalPages(1);
+      setPage(1);
+      setIsSearching(true);
     } catch (err) {
       console.error("Lỗi tìm kiếm:", err);
       setError("Lỗi khi tìm kiếm.");

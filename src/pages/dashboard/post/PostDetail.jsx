@@ -172,7 +172,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
                 onClick={() => setShowComments(!showComments)}
               >
                 <Typography variant="h5" className="text-blue-800">
-                  Bình luận
+                  Bình luận 
                 </Typography>
                 {showComments && (
                   <>
