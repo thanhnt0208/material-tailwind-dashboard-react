@@ -6,8 +6,14 @@ import {
   Chip,
   Dialog,
   Input,
+  Menu,
+  MenuHandler,
+  MenuList,
+  MenuItem,
+  IconButton,
 } from "@material-tailwind/react";
 import PostDetailDialog from "./PostDetail";
+import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
@@ -238,7 +244,7 @@ export function PostList() {
 
   return (
     <div className="p-4">
-  <Typography variant="h4" className="mb-4 font-semibold text-gray-800">
+  <Typography variant="h6" className="mb-4 font-semibold text-gray-800">
     Danh sách bài post
   </Typography>
 
@@ -386,28 +392,30 @@ export function PostList() {
                   />
                 </td>
                 <td className="p-3 border text-center">
-                  <div className="flex justify-center gap-2">
-                    <Button
-                      size="sm"
-                      color="blue"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditClick(post);
-                      }}
-                    >
-                      Sửa
-                    </Button>
-                    <Button
-                      size="sm"
-                      color="red"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deletePost(post.id);
-                      }}
-                    >
-                      Xoá
-                    </Button>
-                  </div>
+                  <Menu placement="bottom-end">
+                    <MenuHandler>
+                      <IconButton variant="text"><EllipsisVerticalIcon className="h-5 w-5" /></IconButton>
+                    </MenuHandler>
+                    <MenuList>
+                      <MenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEditClick(post);
+                        }}
+                      >
+                        Sửa
+                      </MenuItem>
+                      <MenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deletePost(post.id);
+                        }}
+                        className="text-red-500"
+                      >
+                        Xoá
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
                 </td>
               </tr>
             );
@@ -446,6 +454,12 @@ export function PostList() {
       </div>
     </div>
   )}
+
+  <PostDetailDialog
+  postId={selectedPostId}
+  open={isDetailOpen}
+  onClose={() => setIsDetailOpen(false)}
+/>
 </div>
 
   );
