@@ -121,8 +121,8 @@ export default function PostDetailDialog({ postId, open, onClose }) {
 
             {/* Ngày tạo và cập nhật */}
             <div className="text-sm text-gray-600 mb-4">
-              <p>🗓️ <b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
-              <p>🔄 <b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
+              <p><b>Ngày tạo:</b> {formatDateTime(post.createdAt)}</p>
+              <p><b>Cập nhật gần nhất:</b> {formatDateTime(post.updatedAt)}</p>
             </div>
 
             {/* Tác giả */}
