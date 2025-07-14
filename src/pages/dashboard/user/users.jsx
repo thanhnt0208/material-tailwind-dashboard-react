@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
-  const [roles] = useState(["Customer", "Admin", "Farmer"]);
+  const [roles, setRoles] = useState([]);
+  // const [roles] = useState(["Customer", "Admin", "Farmer", "Staff" ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [counts, setCounts] = useState({});
@@ -48,6 +49,14 @@ export default function Users() {
       });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
+      // Tự động lấy danh sách role duy nhất từ users
+const uniqueRoles = Array.from(
+  new Set(usersData.flatMap(user =>
+    Array.isArray(user.role) ? user.role : [user.role]
+  ))
+);
+setRoles(uniqueRoles);
+
       setTotalPages(res.data.totalPages || 1);
 
       // Gọi counts
@@ -207,20 +216,46 @@ export default function Users() {
     <div className="p-4">
       <Typography variant="h6" color="blue-gray" className="mb-4">Quản lý người dùng</Typography>
 
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Input label="Tìm kiếm..." value={searchText} onChange={e => setSearchText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleSearch(); }} />
-        <Select label="Lọc theo role" value={filterRole} onChange={setFilterRole}>
-          <Option value="">Tất cả</Option>
-          {roles.map(r => <Option key={r} value={r}>{r}</Option>)}
-        </Select>
-        <Select label="Trạng thái" value={filterStatus} onChange={setFilterStatus}>
-          <Option value="">Tất cả</Option>
-          <Option>Active</Option>
-          <Option>Inactive</Option>
-        </Select>
-        <Button onClick={handleSearch}>Tìm kiếm</Button>
-      </div>
+     <div className="flex flex-wrap items-center gap-4 mb-4">
+  <div className="w-64">
+    <Input
+      label="Tìm kiếm..."
+      value={searchText}
+      onChange={(e) => setSearchText(e.target.value)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") handleSearch();
+      }}
+    />
+  </div>
+
+  <div className="w-52">
+    <Select label="Trạng thái" value={filterStatus} onChange={val => setFilterStatus(val || "")}>
+      <Option value="">Tất cả</Option>
+      <Option value="Active">Active</Option>
+      <Option value="Inactive">Inactive</Option>
+    </Select>
+  </div>
+
+  <div className="w-52">
+    <Select label="Lọc theo role" value={filterRole} onChange={val => setFilterRole(val || "")}>
+  <Option value="">Tất cả</Option>
+  {roles.map(r => (
+    <Option key={r} value={r}>
+      {r}
+    </Option>
+  ))}
+</Select>
+
+  </div>
+
+  <div>
+    <Button className="bg-blue-500" onClick={handleSearch}>
+      TÌM KIẾM
+    </Button>
+  </div>
+</div>
+
+
 
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
