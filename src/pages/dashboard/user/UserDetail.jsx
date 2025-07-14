@@ -186,8 +186,8 @@ export default function UserDetail() {
               <Typography
                 className={`font-semibold ${
                   user.isActive
-                    ? "text-green-600"
-                    : "text-red-600"
+                    ? "text-green-500"
+                    : "text-gray-500"
                 }`}
               >
                 {user.isActive ? "Active" : "Inactive"}
