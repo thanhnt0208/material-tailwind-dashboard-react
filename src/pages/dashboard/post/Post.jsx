@@ -280,8 +280,8 @@ export function PostList() {
     onChange={(e) => setFilterSortLikes(e.target.value)}
   >
     <option value="">Không sắp xếp</option>
-    <option value="asc">Tăng dần</option>
-    <option value="desc">Giảm dần</option>
+    <option value="asc">Like tăng dần</option>
+    <option value="desc">Like giảm dần</option>
   </select>
 
   {/* Nút lọc */}
