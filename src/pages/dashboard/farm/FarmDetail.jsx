@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Typography, Button } from "@material-tailwind/react";
+import {
+  Typography,
+  Button,
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+} from "@material-tailwind/react";
+import { PlayIcon } from "@heroicons/react/24/outline";
 
 const BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 
@@ -32,18 +40,18 @@ const serviceOptions = [
 const featureOptions = [
   { label: "Mô hình aquaponic", value: "aquaponic_model" },
   { label: "Chứng nhận VietGAP", value: "viet_gap_cert" },
-  { label: "Chứng nhận hữu cơ", value: "organic_cert" },  
+  { label: "Chứng nhận hữu cơ", value: "organic_cert" },
   { label: "Nông trại thông minh", value: "smart_farm" },
   { label: "Tự động hóa", value: "automation" },
   { label: "Sử dụng IoT", value: "iot_enabled" },
 ];
 
 export default function FarmDetail({ open, onClose, farmId }) {
+  const [selectedVideo, setSelectedVideo] = useState(null);
   const [farm, setFarm] = useState(null);
   const [error, setError] = useState(null);
   const [images, setImages] = useState([]);
-  const [selectedFiles, setSelectedFiles] = useState([]);
-  const [uploading, setUploading] = useState(false);
+  const [videos, setVideos] = useState([]);
   const [videoCount, setVideoCount] = useState(0);
   const [showChanges, setShowChanges] = useState(false);
   const [questions, setQuestions] = useState([]);
@@ -51,23 +59,21 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [loadingAnswers, setLoadingAnswers] = useState(true);
 
-  const getOpts = () => {
-    const token = localStorage.getItem("token");
-    return {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    };
-  };
+  const getOpts = () => ({
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+      "Content-Type": "application/json",
+    },
+  });
 
   const fetchDetail = async () => {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      setFarm(res.data);
+      setFarm(res.data?.data || res.data);
     } catch (err) {
       setError(err.response?.data?.message || err.message);
+      setFarm(null);
     }
   };
 
@@ -82,11 +88,13 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
   const fetchFarmVideos = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/admin-video-farm`, getOpts());
-      const count = res.data.filter((v) => v.farmId?.id === farmId).length;
-      setVideoCount(count);
+      const res = await axios.get(`${BASE_URL}/admin-video-farm/farm/${farmId}`, getOpts());
+      setVideos(res.data?.data || []);
+      setVideoCount((res.data?.data || []).length);
     } catch (err) {
       console.error("Lỗi video:", err);
+      setVideos([]);
+      setVideoCount(0);
     }
   };
 
@@ -105,7 +113,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const fetchAnswers = async () => {
     setLoadingAnswers(true);
     try {
-      const res = await axios.get(`${BASE_URL}/answers?farmId=${farmId}`, getOpts());
+      const res = await axios.get(`${BASE_URL}/answers/by-farm/${farmId}`, getOpts());
       setAnswers(res.data || []);
     } catch (err) {
       console.error("Lỗi câu trả lời:", err);
@@ -122,32 +130,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
     setShowChanges(!showChanges);
   };
 
-  const handleFileChange = (e) => setSelectedFiles([...e.target.files]);
-
-  const handleUpload = async () => {
-    if (!selectedFiles.length || !farmId) return;
-    setUploading(true);
-    try {
-      for (const file of selectedFiles) {
-        const formData = new FormData();
-        formData.append("file", file);
-        await axios.post(`${BASE_URL}/farm-pictures/${farmId}`, formData, {
-          ...getOpts(),
-          headers: {
-            ...getOpts().headers,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      }
-      setSelectedFiles([]);
-      await fetchImages();
-    } catch (err) {
-      alert("Upload thất bại: " + (err.response?.data?.message || err.message));
-    } finally {
-      setUploading(false);
-    }
-  };
-
   useEffect(() => {
     if (open && farmId) {
       fetchDetail();
@@ -159,29 +141,23 @@ export default function FarmDetail({ open, onClose, farmId }) {
   if (!open) return null;
 
   return (
-    <div className="max-h-screen overflow-y-auto p-4 bg-white rounded-md shadow-md">
+    <div className="p-4 bg-white rounded-md shadow-md" style={{ maxHeight: "80vh", overflowY: "auto" }}>
       <div className="max-w-6xl mx-auto space-y-6">
         {error && <Typography color="red">{error}</Typography>}
 
         {!farm ? (
-          <Typography className="text-indigo-500">Đang tải...</Typography>
+          <Typography color="red">Không tìm thấy dữ liệu</Typography>
         ) : (
           <>
-            {/* Thông tin nông trại */}
+            {/* Thông tin cơ bản */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Info label="Tên nông trại" value={farm.name} />
               <Info label="Mã nông trại" value={farm.code} />
               <Info label="Tags" value={(farm.tags || []).join(", ")} />
-              <Info
-                label="Trạng thái"
-                value={
-                  farm.status === "pending"
-                    ? "Chờ duyệt"
-                    : farm.status === "active"
-                    ? "Đang hoạt động"
-                    : "Đã khóa"
-                }
-              />
+              <Info label="Trạng thái" value={
+                farm.status === "pending" ? "Chờ duyệt" :
+                farm.status === "active" ? "Đang hoạt động" : "Đã khóa"
+              } />
               <Info label="Tỉnh/Thành phố" value={farm.province} />
               <Info label="Quận/Huyện" value={farm.district} />
               <Info label="Phường/Xã" value={farm.ward} />
@@ -197,6 +173,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
               <Info label="Số video nông trại" value={videoCount} />
             </div>
 
+            {/* Mô tả */}
             {farm.description && (
               <div>
                 <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
@@ -212,28 +189,119 @@ export default function FarmDetail({ open, onClose, farmId }) {
               {images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   {images.map((img, idx) => (
-                    <div key={img.id || idx} className="relative group">
+                    <div key={img.id || idx}>
                       <img
                         src={`https://api-ndolv2.nongdanonline.cc${img.url || img.path || img.image}`}
                         alt={`Ảnh ${idx + 1}`}
-                        className="w-full h-40 object-cover rounded-lg border shadow-sm transition-transform group-hover:scale-105"
+                        className="w-full h-40 object-cover rounded-lg border shadow-sm"
                       />
                     </div>
                   ))}
                 </div>
               ) : (
-                <Typography className="text-sm text-gray-500 italic mb-4">Chưa có hình ảnh</Typography>
+                <Typography className="text-sm italic text-gray-500">Chưa có hình ảnh</Typography>
               )}
             </div>
 
-            {/* Nút biến động */}
+            {/* Danh sách video */}
+<div className="mt-6">
+  <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
+  {videos.length > 0 ? (
+    <div className="border border-gray-200 rounded-md max-h-[400px] overflow-y-auto">
+      <table className="min-w-full table-auto text-sm text-left">
+        <thead className="bg-gray-100 sticky top-0 z-10">
+          <tr>
+            <th className="border px-3 py-2">#</th>
+            <th className="border px-3 py-2">Tiêu đề</th>
+            <th className="border px-3 py-2">Người đăng</th>
+            <th className="border px-3 py-2">Ngày đăng</th>
+            <th className="border px-3 py-2">Trạng thái</th>
+            <th className="border px-3 py-2">Xem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {videos.map((video, idx) => (
+            <tr key={video._id || idx} className="hover:bg-gray-50">
+              <td className="border px-3 py-2">{idx + 1}</td>
+              <td className="border px-3 py-2">{video.title}</td>
+              <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
+              <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
+              <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
+              <td className="border px-3 py-2">
+                <Button
+                  variant="text"
+                  size="sm"
+                  color="blue"
+                  onClick={() => setSelectedVideo(video)}
+                  className="flex items-center gap-1"
+                >
+                  <PlayIcon className="h-4 w-4" />
+                  Xem
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
+  )}
+</div>
+
+            {/* Dialog xem video */}
+            <Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
+  <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
+  <DialogBody divider className="flex justify-center">
+    {selectedVideo?.status === "pending" && selectedVideo?.localFilePath ? (
+      <video
+        controls
+        src={
+          selectedVideo.localFilePath.startsWith("http")
+            ? selectedVideo.localFilePath
+            : `${BASE_URL}${selectedVideo.localFilePath}`
+        }
+        className="max-h-[70vh] w-full rounded shadow"
+      />
+    ) : selectedVideo?.youtubeLink && selectedVideo.status === "uploaded" ? (
+      selectedVideo.youtubeLink.endsWith(".mp4") ? (
+        <video
+          controls
+          src={selectedVideo.youtubeLink}
+          className="max-h-[70vh] w-full rounded shadow"
+        />
+      ) : (
+        <iframe
+          src={
+            "https://www.youtube.com/embed/" +
+            (selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+          }
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-[360px] rounded shadow w-full"
+        ></iframe>
+      )
+    ) : (
+      <Typography className="text-red-500">Không tìm thấy video.</Typography>
+    )}
+  </DialogBody>
+  <DialogFooter>
+    <Button color="blue" onClick={() => setSelectedVideo(null)}>
+      Đóng
+    </Button>
+  </DialogFooter>
+</Dialog>
+
+
+            {/* Xem biến động */}
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
-                {showChanges ? "Ẩn biến động" : "Xem biến động"}
+                {showChanges ? "Ẩn " : "Xem câu hỏi và trả lời"}
               </Button>
             </div>
 
-            {/* Câu hỏi + câu trả lời */}
+            {/* Biến động câu hỏi & trả lời */}
             {showChanges && (
               <div className="space-y-6 p-4 border border-gray-200 rounded-lg bg-white shadow-inner">
                 <Typography variant="h6" className="text-blue-gray-900">Danh sách câu hỏi và câu trả lời</Typography>
@@ -244,28 +312,31 @@ export default function FarmDetail({ open, onClose, farmId }) {
                 ) : (
                   <div className="space-y-4">
                     {questions.map((q, idx) => {
-                      const answer = answers.find((a) => a.questionId === q.id);
+                      const match = answers.find((a) => a.question?._id === q._id);
+                      const ans = match?.answer;
                       return (
-                        <div key={q.id} className="border p-3 rounded-lg bg-gray-50">
+                        <div key={q._id} className="border p-3 rounded-lg bg-gray-50">
                           <Typography className="text-sm font-semibold text-gray-800">
                             {idx + 1}. {q.text}
                           </Typography>
-
-                          {answer ? (
-                            <>
-                              <Typography className="text-sm text-blue-gray-700 mt-1">
-                                Trả lời: {answer.text}
-                              </Typography>
-                              {answer.image && (
-                                <img
-                                  src={`https://api-ndolv2.nongdanonline.cc${answer.image}`}
-                                  alt={`Ảnh trả lời ${idx + 1}`}
-                                  className="w-40 h-32 mt-2 object-cover rounded"
-                                />
+                          {ans ? (
+                            <div className="mt-1 space-y-1 text-sm text-blue-gray-700">
+                              {ans.selectedOptions?.length > 0 && <div>Chọn: {ans.selectedOptions.join(", ")}</div>}
+                              {ans.otherText && <div>Khác: {ans.otherText}</div>}
+                              {ans.uploadedFiles?.length > 0 && (
+                                <div className="space-y-1">
+                                  {ans.uploadedFiles.map((f, i) => (
+                                    <a key={i} href={f} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline block">
+                                      File {i + 1}
+                                    </a>
+                                  ))}
+                                </div>
                               )}
-                            </>
+                            </div>
                           ) : (
-                            <Typography className="text-sm text-red-500 italic mt-1">Chưa có câu trả lời</Typography>
+                            <Typography className="text-sm text-red-500 italic mt-1">
+                              Chưa có câu trả lời
+                            </Typography>
                           )}
                         </div>
                       );

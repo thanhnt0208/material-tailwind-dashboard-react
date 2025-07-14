@@ -108,7 +108,7 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
         ...form,
         tags: form.tags.split(",").map((t) => t.trim()),
       };
-      await onSubmit(payload); // Call add/edit
+await onSubmit(payload); // Call add/edit
       onClose();
     } catch (err) {
       console.error(err);
@@ -171,7 +171,7 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
 
       </DialogBody>
       <DialogFooter>
-        <Button variant="text" onClick={onClose} disabled={loading}>
+<Button variant="text" onClick={onClose} disabled={loading}>
           Huỷ
         </Button>
         <Button color="blue" onClick={handleSubmit} loading={loading}>

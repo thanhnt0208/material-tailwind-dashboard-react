@@ -1,103 +1,135 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, IconButton, Menu,
-  MenuHandler, MenuList, MenuItem, Dialog, DialogHeader,
-  DialogBody, DialogFooter, Input, Select, Option, Button, Spinner, Avatar
+  Typography, IconButton, Menu, MenuHandler, MenuList, MenuItem,
+  Dialog, DialogHeader, DialogBody, DialogFooter,
+  Input, Select, Option, Button, Spinner, Avatar
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
-import FarmForm from "./FarmForm";
 import { useNavigate } from "react-router-dom";
-export function Users() {
+
+export default function Users() {
   const [users, setUsers] = useState([]);
   const [roles] = useState(["Customer", "Admin", "Farmer"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [counts, setCounts] = useState({});
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [formData, setFormData] = useState({ fullName: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({
+    fullName: "", email: "", phone: "", isActive: true, address: ""
+  });
   const [selectedRole, setSelectedRole] = useState("Farmer");
 
-  const [viewOpen, setViewOpen] = useState(false);
-  const [viewUser, setViewUser] = useState(null);
-  const [addresses, setAddresses] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const limit = 10;
 
-  const [openFarmForm, setOpenFarmForm] = useState(false);
-  const [farmFormData, setFarmFormData] = useState({ ownerId: null });
+  const [filterRole, setFilterRole] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
 
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Fetch users + counts
   const fetchUsers = async () => {
-  setLoading(true);
-  try {
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    if (!token) return;
+    setLoading(true);
+    try {
+      const params = { page, limit };
+      if (filterRole) params.role = filterRole;
+      if (filterStatus) params.isActive = filterStatus === "Active";
 
-    const fetchedUsers = Array.isArray(res.data) ? res.data : [];
+      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+        headers: { Authorization: `Bearer ${token}` }, params
+      });
+      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
+      setUsers(usersData);
+      setTotalPages(res.data.totalPages || 1);
 
-    const farmRes = await axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const farmData = farmRes.data;
+      // Gọi 1 lần lấy tất cả farms, videos, posts
+      const [farmsRes, videosRes, postsRes] = await Promise.all([
+        axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+      const farms = farmsRes.data?.data || [];
+      const videos = videosRes.data?.data || [];
+      const posts = postsRes.data?.data || [];
 
-    const videoRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const videoData = videoRes.data;
-    console.log("Video Data:", videoData);
-    
-    const postRes = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const postData = Array.isArray(postRes.data.data) ? postRes.data.data : [];
+      // Đếm posts theo user
+      const postCountsMap = {};
+      posts.forEach(p => {
+        const uid = p.userId || p.authorId;
+        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+      });
 
-    const userPostCounts = {};
-    postData.forEach(post => {
-      const authorId = post.authorId;
-      if (userPostCounts[authorId]) {
-        userPostCounts[authorId]++;
+      const countsObj = {};
+      usersData.forEach(user => {
+        countsObj[user.id] = {
+          farms: farms.filter(f => f.ownerId === user.id).length,
+          videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
+          posts: postCountsMap[user.id] || 0
+        };
+      });
+      setCounts(countsObj);
+    } catch (err) {
+      console.error("Lỗi khi tải users:", err);
+      setError("Lỗi khi tải danh sách người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Search
+  const handleSearch = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      if (searchText.trim() !== "") {
+        const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        let allUsers = Array.isArray(res.data.data) ? res.data.data : [];
+        let filtered = allUsers.filter(u =>
+          (u.fullName?.toLowerCase().includes(searchText.toLowerCase())) ||
+          (u.email?.toLowerCase().includes(searchText.toLowerCase())) ||
+          (u.phone?.toLowerCase().includes(searchText.toLowerCase()))
+        );
+        setUsers(filtered);
+        setIsSearching(true);
       } else {
-        userPostCounts[authorId] = 1;
+        setIsSearching(false);
+        setPage(1);
+        fetchUsers();
       }
-    });
-
-    console.log("✅ Post count by user:", userPostCounts);
-
-
-    const usersWithCounts = fetchedUsers.map(user => {
-      const farmCount = farmData.filter(farm => farm.ownerId === user.id).length;
-      const videoCount = videoData.filter(video => video.uploadedBy?.id === user.id).length;
-      const postCount = userPostCounts[user.id] || 0;
-      return { ...user, farmCount, videoCount, postCount };
-    });
-
-    setUsers(usersWithCounts);
-  } catch {
-    setError("Lỗi khi tải danh sách người dùng.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+    } catch (err) {
+      console.error("Lỗi tìm kiếm:", err);
+      setError("Lỗi khi tìm kiếm.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) {
-      setError("Không tìm thấy access token!");
+      setError("Không tìm thấy token!");
       setLoading(false);
       return;
     }
-    fetchUsers();
-  }, [token]);
+    if (!isSearching) fetchUsers();
+  }, [token, page, filterRole, filterStatus, isSearching]);
 
+  // Edit user
   const openEdit = (user) => {
     setSelectedUser(user);
     setFormData({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone || ''
+      fullName: user.fullName, email: user.email,
+      phone: user.phone || "", isActive: user.isActive,
+      address: user.addresses?.[0]?.address || ""
     });
     setEditOpen(true);
   };
@@ -105,9 +137,13 @@ export function Users() {
   const handleUpdate = async () => {
     if (!token || !selectedUser) return;
     try {
-      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`, formData, {
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      });
+      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
+        { fullName: formData.fullName, phone: formData.phone, isActive: formData.isActive },
+        { headers: { Authorization: `Bearer ${token}` } });
+      if (selectedUser.addresses?.[0]?.id) {
+        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
+          { address: formData.address }, { headers: { Authorization: `Bearer ${token}` } });
+      }
       alert("Cập nhật thành công!");
       fetchUsers();
       setEditOpen(false);
@@ -116,47 +152,11 @@ export function Users() {
     }
   };
 
-  const handleAddRole = async () => {
-    if (!selectedUser) return;
-    try {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
-        { role: selectedRole },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Thêm role thành công!");
-      fetchUsers();
-    } catch {
-      alert("Không thể thêm role!");
-    }
-  };
-
-  const handleRemoveRole = async (role) => {
-    if (!selectedUser) return;
-    try {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
-        { roles: [role] },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("Xoá role thành công!");
-      fetchUsers();
-    } catch {
-      alert("Không thể xoá role!");
-    }
-  };
-
-const handleView = (user) => {
-  navigate(`/dashboard/users/${user.id}`);
-};
-
   const handleDelete = async (userId) => {
-    if (!window.confirm("Bạn chắc muốn xoá?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xoá?")) return;
     try {
-      await axios.delete(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
+        { headers: { Authorization: `Bearer ${token}` } });
       alert("Đã xoá người dùng!");
       fetchUsers();
     } catch {
@@ -164,21 +164,49 @@ const handleView = (user) => {
     }
   };
 
-  const handleCreateFarm = async (farmData) => {
+  const handleAddRole = async () => {
+    if (!token || !selectedUser) return;
     try {
-      await axios.post("https://api-ndolv2.nongdanonline.cc/farms", farmData, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Tạo nông trại thành công!");
-      setOpenFarmForm(false);
+      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
+        { role: selectedRole }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Thêm role thành công!");
+      fetchUsers();
     } catch {
-      alert("Tạo nông trại thất bại!");
+      alert("Thêm role thất bại!");
+    }
+  };
+
+  const handleRemoveRole = async (role) => {
+    if (!token || !selectedUser) return;
+    try {
+      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-role`,
+        { role }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Xoá role thành công!");
+      fetchUsers();
+    } catch {
+      alert("Xoá role thất bại!");
     }
   };
 
   return (
     <div className="p-4">
       <Typography variant="h6" color="blue-gray" className="mb-4">Quản lý người dùng</Typography>
+
+      <div className="flex flex-wrap gap-2 mb-4">
+        <Input label="Tìm kiếm..." value={searchText} onChange={e => setSearchText(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") handleSearch(); }} />
+        <Select label="Lọc theo role" value={filterRole} onChange={setFilterRole}>
+          <Option value="">Tất cả</Option>
+          {roles.map(r => <Option key={r} value={r}>{r}</Option>)}
+        </Select>
+        <Select label="Trạng thái" value={filterStatus} onChange={setFilterStatus}>
+          <Option value="">Tất cả</Option>
+          <Option>Active</Option>
+          <Option>Inactive</Option>
+        </Select>
+        <Button onClick={handleSearch}>Tìm kiếm</Button>
+      </div>
+
       {loading && <div className="flex justify-center py-4"><Spinner /></div>}
       {error && <p className="text-red-500">{error}</p>}
 
@@ -186,38 +214,34 @@ const handleView = (user) => {
         <table className="min-w-full border">
           <thead>
             <tr className="bg-gray-100">
-              {["Avatar", "Tên", "Email", "Phone", "Farms", "Posts", "Videos", "Roles", "Trạng thái", "Thao tác"].map((head) => (
+              {["Avatar", "Tên", "Email", "Phone", "Role", "Posts", "Farms", "Videos", "Trạng thái", "Thao tác"].map(head => (
                 <th key={head} className="p-2 text-left text-xs font-semibold">{head}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {users.map(user => (
-              <tr key={user.id} className="border-t">
-                <td className="p-2">
-                  <Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" />
-                </td>
+              <tr key={user.id} className="border-t hover:bg-blue-50 cursor-pointer"
+                  onClick={() => navigate(`/dashboard/users/${user.id}`)}>
+                <td className="p-2"><Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" /></td>
                 <td className="p-2">{user.fullName}</td>
-                <td className="p-2">{user.email.length > 25 ? user.email.slice(0, 20) + "..." : user.email}</td>
+                <td className="p-2">{user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
-                <td className="p-2 text-center">{user.farmCount}</td> 
-                <td className="p-2 text-center">{user.postCount}</td> 
-                <td className="p-2 text-center">{user.videoCount}</td>
                 <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
+                <td className="p-2">{counts[user.id]?.posts ?? 0}</td>
+                <td className="p-2">{counts[user.id]?.farms ?? 0}</td>
+                <td className="p-2">{counts[user.id]?.videos ?? 0}</td>
                 <td className="p-2">
-                  {user.isActive ? (
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
-                  ) : (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>
-                  )}
+                  {user.isActive
+                    ? <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
+                    : <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>}
                 </td>
-                <td className="p-2">
+                <td className="p-2" onClick={e => e.stopPropagation()}>
                   <Menu placement="left-start">
                     <MenuHandler>
                       <IconButton variant="text"><EllipsisVerticalIcon className="h-5 w-5" /></IconButton>
                     </MenuHandler>
                     <MenuList>
-                      <MenuItem onClick={() => handleView(user)}>Xem</MenuItem>
                       <MenuItem onClick={() => openEdit(user)}>Sửa</MenuItem>
                       <MenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Xoá</MenuItem>
                     </MenuList>
@@ -229,19 +253,26 @@ const handleView = (user) => {
         </table>
       </div>
 
-      {/* Dialog SỬA */}
+      {!isSearching && (
+        <div className="flex justify-center items-center gap-2 mt-4">
+          <Button size="sm" variant="outlined" disabled={page <= 1} onClick={() => setPage(prev => prev - 1)}>Trang trước</Button>
+          <span>Trang {page} / {totalPages}</span>
+          <Button size="sm" variant="outlined" disabled={page >= totalPages} onClick={() => setPage(prev => prev + 1)}>Trang sau</Button>
+        </div>
+      )}
+
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
           <Input label="Full Name" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} />
-          <Input
-            label="Email"
-            value={formData.email}
-            disabled
-            readOnly
-            className="cursor-not-allowed bg-gray-100"
-          />
+          <Input label="Email" value={formData.email} disabled />
           <Input label="Phone" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+          <Select label="Trạng thái" value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
+            onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}>
+            <Option>Đã cấp quyền</Option>
+            <Option>Chưa cấp quyền</Option>
+          </Select>
+          <Input label="Địa chỉ" value={formData.address} onChange={e => setFormData({ ...formData, address: e.target.value })} />
           <Typography className="font-bold">Quản lý role</Typography>
           <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
             {roles.map(role => <Option key={role} value={role}>{role}</Option>)}
@@ -261,54 +292,6 @@ const handleView = (user) => {
           <Button variant="gradient" onClick={handleUpdate}>Lưu</Button>
         </DialogFooter>
       </Dialog>
-
-      {/* Dialog XEM */}
-      <Dialog open={viewOpen} handler={setViewOpen} size="sm">
-        <DialogHeader>Chi tiết người dùng</DialogHeader>
-        <DialogBody className="space-y-2">
-          {viewUser ? (
-            <div className="flex flex-col items-center text-center space-y-2">
-              <Avatar src={viewUser.avatar ? `https://api-ndolv2.nongdanonline.cc${viewUser.avatar}` : ""} size="xl" />
-              <Typography variant="h6">{viewUser.fullName}</Typography>
-              <Typography variant="small">ID: {viewUser.id}</Typography>
-              <Typography>Email: {viewUser.email}</Typography>
-              <Typography>Phone: {viewUser.phone || "N/A"}</Typography>
-              <Typography>Roles: {Array.isArray(viewUser.role) ? viewUser.role.join(", ") : viewUser.role}</Typography>
-              <Typography>
-                Trạng thái: {viewUser.isActive ? (
-                  <span className="text-green-600 font-semibold">Active</span>
-                ) : (
-                  <span className="text-gray-500 font-semibold">inactive</span>
-                )}
-              </Typography>
-              <Typography className="font-bold">Địa chỉ:</Typography>
-              {addresses.length ? addresses.map((addr, i) => (
-                <Typography key={`${viewUser.id}-addr-${i}`} className="text-sm">
-                  {addr.address} - {addr.ward}, {addr.district}, {addr.province}
-                </Typography>
-              )) : <Typography className="text-gray-400 text-sm">Không có địa chỉ</Typography>}
-              <Button color="green" size="sm" className="mt-2" onClick={() => {
-                setFarmFormData({ ownerId: viewUser.id });
-                setOpenFarmForm(true);
-              }}>
-                Thêm nông trại cho người dùng này
-              </Button>
-            </div>
-          ) : <Typography>Đang tải...</Typography>}
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="gradient" onClick={() => setViewOpen(false)}>Đóng</Button>
-        </DialogFooter>
-      </Dialog>
-
-      {/* <FarmForm
-        open={openFarmForm}
-        onClose={() => setOpenFarmForm(false)}
-        initialData={farmFormData}
-        onSubmit={handleCreateFarm}
-      /> */}
     </div>
   );
 }
-
-export default Users;

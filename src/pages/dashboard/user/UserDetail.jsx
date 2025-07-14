@@ -1,232 +1,549 @@
-import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Card, CardHeader, CardBody, Typography, Spinner,Button } from "@material-tailwind/react";
-import { useNavigate } from "react-router-dom";
-import FarmForm from "./FarmForm";
+import {
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button
+} from "@material-tailwind/react";
+import { useParams } from "react-router-dom";
+
 
 export default function UserDetail() {
   const { id } = useParams();
   const [user, setUser] = useState(null);
+  const [farms, setFarms] = useState([]);
+  const [videos, setVideos] = useState([]);
+  const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [openFarms, setOpenFarms] = useState(false);
+  const [openVideos, setOpenVideos] = useState(false);
+  const [openPosts, setOpenPosts] = useState(false);
 
-  const [farms, setFarms] = useState([]);       
-  const [videos, setVideos] = useState([]);     
-  const [posts, setPosts] = useState([]); 
-  const [openFarmForm, setOpenFarmForm] = useState(false); 
+  const [openVideoDialog, setOpenVideoDialog] = useState(false);        
+  const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
+  const [selectedFarmName, setSelectedFarmName] = useState(""); 
 
-  const navigate = useNavigate();
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Không tìm thấy access token!");
-      setLoading(false);
-      return;
-    }
-
-    const fetchUserDetails = async () => {
+    const fetchData = async () => {
       try {
-        
-        const userRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const token = localStorage.getItem("token");
+        const config = { headers: { Authorization: `Bearer ${token}` } };
+
+        const userRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config);
         setUser(userRes.data);
 
-        
-        const farmRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const farmsData = Array.isArray(farmRes.data) ? farmRes.data.filter(farm => farm.ownerId === id) : [];
-        setFarms(farmsData);
+        const fetchAllFarms = async () => {
+          let allFarms = [];
+          let page = 1;
+          let hasMore = true;
 
-        
-        const videoRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const videosData = Array.isArray(videoRes.data) ? videoRes.data.filter(video => video.uploadedBy?.id === id) : [];
-        setVideos(videosData);
+          while (hasMore) {
+            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, config);
+            const farmsPage = res.data?.data || [];
+            allFarms = [...allFarms, ...farmsPage];
 
-        
-        const postRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const postsData = Array.isArray(postRes.data.data) ? postRes.data.data.filter(post => post.authorId === id) : [];
-        setPosts(postsData);
+            hasMore = farmsPage.length > 0 && farmsPage.length === 10;
+            page++;
+          }
 
+          return allFarms;
+        };
+
+        const fetchAllVideos = async () => {
+          let allVideos = [];
+          let page = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, config);
+            const videosPage = res.data?.data || [];
+            allVideos = [...allVideos, ...videosPage];
+
+            hasMore = videosPage.length > 0 && videosPage.length === 10;
+            page++;
+          }
+
+          return allVideos;
+        };
+
+        const fetchAllPosts = async () => {
+          let allPosts = [];
+          let page = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=${page}&limit=10`, config);
+            const postsPage = res.data?.data || [];
+            allPosts = [...allPosts, ...postsPage];
+
+            hasMore = postsPage.length > 0 && postsPage.length === 10;
+            page++;
+          }
+
+          return allPosts;
+        };
+
+      const farmsRes = await fetchAllFarms();
+      setFarms(farmsRes);
+const [allFarms, allVideos, allPosts] = await Promise.all([
+          fetchAllFarms(),
+          fetchAllVideos(),
+          fetchAllPosts()
+        ]);
+        console.log("USER:", userRes.data);
+
+
+        setFarms(allFarms);
+        setVideos(allVideos);
+        setPosts(allPosts);
+        setLoading(false);
       } catch (err) {
         console.error(err);
-        setError("Không thể tải chi tiết người dùng.");
-      } finally {
         setLoading(false);
       }
     };
 
-    fetchUserDetails();
+    fetchData();
   }, [id]);
 
-  const handleCreateFarm = async (farmData) => {
-  const token = localStorage.getItem("token");
-  try {
+  const countVideosByFarm = (farmId) => {
+    return videos.filter((v) => v.farmId?.id === farmId).length;
+  };
 
-    await axios.post(`https://api-ndolv2.nongdanonline.cc/adminfarms`, farmData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    alert("Tạo nông trại thành công!");
-    setOpenFarmForm(false);
+  const showFarmVideos = (farmId, farmName) => {           
+    const relatedVideos = videos.filter((v) => v.farmId?.id === farmId);
+    setSelectedFarmVideos(relatedVideos);
+    setSelectedFarmName(farmName);
+    setOpenVideoDialog(true);
+  };
 
-    const updatedFarms = await axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const farmsData = Array.isArray(updatedFarms.data)
-      ? updatedFarms.data.filter(farm => farm.ownerId === id)
-      : [];
-    setFarms(farmsData);
-  } catch (err) {
-    console.error(err);
-    alert("Tạo nông trại thất bại!");
+
+
+
+
+
+  const userFarms = farms.filter(
+  (f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id)
+);
+
+
+  console.log("User ID:", user?._id || user?.id);
+
+
+  const userPosts = posts.filter(p => p.authorId === user?.id);
+
+  const userVideos = videos.filter(v => v.uploadedBy?.id === user?.id);
+
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-screen"><Spinner className="h-12 w-12" /></div>;
   }
-};
 
-  if (loading) return (
-    <div className="flex justify-center items-center h-64">
-      <Spinner className="h-12 w-12" color="blue" />
-    </div>
-  );
+  if (!user) {
+    return <Typography color="red">Không tìm thấy user.</Typography>;
+  }
 
-  if (error) return (
-    <Typography color="red" className="text-center mt-8">{error}</Typography>
-  );
 
-  if (!user) return <Typography className="text-center mt-8">Không có dữ liệu người dùng.</Typography>;
+
 
   return (
-    <div className="p-4 max-w-5xl mx-auto">
-      <Button
-        color="blue"
-        size="sm"
-        className="mb-4"
-        onClick={() => navigate(-1)}
-      >
-        Quay lại
-      </Button>
-      <Card>
-        <CardHeader floated={false} className="h-80">
-          {user.avatar ? (
+    <div className="p-8 space-y-8">
+      {/* Thông tin user */}
+      <Card className="p-6 bg-gradient-to-br from-white to-gray-50 shadow-lg rounded-xl">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          {/* Avatar */}
+          <div className="flex-shrink-0">
             <img
               src={`https://api-ndolv2.nongdanonline.cc${user.avatar}`}
-              alt={user.fullName}
-              className="h-full w-full object-cover rounded"
+              alt="avatar"
+              className="w-32 h-32 rounded-full border-4 border-blue-400 shadow"
             />
-          ) : (
-            <div className="h-full w-full bg-gray-300 flex items-center justify-center text-gray-500">
-              No Avatar
+          </div>
+
+          {/* User Info */}
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">ID:</Typography>
+              <Typography className="text-gray-900">{user.id}</Typography>
             </div>
-          )}
-        </CardHeader>
-        <CardBody>
-          <CardBody className="space-y-2">
-          <Typography variant="h4" color="blue-gray">{user.fullName}</Typography>
-          <Typography>Email: {user.email}</Typography>
-          <Typography>Phone: {user.phone || "N/A"}</Typography>
-          <Typography>Roles: {Array.isArray(user.role) ? user.role.join(", ") : user.role}</Typography>
-          <Typography>Status: {user.isActive ? (
-            <span className="text-green-600 font-bold">Active</span>
-          ) : (
-            <span className="text-gray-500 font-bold">Inactive</span>
-          )}</Typography>
-          <Typography>Note: {user.note || "N/A"}</Typography>
-          <Typography>Created At: {new Date(user.createdAt).toLocaleString()}</Typography>
-          <Typography>Last Login: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : "N/A"}</Typography>
-        </CardBody>
-        </CardBody>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Name:</Typography>
+              <Typography className="text-gray-900">{user.fullName}</Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Email:</Typography>
+              <Typography className="text-gray-900">{user.email}</Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Phone:</Typography>
+              <Typography className="text-gray-900">{user.phone}</Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Role:</Typography>
+<Typography className="capitalize text-gray-900">{user.role}</Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Status:</Typography>
+              <Typography
+                className={`font-semibold ${
+                  user.isActive
+                    ? "text-green-600"
+                    : "text-red-600"
+                }`}
+              >
+                {user.isActive ? "Active" : "Inactive"}
+              </Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Ngày tạo:</Typography>
+              <Typography className="text-gray-900">{new Date(user.createdAt).toLocaleString()}</Typography>
+            </div>
+            <div>
+              <Typography variant="h6" className="text-gray-700 font-semibold">ngày Updated gần nhất:</Typography>
+              <Typography className="text-gray-900">{new Date(user.updatedAt).toLocaleString()}</Typography>
+            </div>
+          </div>
+        </div>
+
       </Card>
 
-      <div className="mt-6">
-        <div className="flex justify-between items-center mb-2">
-          <Typography variant="h5">Danh sách Nông Trại ({farms.length})</Typography>
-          {/* 🆕 Nút thêm nông trại */}
-          {/* <Button
-            size="sm"
-            color="green"
-            onClick={() => setOpenFarmForm(true)}
+
+      {/* Thông tin Farms của user */}
+      <Card>
+        <div
+          onClick={() => setOpenFarms(!openFarms)}
+          className="cursor-pointer flex gap-2 items-center px-4 py-2 bg-gray-100 rounded-t"
+        >
+          <Typography variant="h5">
+            Danh sách Farms ({userFarms.length})
+          </Typography>
+          <Typography variant="h5" className={`transform transition-transform duration-300 ${openFarms ? "rotate-180" : ""}`}>▼</Typography>
+
+        </div>
+
+        <Collapse open={openFarms}>
+        {openFarms && (
+          <div className="overflow-hidden transition-all duration-300">
+            <CardBody>
+              {userFarms.length === 0 ? (
+                <Typography>Chưa có Farm nào.</Typography>
+              ) : userFarms.map((farm) => (
+                <div key={farm._id} className="border p-4 mb-4 rounded shadow space-y-2">
+                  <Typography variant="h6" className="text-blue-600">{farm.name}</Typography>
+                  <Typography><b>ID:</b> {farm._id}</Typography>
+                  <Typography><b>Mã nông trại:</b> {farm.code}</Typography>
+                  <Typography><b>Tags:</b> {(farm.tags || []).join(", ") || "—"}</Typography>
+                  <Typography><b>Trạng thái:</b> {
+                    farm.status === "pending" ? "Chờ duyệt" :
+                    farm.status === "active" ? "Đang hoạt động" : "Đã khóa"
+                  }</Typography>
+                  <Typography><b>Tỉnh/Thành phố:</b> {farm.province}</Typography>
+                  <Typography><b>Quận/Huyện:</b> {farm.district}</Typography>
+                  <Typography><b>Phường/Xã:</b> {farm.ward}</Typography>
+                  <Typography><b>Đường:</b> {farm.street}</Typography>
+                  <Typography><b>Vị trí tổng quát:</b> {farm.location}</Typography>
+<Typography><b>Tổng diện tích (m²):</b> {farm.area}</Typography>
+                  <Typography><b>Đất canh tác (m²):</b> {farm.cultivatedArea}</Typography>
+                  <Typography><b>Dịch vụ:</b> {(farm.services || []).join(", ") || "—"}</Typography>
+                  <Typography><b>Tính năng:</b> {(farm.features || []).join(", ") || "—"}</Typography>
+                  {farm.ownerInfo && (
+                    <>
+                      <Typography><b>Chủ sở hữu:</b> {farm.ownerInfo.name}</Typography>
+                      <Typography><b>Số điện thoại:</b> {farm.ownerInfo.phone}</Typography>
+                      <Typography><b>Email:</b> {farm.ownerInfo.email}</Typography>
+                    </>
+                  )}
+                  {farm.description && (
+                    <div>
+                      <Typography><b>Mô tả:</b></Typography>
+                      <Typography className="italic text-gray-700">{farm.description}</Typography>
+                    </div>
+                  )}
+
+                  {/* Số lượng video và nút xem chi tiết */}
+                  <div className="flex gap-3 items-center mt-2">
+                    <Typography color="deep-purple">
+                      <b>Số lượng video:</b> {countVideosByFarm(farm._id)}
+                    </Typography>
+                    <Button
+                      size="sm"
+                      color="blue"
+                      onClick={() => showFarmVideos(farm._id, farm.name)}
+                    >
+                      Xem chi tiết
+                    </Button>
+                  </div>
+
+                  {farm.pictures?.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                      {farm.pictures.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={`https://api-ndolv2.nongdanonline.cc${img.url || img.path || img.image}`}
+                          alt={`Hình ${idx + 1}`}
+                          className="w-full h-40 object-cover rounded"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </CardBody>
+          </div>
+        )}
+      </Collapse>
+      </Card>
+
+      {/* Danh sách video */}
+      <Card>
+        <div
+          onClick={() => setOpenVideos(!openVideos)}
+          className="cursor-pointer flex gap-2 items-center px-4 py-2 bg-gray-100 rounded-t"
+        >
+          <Typography variant="h5">
+            Danh sách Videos ({userVideos.length})
+          </Typography>
+          <Typography
+            variant="h5"
+            className={`transform transition-transform duration-300 ${openVideos ? "rotate-180" : ""}`}
           >
-            + Thêm Nông Trại
-          </Button> */}
+            ▼
+          </Typography>
         </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 text-left">Tên Farm</th>
-                <th className="p-2 text-left">Ngày tạo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {farms.map(farm => (
-                <tr key={farm.id} className="border-t">
-                  <td className="p-2">{farm.name}</td>
-                  <td className="p-2">{new Date(farm.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+
+        <Collapse open={openVideos}>
+          {openVideos && (
+            <div className="overflow-hidden transition-all duration-300">
+<CardBody>
+                {userVideos.length === 0 ? (
+                  <Typography>Chưa có video nào.</Typography>
+                ) : userVideos.map((video) => (
+                  <div key={video._id} className="border p-4 mb-6 rounded shadow">
+                    <Typography variant="h6" className="mb-2">{video.title}</Typography>
+
+                     <Typography className="mb-2 text-sm text-gray-700">
+                      <strong>Thuộc Farm:</strong>{" "}
+                      {video.farmId?.name || <span className="text-red-500">Không thuộc farm nào</span>}
+                    </Typography>
+                    
+                    {/* Video player */}
+                    {video.status === "pending" && video.localFilePath ? (
+                      <video
+                        src={
+                          video.localFilePath.startsWith('http')
+                            ? video.localFilePath
+                            : `https://api-ndolv2.nongdanonline.cc${video.localFilePath}`
+                        }
+                        controls
+                        className="h-[300px] w-full rounded shadow mb-4"
+                      />
+                    ) : video.youtubeLink && video.status === "uploaded" ? (
+                      video.youtubeLink.endsWith(".mp4") ? (
+                        <video
+                          src={video.youtubeLink}
+                          controls
+                          className="h-[320px] w-[600px] rounded shadow mb-4 mx-auto"
+                        />
+                      ) : (
+                        <iframe
+                          src={
+                            "https://www.youtube.com/embed/" +
+                            (video.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+                          }
+                          title="YouTube video"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="h-[320px] w-[600px] rounded shadow mb-4 mx-auto"
+                        />
+                      )
+                    ) : (
+                      <div className="flex items-center justify-center h-[300px] text-red-500 font-semibold bg-gray-100 rounded shadow mb-4">
+                        Video không tồn tại
+                      </div>
+                    )}
+
+                    {/* Thông tin video */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                      <span>Danh sách phát: <strong>{video.playlistName}</strong></span>
+                      <span>Tên Farm: <strong>{video.farmId?.name}</strong></span>
+                      <span>Ngày đăng: <strong>{new Date(video.createdAt).toLocaleDateString()}</strong></span>
+                      <span>Người đăng: <strong>{video.uploadedBy?.fullName}</strong></span>
+<span>Email: <strong>{video.uploadedBy?.email}</strong></span>
+                      <span>Trạng thái: <strong>{video.status}</strong></span>
+                      <span>Link Local: <strong>{video.localFilePath}</strong></span>
+                      <span>Link YouTube: <strong>{video.youtubeLink || "Không có"}</strong></span>
+                    </div>
+                  </div>
+                ))}
+              </CardBody>
+            </div>
+          )}
+        </Collapse>
+      </Card>
+
+      <Dialog
+        open={openVideoDialog}
+        size="xl"
+        handler={() => setOpenVideoDialog(false)}
+      >
+        <DialogHeader>Danh sách video - {selectedFarmName}</DialogHeader>
+
+        <DialogBody className="space-y-6 max-h-[560px] overflow-y-auto">
+          {selectedFarmVideos.length === 0 ? (
+            <Typography>Không có video nào cho farm này.</Typography>
+          ) : (
+            selectedFarmVideos.map((item) => (
+              <div
+                key={item._id}
+                className="bg-white rounded-lg shadow p-4 border"
+              >
+                <Typography variant="h6" className="mb-2 font-semibold">
+                  {item.title}
+                </Typography>
+
+                {/* Video hiển thị */}
+                {item.status === "pending" && item.localFilePath ? (
+                  <video
+                    src={
+                      item.localFilePath.startsWith('http')
+                        ? item.localFilePath
+                        : `https://api-ndolv2.nongdanonline.cc${item.localFilePath}`
+                    }
+                    controls
+                    className="h-[300px] w-full rounded shadow mb-4"
+                  >
+                    Trình duyệt không hỗ trợ video
+                  </video>
+                ) : item.youtubeLink && item.status === "uploaded" ? (
+                  item.youtubeLink.endsWith(".mp4") ? (
+                    <video
+                      src={item.youtubeLink}
+                      controls
+                      className="h-[320px] w-[600px] rounded shadow mb-4 mx-auto"
+                    />
+                  ) : (
+                    <iframe
+                      src={
+                        "https://www.youtube.com/embed/" +
+                        (item.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+                      }
+                      title="YouTube video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-[320px] w-[600px] rounded shadow mb-4 mx-auto"
+                    ></iframe>
+                  )
+                ) : (
+                  <div className="flex items-center justify-center h-[300px] text-red-500 font-semibold bg-gray-100 rounded shadow mb-4">
+                    Video không tồn tại
+                  </div>
+                )}
+{/* Thông tin video */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
+                  <span>Danh sách phát: <strong>{item.playlistName}</strong></span>
+                  <span>Tên Farm: <strong>{item.farmId?.name}</strong></span>
+                  <span>Ngày đăng: <strong>{new Date(item.createdAt).toLocaleDateString()}</strong></span>
+                  <span>Người đăng: <strong>{item.uploadedBy?.fullName}</strong></span>
+                  <span>Email: <strong>{item.uploadedBy?.email}</strong></span>
+                  <span>Trạng thái: <strong>{item.status}</strong></span>
+                  <span>Link Local: <strong>{item.localFilePath}</strong></span>
+                  <span>Link YouTube: <strong>{item.youtubeLink || "Không có"}</strong></span>
+                </div>
+              </div>
+            ))
+          )}
+        </DialogBody>
+
+        <DialogFooter>
+          <Button color="red" onClick={() => setOpenVideoDialog(false)}>
+            Đóng
+          </Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* danh sách post */}
+      <Card>
+        <div
+          onClick={() => setOpenPosts(!openPosts)}
+          className="cursor-pointer flex gap-2 items-center px-4 py-2 bg-gray-100 rounded-t"
+        >
+          <Typography variant="h5">
+            Danh sách Posts ({userPosts.length})
+          </Typography>
+          <Typography
+            variant="h5"
+            className={`transform transition-transform duration-300 ${openPosts ? "rotate-180" : ""}`}
+          >
+            ▼
+          </Typography>
         </div>
-      </div>
 
-      
-      <div className="mt-6">
-        <Typography variant="h5" className="mb-2">Danh sách Video ({videos.length})</Typography>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 text-left">Tiêu đề</th>
-                <th className="p-2 text-left">Ngày đăng</th>
-              </tr>
-            </thead>
-            <tbody>
-              {videos.map(video => (
-                <tr key={video.id} className="border-t">
-                  <td className="p-2">{video.title}</td>
-                  <td className="p-2">{new Date(video.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <Collapse open={openPosts}>
+          {openPosts && (
+            <div className="overflow-hidden transition-all duration-300">
+              <CardBody>
+                {userPosts.length === 0 ? (
+                  <Typography>Chưa có bài viết nào.</Typography>
+                ) : userPosts.map((post) => (
+                  <div key={post._id} className="border p-4 mb-6 rounded shadow">
+                    {/* Tiêu đề */}
+                    <Typography variant="h6" className="mb-2">{post.title}</Typography>
 
-      
-      <div className="mt-6">
-        <Typography variant="h5" className="mb-2">Danh sách Bài Post ({posts.length})</Typography>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="p-2 text-left">Tiêu đề</th>
-                <th className="p-2 text-left">Ngày tạo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map(post => (
-                <tr key={post.id} className="border-t">
-                  <td className="p-2">{post.title}</td>
-                  <td className="p-2">{new Date(post.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    {/* Ngày tạo và cập nhật */}
+                    <div className="text-sm text-gray-600 mb-2">
+                      <p><b>Ngày tạo:</b> {new Date(post.createdAt).toLocaleString("vi-VN")}</p>
+                      <p><b>Cập nhật:</b> {new Date(post.updatedAt).toLocaleString("vi-VN")}</p>
+                    </div>
 
-      {/* <FarmForm
-        open={openFarmForm}
-        onClose={() => setOpenFarmForm(false)}
-        initialData={{ ownerId: id }} 
-        onSubmit={handleCreateFarm}
-      /> */}
+                    {/* Tác giả */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <Typography className="font-semibold text-gray-700">Tác giả:</Typography>
+                      <img
+                        src={
+                          post.authorId?.avatar?.startsWith("http")
+                            ? post.authorId.avatar
+                            : `https://api-ndolv2.nongdanonline.cc${post.authorId?.avatar || ""}`
+}
+                        alt={post.authorId?.fullName}
+                        className="w-10 h-10 rounded-full"
+                      />
+                      <Typography>{post.authorId?.fullName || "Không rõ"}</Typography>
+                    </div>
 
+                    {/* Mô tả */}
+                    <Typography className="mb-3">
+                      <b>Mô tả:</b> {post.description}
+                    </Typography>
+
+                    {/* Tags */}
+                    <div className="flex gap-2 flex-wrap mb-3">
+                      <Typography className="font-semibold text-gray-700">Tags:</Typography>
+                      {post.tags?.map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* Hình ảnh */}
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                      {post.images?.map((img, idx) => (
+                        <img
+                          key={idx}
+                          src={`https://api-ndolv2.nongdanonline.cc${img}`}
+                          alt={`img-${idx}`}
+                          className="w-full h-40 object-cover rounded shadow"
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </CardBody>
+            </div>
+          )}
+        </Collapse>
+      </Card>
     </div>
   );
 }

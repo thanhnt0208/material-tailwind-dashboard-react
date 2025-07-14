@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
-import VideoFarmById from "./pages/dashboard/VideoFarms/ListVideo";
+import VideoFarmById from "./pages/dashboard/VideoFarms/VideoById";
 import VideoLikeList from "./pages/dashboard/VideoFarms/VideoLikeList";
 import PostDetail from "./pages/dashboard/post/PostDetail";
 import CommentPostbyId from "./pages/dashboard/AdminCommentPost/CommentPostbyId";
@@ -10,8 +10,8 @@ import CommentPostbyIdPost from "./pages/dashboard/AdminCommentPost/CommentPostb
 import CommentPostByIdUser from "./pages/dashboard/AdminCommentPost/CommentPostByIdUser";
 import FarmDetail from "./pages/dashboard/farm/FarmDetail";
 import { Farms } from "./pages/dashboard/farm/farms";
-import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 import UserDetail from "./pages/dashboard/user/UserDetail";
+import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
   const navigate = useNavigate();
   useEffect(() =>{
@@ -21,23 +21,30 @@ function App() {
     }
   })
   return (
-    <Routes>
-      <Route path="/dashboard/*" element={<Dashboard />} />
+ <Routes>
+      <Route path="/dashboard/*" element={<Dashboard />}>
+        <Route path="VideoFarmById/:farmId" element={<VideoFarmById />} />
+        <Route path="video-like/:videoId" element={<VideoLikeList />} />
+        <Route path="post/:id" element={<PostDetail />} />
+        <Route path="CommentPostbyId/:id" element={<CommentPostbyId />} />
+        <Route path="CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
+        <Route path="CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
+        <Route path="VideoFarms/VideoById/:id" element={<VideoById />} />
+        <Route path="users/:id" element={<UserDetail />} />
+        {/* <Route path="/dashboard/users/:id" element={<UserDetail />} /> */}
+      </Route>
       <Route path="/auth/*" element={<Auth />} />
-      <Route path="/dashboard/VideoFarmById/:farmId" element={<VideoFarmById />} />
-      <Route path="/dashboard/video-like/:videoId" element={<VideoLikeList />} />
-      <Route path="/dashboard/post/:id" element={<PostDetail />} />
-      <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
-      <Route path="/dashboard/CommentPostbyId/:id" element={<CommentPostbyId />} />
-      <Route path="/dashboard/CommentPostbyIdPost/:postId" element={<CommentPostbyIdPost />} />
-      <Route path="/dashboard/CommentPostByIdUser/:id" element={<CommentPostByIdUser />} />
       <Route path="/admin/Farms" element={<Farms />} />
       <Route path="/admin/farms/:id" element={<FarmDetail />} />
-      <Route path="/dashboard/VideoFarms/VideoById/:id" element={<VideoById />} />
-      <Route path="/dashboard/users/:id" element={<UserDetail />} />
+      <Route path="*" element={<Navigate to="/dashboard/home" replace />} />
 
     </Routes>
   );
 }
+
+ 
+
+  
+
  
 export default App;
