@@ -236,6 +236,7 @@ export default function PostDetailDialog({ postId, open, onClose }) {
           </>
         )}
       </DialogBody>
+      
     </Dialog>
   );
 }
