@@ -249,7 +249,7 @@ export function PostList() {
   </Typography>
 
   {/* Bộ lọc */}
-  <div className="flex justify-end items-center flex-wrap gap-3 mb-4">
+  <div className="flex justify-start items-center flex-wrap gap-3 mb-4">
   {/* Tiêu đề */}
   <div className="h-10">
     <Input
