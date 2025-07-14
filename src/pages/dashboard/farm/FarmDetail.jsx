@@ -42,6 +42,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
   const [farm, setFarm] = useState(null);
   const [error, setError] = useState(null);
   const [images, setImages] = useState([]);
+  const [videos, setVideos] = useState([]);
   const [videoCount, setVideoCount] = useState(0);
   const [showChanges, setShowChanges] = useState(false);
   const [questions, setQuestions] = useState([]);
@@ -60,8 +61,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
     if (!farmId) return;
     try {
       const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts());
-      const data = res.data?.data || res.data;
-      setFarm(data);
+      setFarm(res.data?.data || res.data);
     } catch (err) {
       console.error("❌ Lỗi fetchDetail:", err);
       setError(err.response?.data?.message || err.message);
@@ -80,10 +80,12 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
   const fetchFarmVideos = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/adminfarms/${farmId}/video-count`, getOpts());
-      setVideoCount(res.data.count || 0);
+      const res = await axios.get(`${BASE_URL}/video-farm/farm/${farmId}?page=1&limit=100`, getOpts());
+      setVideos(res.data?.data || []);
+      setVideoCount(res.data?.total || 0);
     } catch (err) {
       console.error("Lỗi video:", err);
+      setVideos([]);
       setVideoCount(0);
     }
   };
@@ -121,7 +123,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
   };
 
   useEffect(() => {
-    console.log("📌 Dialog open =", open, "| farmId =", farmId);
     if (open && farmId) {
       fetchDetail();
       fetchImages();
@@ -196,6 +197,50 @@ export default function FarmDetail({ open, onClose, farmId }) {
                 </div>
               ) : (
                 <Typography className="text-sm text-gray-500 italic mb-4">Chưa có hình ảnh</Typography>
+              )}
+            </div>
+
+            {/* Danh sách video */}
+            <div className="mt-6">
+              <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
+              {videos.length > 0 ? (
+                <div className="overflow-auto">
+                  <table className="min-w-full table-auto border border-gray-300 text-sm text-left">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="border px-3 py-2">#</th>
+                        <th className="border px-3 py-2">Tiêu đề</th>
+                        <th className="border px-3 py-2">Người đăng</th>
+                        <th className="border px-3 py-2">Ngày đăng</th>
+                        <th className="border px-3 py-2">Trạng thái</th>
+                        <th className="border px-3 py-2">Xem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {videos.map((video, idx) => (
+                        <tr key={video._id || idx} className="hover:bg-gray-50">
+                          <td className="border px-3 py-2">{idx + 1}</td>
+                          <td className="border px-3 py-2">{video.title}</td>
+                          <td className="border px-3 py-2">{video.uploader?.name || "—"}</td>
+                          <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
+                          <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
+                          <td className="border px-3 py-2">
+                            <a
+                              href={video.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 underline"
+                            >
+                              Xem video
+                            </a>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
               )}
             </div>
 
