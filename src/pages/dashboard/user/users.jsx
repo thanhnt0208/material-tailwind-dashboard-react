@@ -10,7 +10,8 @@ import { useNavigate } from "react-router-dom";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
-  const [roles] = useState(["Customer", "Admin", "Farmer"]);
+  const [roles] = useState(["Admin", "Staff", "Farmer", "Customer"]);
+  const preferredRoleOrder = ["Admin", "Staff", "Farmer", "Customer"];
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [counts, setCounts] = useState({});
@@ -34,27 +35,35 @@ export default function Users() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Hàm sắp xếp role theo thứ tự ưu tiên
+  const sortUserRoles = (userList) => {
+    return userList.map(u => {
+      if (Array.isArray(u.role)) {
+        u.role = [...u.role].sort(
+          (a, b) => preferredRoleOrder.indexOf(a) - preferredRoleOrder.indexOf(b)
+        );
+      }
+      return u;
+    });
+  };
+
   // Fetch users + counts
- const fetchUsers = async () => {
-  if (!token) return;
-  setLoading(true);
-  try {
-    const params = { page, limit };
-    if (filterRole) params.role = filterRole;
-    if (filterStatus) {
+  const fetchUsers = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const params = { page, limit };
+      if (filterRole) params.role = filterRole;
       if (filterStatus === "Active") params.isActive = true;
       else if (filterStatus === "Inactive") params.isActive = false;
-    }
 
-    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-      headers: { Authorization: `Bearer ${token}` },
-      params
-    });
-    const usersData = Array.isArray(res.data.data) ? res.data.data : [];
-    setUsers(usersData);
-    setTotalPages(res.data.totalPages || 1);
+      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+        headers: { Authorization: `Bearer ${token}` }, params
+      });
+      let usersData = Array.isArray(res.data.data) ? res.data.data : [];
+      usersData = sortUserRoles(usersData);
 
-      // Gọi counts
+      // Tính counts
       const [farmsRes, videosRes, postsRes] = await Promise.all([
         axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -65,10 +74,10 @@ export default function Users() {
       const videos = videosRes.data?.data || [];
       const posts = postsRes.data?.data || [];
 
-      const postCountsMap = {};
+      const postMap = {};
       posts.forEach(p => {
         const uid = p.userId || p.authorId;
-        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+        if (uid) postMap[uid] = (postMap[uid] || 0) + 1;
       });
 
       const countsObj = {};
@@ -76,10 +85,12 @@ export default function Users() {
         countsObj[user.id] = {
           farms: farms.filter(f => f.ownerId === user.id).length,
           videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
-          posts: postCountsMap[user.id] || 0
+          posts: postMap[user.id] || 0
         };
       });
+      setUsers(usersData);
       setCounts(countsObj);
+      setTotalPages(res.data.totalPages || 1);
     } catch (err) {
       console.error("Lỗi khi tải users:", err);
       setError("Lỗi khi tải danh sách người dùng.");
@@ -88,41 +99,25 @@ export default function Users() {
     }
   };
 
-  // handleSearch: tìm fullName, email, phone
+  // handleSearch: tìm cả fullName + email + phone
   const handleSearch = async () => {
-  if (!token) return;
-  setLoading(true);
-  try {
-    const paramsCommon = { page: 1, limit: 10 };
-    if (filterRole) paramsCommon.role = filterRole;
-    if (filterStatus) {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const paramsCommon = { page: 1, limit: 10 };
+      if (filterRole) paramsCommon.role = filterRole;
       if (filterStatus === "Active") paramsCommon.isActive = true;
       else if (filterStatus === "Inactive") paramsCommon.isActive = false;
-    }
 
       const [byName, byEmail, byPhone] = await Promise.all([
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, fullName: searchText }
-        }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, email: searchText }
-        }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, phone: searchText }
-        }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, fullName: searchText } }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, email: searchText } }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, phone: searchText } }),
       ]);
 
-      const merged = [
-        ...(byName.data.data || []),
-        ...(byEmail.data.data || []),
-        ...(byPhone.data.data || [])
-      ];
-      const unique = merged.filter(
-        (v, i, a) => a.findIndex(t => t.id === v.id) === i
-      );
+      let merged = [...(byName.data.data || []), ...(byEmail.data.data || []), ...(byPhone.data.data || [])];
+      let unique = merged.filter((v, i, arr) => arr.findIndex(t => t.id === v.id) === i);
+      unique = sortUserRoles(unique);
 
       setUsers(unique);
       setTotalPages(1);
@@ -137,11 +132,7 @@ export default function Users() {
   };
 
   useEffect(() => {
-    if (!token) {
-      setError("Không tìm thấy token!");
-      setLoading(false);
-      return;
-    }
+    if (!token) { setError("Không tìm thấy token!"); setLoading(false); return; }
     if (!isSearching) fetchUsers();
   }, [token, page, filterRole, filterStatus, isSearching]);
 
