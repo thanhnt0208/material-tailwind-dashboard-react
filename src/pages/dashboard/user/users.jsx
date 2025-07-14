@@ -35,20 +35,24 @@ export default function Users() {
   const token = localStorage.getItem("token");
 
   // Fetch users + counts
-  const fetchUsers = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const params = { page, limit };
-      if (filterRole) params.role = filterRole;
-      if (filterStatus) params.isActive = filterStatus === "Active";
+ const fetchUsers = async () => {
+  if (!token) return;
+  setLoading(true);
+  try {
+    const params = { page, limit };
+    if (filterRole) params.role = filterRole;
+    if (filterStatus) {
+      if (filterStatus === "Active") params.isActive = true;
+      else if (filterStatus === "Inactive") params.isActive = false;
+    }
 
-      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }, params
-      });
-      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
-      setUsers(usersData);
-      setTotalPages(res.data.totalPages || 1);
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    const usersData = Array.isArray(res.data.data) ? res.data.data : [];
+    setUsers(usersData);
+    setTotalPages(res.data.totalPages || 1);
 
       // Gọi counts
       const [farmsRes, videosRes, postsRes] = await Promise.all([
@@ -86,12 +90,15 @@ export default function Users() {
 
   // handleSearch: tìm fullName, email, phone
   const handleSearch = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const paramsCommon = { page: 1, limit: 10 };
-      if (filterRole) paramsCommon.role = filterRole;
-      if (filterStatus) paramsCommon.isActive = filterStatus === "Active";
+  if (!token) return;
+  setLoading(true);
+  try {
+    const paramsCommon = { page: 1, limit: 10 };
+    if (filterRole) paramsCommon.role = filterRole;
+    if (filterStatus) {
+      if (filterStatus === "Active") paramsCommon.isActive = true;
+      else if (filterStatus === "Inactive") paramsCommon.isActive = false;
+    }
 
       const [byName, byEmail, byPhone] = await Promise.all([
         axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
