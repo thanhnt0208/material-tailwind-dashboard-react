@@ -297,7 +297,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
             {/* Xem biến động */}
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
-                {showChanges ? "Ẩn " : "Xem câu trả lời"}
+                {showChanges ? "Ẩn " : "Xem câu hỏi và trả lời"}
               </Button>
             </div>
 
