@@ -13,7 +13,7 @@ export default function Users() {
   const [roles] = useState(["Customer", "Admin", "Farmer"]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [counts, setCounts] = useState({});
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -21,7 +21,6 @@ export default function Users() {
     fullName: "", email: "", phone: "", isActive: true, address: ""
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
-  const [counts, setCounts] = useState({});
 
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -32,9 +31,12 @@ export default function Users() {
   const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(false);
 
+  const navigate = useNavigate();
   const token = localStorage.getItem("token");
 
+  // Fetch users + counts
   const fetchUsers = async () => {
+    if (!token) return;
     setLoading(true);
     try {
       const params = { page, limit };
@@ -48,40 +50,41 @@ export default function Users() {
       setUsers(usersData);
       setTotalPages(res.data.totalPages || 1);
 
-      // Lấy thêm counts
-      const [farmsRes, videosRes] = await Promise.all([
+      // Gọi 1 lần lấy tất cả farms, videos, posts
+      const [farmsRes, videosRes, postsRes] = await Promise.all([
         axios.get("https://api-ndolv2.nongdanonline.cc/adminfarms", { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", { headers: { Authorization: `Bearer ${token}` } })
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-video-farm", { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", { headers: { Authorization: `Bearer ${token}` } })
       ]);
       const farms = farmsRes.data?.data || [];
       const videos = videosRes.data?.data || [];
+      const posts = postsRes.data?.data || [];
+
+      // Đếm posts theo user
+      const postCountsMap = {};
+      posts.forEach(p => {
+        const uid = p.userId || p.authorId;
+        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+      });
 
       const countsObj = {};
-      await Promise.all(usersData.map(async (user) => {
-        const userId = user.id;
-        const farmsCount = farms.filter(f => f.ownerId === userId).length;
-        const videosCount = videos.filter(v => v.uploadedBy?.id === userId).length;
-
-        let postsCount = 0;
-        try {
-          const postsRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed/user/${userId}`,
-            { headers: { Authorization: `Bearer ${token}` } });
-          postsCount = postsRes.data?.data?.length || 0;
-        } catch (error) {
-          console.error("Lỗi lấy posts:", error);
-        }
-        countsObj[userId] = { farms: farmsCount, videos: videosCount, posts: postsCount };
-      }));
+      usersData.forEach(user => {
+        countsObj[user.id] = {
+          farms: farms.filter(f => f.ownerId === user.id).length,
+          videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
+          posts: postCountsMap[user.id] || 0
+        };
+      });
       setCounts(countsObj);
-    } catch (error) {
-      console.error("Lỗi khi tải users:", error);
+    } catch (err) {
+      console.error("Lỗi khi tải users:", err);
       setError("Lỗi khi tải danh sách người dùng.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Tìm kiếm
+  // Search
   const handleSearch = async () => {
     if (!token) return;
     setLoading(true);
@@ -90,8 +93,8 @@ export default function Users() {
         const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const allUsers = Array.isArray(res.data.data) ? res.data.data : [];
-        const filtered = allUsers.filter(u =>
+        let allUsers = Array.isArray(res.data.data) ? res.data.data : [];
+        let filtered = allUsers.filter(u =>
           (u.fullName?.toLowerCase().includes(searchText.toLowerCase())) ||
           (u.email?.toLowerCase().includes(searchText.toLowerCase())) ||
           (u.phone?.toLowerCase().includes(searchText.toLowerCase()))
@@ -103,8 +106,8 @@ export default function Users() {
         setPage(1);
         fetchUsers();
       }
-    } catch (error) {
-      console.error("Lỗi tìm kiếm:", error);
+    } catch (err) {
+      console.error("Lỗi tìm kiếm:", err);
       setError("Lỗi khi tìm kiếm.");
     } finally {
       setLoading(false);
@@ -120,6 +123,7 @@ export default function Users() {
     if (!isSearching) fetchUsers();
   }, [token, page, filterRole, filterStatus, isSearching]);
 
+  // Edit user
   const openEdit = (user) => {
     setSelectedUser(user);
     setFormData({
@@ -140,18 +144,48 @@ export default function Users() {
         await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
           { address: formData.address }, { headers: { Authorization: `Bearer ${token}` } });
       }
-      alert("Cập nhật thành công!"); fetchUsers(); setEditOpen(false);
-    } catch { alert("Cập nhật thất bại!"); }
+      alert("Cập nhật thành công!");
+      fetchUsers();
+      setEditOpen(false);
+    } catch {
+      alert("Cập nhật thất bại!");
+    }
   };
 
-  const handleView = (user) => navigate(`/dashboard/users/${user.id}`);
   const handleDelete = async (userId) => {
-    if (!window.confirm("Bạn chắc muốn xoá?")) return;
+    if (!window.confirm("Bạn chắc chắn muốn xoá?")) return;
     try {
       await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
         { headers: { Authorization: `Bearer ${token}` } });
-      alert("Đã xoá người dùng!"); fetchUsers();
-    } catch { alert("Xoá thất bại!"); }
+      alert("Đã xoá người dùng!");
+      fetchUsers();
+    } catch {
+      alert("Xoá thất bại!");
+    }
+  };
+
+  const handleAddRole = async () => {
+    if (!token || !selectedUser) return;
+    try {
+      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
+        { role: selectedRole }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Thêm role thành công!");
+      fetchUsers();
+    } catch {
+      alert("Thêm role thất bại!");
+    }
+  };
+
+  const handleRemoveRole = async (role) => {
+    if (!token || !selectedUser) return;
+    try {
+      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-role`,
+        { role }, { headers: { Authorization: `Bearer ${token}` } });
+      alert("Xoá role thành công!");
+      fetchUsers();
+    } catch {
+      alert("Xoá role thất bại!");
+    }
   };
 
   return (
@@ -159,12 +193,8 @@ export default function Users() {
       <Typography variant="h6" color="blue-gray" className="mb-4">Quản lý người dùng</Typography>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        <Input
-          label="Tìm kiếm theo tên, phone, email"
-          value={searchText}
-          onChange={e => setSearchText(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleSearch(); }}
-        />
+        <Input label="Tìm kiếm..." value={searchText} onChange={e => setSearchText(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter") handleSearch(); }} />
         <Select label="Lọc theo role" value={filterRole} onChange={setFilterRole}>
           <Option value="">Tất cả</Option>
           {roles.map(r => <Option key={r} value={r}>{r}</Option>)}
@@ -192,21 +222,19 @@ export default function Users() {
           <tbody>
             {users.map(user => (
               <tr key={user.id} className="border-t hover:bg-blue-50 cursor-pointer"
-                onClick={() => handleView(user)}>
+                  onClick={() => navigate(`/dashboard/users/${user.id}`)}>
                 <td className="p-2"><Avatar src={user.avatar ? `https://api-ndolv2.nongdanonline.cc${user.avatar}` : ""} size="sm" /></td>
                 <td className="p-2">{user.fullName}</td>
                 <td className="p-2">{user.email}</td>
                 <td className="p-2">{user.phone || "N/A"}</td>
                 <td className="p-2 text-xs">{Array.isArray(user.role) ? user.role.join(", ") : user.role}</td>
-                <td className="p-2">{counts[user.id]?.posts || 0}</td>
-                <td className="p-2">{counts[user.id]?.farms || 0}</td>
-                <td className="p-2">{counts[user.id]?.videos || 0}</td>
+                <td className="p-2">{counts[user.id]?.posts ?? 0}</td>
+                <td className="p-2">{counts[user.id]?.farms ?? 0}</td>
+                <td className="p-2">{counts[user.id]?.videos ?? 0}</td>
                 <td className="p-2">
-                  {user.isActive ? (
-                    <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
-                  ) : (
-                    <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>
-                  )}
+                  {user.isActive
+                    ? <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded">Active</span>
+                    : <span className="bg-gray-500 text-white text-xs px-2 py-0.5 rounded">Inactive</span>}
                 </td>
                 <td className="p-2" onClick={e => e.stopPropagation()}>
                   <Menu placement="left-start">
@@ -214,7 +242,6 @@ export default function Users() {
                       <IconButton variant="text"><EllipsisVerticalIcon className="h-5 w-5" /></IconButton>
                     </MenuHandler>
                     <MenuList>
-                      <MenuItem onClick={() => handleView(user)}>Xem</MenuItem>
                       <MenuItem onClick={() => openEdit(user)}>Sửa</MenuItem>
                       <MenuItem onClick={() => handleDelete(user.id)} className="text-red-500">Xoá</MenuItem>
                     </MenuList>
@@ -234,7 +261,6 @@ export default function Users() {
         </div>
       )}
 
-      {/* Dialog chỉnh sửa */}
       <Dialog open={editOpen} handler={setEditOpen} size="sm">
         <DialogHeader>Chỉnh sửa người dùng</DialogHeader>
         <DialogBody className="space-y-3">
