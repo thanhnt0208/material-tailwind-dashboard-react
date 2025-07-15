@@ -51,17 +51,13 @@ export default function Users() {
       setUsers(usersData);
       // Tự động lấy danh sách role duy nhất từ users
       const uniqueRoles = Array.from(
-        new Set([
-          ...usersData
-            .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
-            .map(role => role.toLowerCase()),
-
-          filterRole?.toLowerCase() 
-        ])
-      )
-      .filter(Boolean)
-      .map(role => role.charAt(0).toUpperCase() + role.slice(1)); 
-      setRoles(uniqueRoles);
+  new Set(
+    usersData
+      .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
+      .map(role => role.toLowerCase()) // chuẩn hóa về lowercase
+  )
+).map(role => role.charAt(0).toUpperCase() + role.slice(1)); // Viết hoa chữ cái đầu
+setRoles(uniqueRoles);
 
       setTotalPages(res.data.totalPages || 1);
 
@@ -279,7 +275,6 @@ export default function Users() {
     <Option key={role} value={role}>{role}</Option>
   ))}
 </Select>
-
 
 
 

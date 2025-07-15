@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 
@@ -483,6 +483,17 @@ export default function UserDetail() {
                         </span>
                       ))}
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Typography className="font-semibold">Lượt thích:</Typography>
+                      <Chip
+                        value={
+                          Array.isArray(post.like) ? post.like.length : (post.like || 0)
+                        }
+                        color="blue"
+                        size="sm"
+                      />
+                    </div>
+
 
                     {/* Hình ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
