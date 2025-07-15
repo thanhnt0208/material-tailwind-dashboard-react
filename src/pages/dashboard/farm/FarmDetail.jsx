@@ -202,11 +202,11 @@ export default function FarmDetail({ open, onClose, farmId }) {
                     <div key={idx}>
                       <img
                         src={`${BASE_URL}${post.images[0]}`}
-                        alt={img.isAvatar ? "Ảnh đại diện" : `Ảnh ${idx + 1}`}
+                        alt={img.isAvatar ? "Ảnh" : `Ảnh ${idx + 1}`}
                         className="w-full h-40 object-cover rounded-lg border shadow-sm"
                       />
                       {img.isAvatar && (
-                        <Typography className="text-xs text-center text-gray-600 mt-1">Ảnh đại diện</Typography>
+                        <Typography className="text-xs text-center text-gray-600 mt-1">Ảnh</Typography>
                       )}
                     </div>
                   ))}

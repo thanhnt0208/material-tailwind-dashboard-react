@@ -18,6 +18,7 @@ import axios from "axios";
 import { Audio } from "react-loader-spinner";
 
 const API_URL = "https://api-ndolv2.nongdanonline.cc/answers";
+const FILE_BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 let token = localStorage.getItem("token");
 
 // Auto-refresh token
@@ -77,7 +78,6 @@ export function AnswersTable() {
 
   const [searchText, setSearchText] = useState("");
   const [filterOption, setFilterOption] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -289,7 +289,7 @@ export function AnswersTable() {
                     ? item.uploadedFiles.map((file, i) => (
                         <a
                           key={i}
-                          href={file}
+                          href={`${FILE_BASE_URL}${file}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 underline block"
