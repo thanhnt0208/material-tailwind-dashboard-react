@@ -97,18 +97,19 @@ export default function FarmDetail({ open, onClose, farmId }) {
       setVideoCount(0);
     }
   };
-
   const fetchQuestions = async () => {
     setLoadingQuestions(true);
     try {
-      const res = await axios.get(`${BASE_URL}/admin-questions`, getOpts());
-      setQuestions(res.data || []);
+      const res = await axios.get(`${BASE_URL}/admin-questions?limit=100`, getOpts());
+      setQuestions(Array.isArray(res.data) ? res.data : res.data?.data || []);
     } catch (err) {
       console.error("Lỗi câu hỏi:", err);
+      setQuestions([]);
     } finally {
       setLoadingQuestions(false);
     }
   };
+
 
   const fetchAnswers = async () => {
     setLoadingAnswers(true);
@@ -149,7 +150,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
           <Typography color="red">Không tìm thấy dữ liệu</Typography>
         ) : (
           <>
-            {/* Thông tin cơ bản */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <Info label="Tên nông trại" value={farm.name} />
               <Info label="Mã nông trại" value={farm.code} />
@@ -173,7 +173,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
               <Info label="Số video nông trại" value={videoCount} />
             </div>
 
-            {/* Mô tả */}
             {farm.description && (
               <div>
                 <Typography variant="h6" className="mb-2 text-blue-gray-900">Mô tả</Typography>
@@ -183,7 +182,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
               </div>
             )}
 
-            {/* Hình ảnh */}
             <div>
               <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
               {images.length > 0 ? (
@@ -203,148 +201,142 @@ export default function FarmDetail({ open, onClose, farmId }) {
               )}
             </div>
 
-            {/* Danh sách video */}
-<div className="mt-6">
-  <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
-  {videos.length > 0 ? (
-    <div className="border border-gray-200 rounded-md max-h-[400px] overflow-y-auto">
-      <table className="min-w-full table-auto text-sm text-left">
-        <thead className="bg-gray-100 sticky top-0 z-10">
-          <tr>
-            <th className="border px-3 py-2">#</th>
-            <th className="border px-3 py-2">Tiêu đề</th>
-            <th className="border px-3 py-2">Người đăng</th>
-            <th className="border px-3 py-2">Ngày đăng</th>
-            <th className="border px-3 py-2">Trạng thái</th>
-            <th className="border px-3 py-2">Xem</th>
-          </tr>
-        </thead>
-        <tbody>
-          {videos.map((video, idx) => (
-            <tr key={video._id || idx} className="hover:bg-gray-50">
-              <td className="border px-3 py-2">{idx + 1}</td>
-              <td className="border px-3 py-2">{video.title}</td>
-              <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
-              <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
-              <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
-              <td className="border px-3 py-2">
-                <Button
-                  variant="text"
-                  size="sm"
-                  color="blue"
-                  onClick={() => setSelectedVideo(video)}
-                  className="flex items-center gap-1"
-                >
-                  <PlayIcon className="h-4 w-4" />
-                  Xem
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  ) : (
-    <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
-  )}
-</div>
+            <div className="mt-6">
+              <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
+              {videos.length > 0 ? (
+                <div className="border border-gray-200 rounded-md max-h-[400px] overflow-y-auto">
+                  <table className="min-w-full table-auto text-sm text-left">
+                    <thead className="bg-gray-100 sticky top-0 z-10">
+                      <tr>
+                        <th className="border px-3 py-2">#</th>
+                        <th className="border px-3 py-2">Tiêu đề</th>
+                        <th className="border px-3 py-2">Người đăng</th>
+                        <th className="border px-3 py-2">Ngày đăng</th>
+                        <th className="border px-3 py-2">Trạng thái</th>
+                        <th className="border px-3 py-2">Xem</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {videos.map((video, idx) => (
+                        <tr key={video._id || idx} className="hover:bg-gray-50">
+                          <td className="border px-3 py-2">{idx + 1}</td>
+                          <td className="border px-3 py-2">{video.title}</td>
+                          <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
+                          <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
+                          <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
+                          <td className="border px-3 py-2">
+                            <Button
+                              variant="text"
+                              size="sm"
+                              color="blue"
+                              onClick={() => setSelectedVideo(video)}
+                              className="flex items-center gap-1"
+                            >
+                              <PlayIcon className="h-4 w-4" />
+                              Xem
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
+              )}
+            </div>
 
-            {/* Dialog xem video */}
             <Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
-  <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
-  <DialogBody divider className="flex justify-center">
-    {selectedVideo?.status === "pending" && selectedVideo?.localFilePath ? (
-      <video
-        controls
-        src={
-          selectedVideo.localFilePath.startsWith("http")
-            ? selectedVideo.localFilePath
-            : `${BASE_URL}${selectedVideo.localFilePath}`
-        }
-        className="max-h-[70vh] w-full rounded shadow"
-      />
-    ) : selectedVideo?.youtubeLink && selectedVideo.status === "uploaded" ? (
-      selectedVideo.youtubeLink.endsWith(".mp4") ? (
-        <video
-          controls
-          src={selectedVideo.youtubeLink}
-          className="max-h-[70vh] w-full rounded shadow"
-        />
-      ) : (
-        <iframe
-          src={
-            "https://www.youtube.com/embed/" +
-            (selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
-          }
-          title="YouTube video"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="h-[360px] rounded shadow w-full"
-        ></iframe>
-      )
-    ) : (
-      <Typography className="text-red-500">Không tìm thấy video.</Typography>
-    )}
-  </DialogBody>
-  <DialogFooter>
-    <Button color="blue" onClick={() => setSelectedVideo(null)}>
-      Đóng
-    </Button>
-  </DialogFooter>
-</Dialog>
+              <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
+              <DialogBody divider className="flex justify-center">
+                {selectedVideo?.status === "pending" && selectedVideo?.localFilePath ? (
+                  <video
+                    controls
+                    src={
+                      selectedVideo.localFilePath.startsWith("http")
+                        ? selectedVideo.localFilePath
+                        : `${BASE_URL}${selectedVideo.localFilePath}`
+                    }
+                    className="max-h-[70vh] w-full rounded shadow"
+                  />
+                ) : selectedVideo?.youtubeLink && selectedVideo.status === "uploaded" ? (
+                  selectedVideo.youtubeLink.endsWith(".mp4") ? (
+                    <video
+                      controls
+                      src={selectedVideo.youtubeLink}
+                      className="max-h-[70vh] w-full rounded shadow"
+                    />
+                  ) : (
+                    <iframe
+                      src={
+                        "https://www.youtube.com/embed/" +
+                        (selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
+                      }
+                      title="YouTube video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      className="h-[360px] rounded shadow w-full"
+                    ></iframe>
+                  )
+                ) : (
+                  <Typography className="text-red-500">Không tìm thấy video.</Typography>
+                )}
+              </DialogBody>
+              <DialogFooter>
+                <Button color="blue" onClick={() => setSelectedVideo(null)}>Đóng</Button>
+              </DialogFooter>
+            </Dialog>
 
-
-            {/* Xem biến động */}
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
-                {showChanges ? "Ẩn " : "Xem câu hỏi và trả lời"}
+                Xem câu hỏi và trả lời
               </Button>
             </div>
 
-            {/* Biến động câu hỏi & trả lời */}
-            {showChanges && (
-              <div className="space-y-6 p-4 border border-gray-200 rounded-lg bg-white shadow-inner">
-                <Typography variant="h6" className="text-blue-gray-900">Danh sách câu hỏi và câu trả lời</Typography>
+            <Dialog open={showChanges} handler={handleToggleChanges} size="lg">
+              <DialogHeader>Danh sách câu hỏi và câu trả lời</DialogHeader>
+              <DialogBody className="space-y-4 max-h-[70vh] overflow-y-auto">
                 {loadingQuestions || loadingAnswers ? (
                   <Typography className="text-sm text-blue-500">Đang tải dữ liệu...</Typography>
                 ) : questions.length === 0 ? (
                   <Typography className="text-sm text-gray-500 italic">Không có câu hỏi nào.</Typography>
                 ) : (
-                  <div className="space-y-4">
-                    {questions.map((q, idx) => {
-                      const match = answers.find((a) => a.question?._id === q._id);
-                      const ans = match?.answer;
-                      return (
-                        <div key={q._id} className="border p-3 rounded-lg bg-gray-50">
-                          <Typography className="text-sm font-semibold text-gray-800">
-                            {idx + 1}. {q.text}
+                  questions.map((q, idx) => {
+                    const match = answers.find((a) => a.question?._id === q._id);
+                    const ans = match?.answer;
+                    return (
+                      <div key={q._id} className="border p-3 rounded-lg bg-gray-50">
+                        <Typography className="text-sm font-semibold text-gray-800">
+                          {idx + 1}. {q.text}
+                        </Typography>
+                        {ans ? (
+                          <div className="mt-1 space-y-1 text-sm text-blue-gray-700">
+                            {ans.selectedOptions?.length > 0 && <div>Chọn: {ans.selectedOptions.join(", ")}</div>}
+                            {ans.otherText && <div>Khác: {ans.otherText}</div>}
+                            {ans.uploadedFiles?.length > 0 && (
+                              <div className="space-y-1">
+                                {ans.uploadedFiles.map((f, i) => (
+                                  <a key={i} href={f} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline block">
+                                    File {i + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Typography className="text-sm text-red-500 italic mt-1">
+                            Chưa có câu trả lời
                           </Typography>
-                          {ans ? (
-                            <div className="mt-1 space-y-1 text-sm text-blue-gray-700">
-                              {ans.selectedOptions?.length > 0 && <div>Chọn: {ans.selectedOptions.join(", ")}</div>}
-                              {ans.otherText && <div>Khác: {ans.otherText}</div>}
-                              {ans.uploadedFiles?.length > 0 && (
-                                <div className="space-y-1">
-                                  {ans.uploadedFiles.map((f, i) => (
-                                    <a key={i} href={f} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline block">
-                                      File {i + 1}
-                                    </a>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <Typography className="text-sm text-red-500 italic mt-1">
-                              Chưa có câu trả lời
-                            </Typography>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
-              </div>
-            )}
+              </DialogBody>
+              <DialogFooter>
+                <Button color="blue" onClick={handleToggleChanges}>Đóng</Button>
+              </DialogFooter>
+            </Dialog>
           </>
         )}
       </div>

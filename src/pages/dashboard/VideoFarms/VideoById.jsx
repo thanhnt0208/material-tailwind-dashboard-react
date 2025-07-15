@@ -3,19 +3,18 @@ import { useParams } from 'react-router-dom'
 import axios from 'axios'
 import { BaseUrl } from '@/ipconfig'
 import { Audio } from 'react-loader-spinner'
-import { ArrowLeftIcon  } from '@heroicons/react/24/solid'
 import LikeButton from './LikeButton'
+import VideoLikeList from './VideoLikeList'
 import CommentVideo from './commentVideo';
-import { useNavigate } from 'react-router-dom'
  export const VideoById = () => {
     const {id}= useParams()
-  const [selectedVideoId, setSelectedVideoId] = useState(null)
+   const [selectedVideoId, setSelectedVideoId] = useState(null)
     const [openComment, setOpenComment] = useState(false);
+   const [openLike, setOpenlike] = useState(false);
     const [videoDetail,setVideoDetail]=useState([])
+    const [videoComment,setVideoComment]=useState([])
      const [loading, setLoading] = useState(true)
-      console.log(videoDetail)
-      const navigate=useNavigate()
-
+      // console.log(videoDetail)
      const tokenUser = localStorage.getItem('token');
 const getVideoDetail = async()=>{
   try {
@@ -30,7 +29,32 @@ setLoading(false)
 
   }
 }
-    const handleOpenComment = (e, videoId) => {
+const getCommentVideo = async()=>{
+  try {
+    const res= await axios.get(`${BaseUrl}/video-comment/${id}/comments`,{headers:{Authorization: `Bearer ${tokenUser}`}})
+if(res.status===200){
+setVideoComment(res.data)
+setLoading(false)
+}
+  } catch (error) {
+    console.log("Lỗi nè:",error)
+        setLoading(false)
+
+  }
+}
+
+ const handleOpenLike = (e, videoId) => {
+  e.stopPropagation(); 
+  setSelectedVideoId(videoId);
+  setOpenlike(true);
+};
+  const handleCloseLike = () => {
+    setSelectedVideoId(null); 
+    setOpenlike(false);
+  };
+
+
+ const handleOpenComment = (e, videoId) => {
   e.stopPropagation(); 
   setSelectedVideoId(videoId);
   setOpenComment(true);
@@ -69,8 +93,11 @@ alert("Xóa thành công")
 }
 
 
+
+
 useEffect(()=>{
 getVideoDetail()
+getCommentVideo()
 },[])
   return (
      
@@ -89,11 +116,10 @@ getVideoDetail()
             key={item._id}
             className="bg-white rounded-lg shadow p-5 flex flex-col gap-3 border hover:shadow-lg transition mb-6 "
           >
-           <span className="font-bold text-lg mb-1">{item.title}</span>
-
-            <div className="flex justify-start" onClick={(e) => e.stopPropagation()}>
-              <LikeButton videoId={item._id} />
-            </div>
+<span className="font-bold text-lg mb-1 truncate max-w-[400px] block" title={item.title}>
+  {item.title}
+</span>
+           
            <div className="flex flex-row justify-end gap-3 mt-2">
    
  {item.status === "pending" ? (
@@ -107,12 +133,7 @@ getVideoDetail()
           Duyệt
         </button>
       ):(
-         <button
-        
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded shadow transition"
-        >
-        Đã Duyệt
-        </button>
+       <span></span>
       )}
 
             <button
@@ -162,17 +183,25 @@ getVideoDetail()
   </div>
 
 )} 
-            <div className="flex justify-end gap-3 mt-2">
- 
-              <button
-                onClick={(e) =>{ handleOpenComment(e, item._id)}} 
-                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded shadow"
-              >
-                Bình luận
-              </button>
-            </div>
 
-   
+<div className="flex justify-between items-center mt-2">
+  {item.status === "uploaded" && (
+    <>
+      <div>
+        <LikeButton onOpenLike={handleOpenLike} videoId={item._id} />
+      </div>
+      <div>
+        <button
+          onClick={(e) => { handleOpenComment(e, item._id) }}
+          className="flex items-center gap-1 px-3 py-1 rounded text-green-700 bg-green-100 hover:bg-green-200 text-sm font-semibold shadow transition"
+        >
+          <span className="material-icons text-base">{videoComment.length} bình luận</span>
+        </button>
+      </div>
+    </>
+  )}
+</div>
+
    <span className="text-sm text-gray-600 cursor-pointer">
             Danh sách phát: <span className=" truncate font-medium">{item.playlistName}</span>
           </span>
@@ -202,13 +231,13 @@ getVideoDetail()
         ))
       )}
 
-{/* <DialogVideoDetail 
-editData={editData} 
-handleCloseDialogInforVideo={handleCloseDialogInforVideo}
- handleSaveEdit={handleSaveEdit}
- editValue={editValue}
- openDialogInforVideo={openDialogInforVideo}
- />   */}
+{openLike&&(<VideoLikeList 
+openLike={openLike} 
+handleCloseLike={handleCloseLike}
+videoId={selectedVideoId}
+/>
+)
+}
       {openComment && (
         <CommentVideo
           open={openComment}

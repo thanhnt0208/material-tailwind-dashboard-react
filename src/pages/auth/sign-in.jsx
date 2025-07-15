@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import {
-  Card, Input, Checkbox, Button, Typography,
+  Card, Input, Checkbox, Button, Typography, Radio
 } from "@material-tailwind/react";
 import { Link, useNavigate } from "react-router-dom";
 import { useMaterialTailwindController, setAuthStatus } from "@/context";
@@ -10,6 +10,7 @@ export function SignIn() {
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
+  const [env, setEnv] = useState("dev");
   const navigate = useNavigate();
   const [, dispatch] = useMaterialTailwindController();
   const emailRef = useRef();
@@ -35,6 +36,9 @@ export function SignIn() {
     }
 
     try {
+      const BASE_URL = env === "dev"? "https://api-ndolv2.nongdanonline.cc" : "https://api-ndol-v2-prod.nongdanonline.cc/";
+      localStorage.setItem("apiBaseUrl", BASE_URL);
+
       const res = await fetch("https://api-ndolv2.nongdanonline.cc/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -101,6 +105,31 @@ export function SignIn() {
               <Typography variant="small" className="text-red-500 -mt-4">{passwordError}</Typography>
             )}
           </div>
+
+          <div className="mt-4">
+            <Typography variant="small" className="font-medium mb-2">
+              Chọn môi trường API:
+            </Typography>
+            <div className="flex gap-4">
+              <Radio
+                id="env-dev"
+                name="environment"
+                label="Dev (Mặc định)"
+                value="dev"
+                checked={env === "dev"}
+                onChange={() => setEnv("dev")}
+              />
+              <Radio
+                id="env-prod"
+                name="environment"
+                label="Production"
+                value="prod"
+                checked={env === "prod"}
+                onChange={() => setEnv("prod")}
+              />
+            </div>
+          </div>
+
 
           <Button className="mt-6" type="submit" fullWidth>Sign In</Button>
 

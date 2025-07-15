@@ -2,7 +2,6 @@
 import React, { useEffect, useState,useMemo } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
-import { useParams } from 'react-router-dom';
 import { Audio } from 'react-loader-spinner';
 import { useNavigate } from "react-router-dom";
 import { Typography,Button,Input } from '@material-tailwind/react';
@@ -41,6 +40,7 @@ export const ListVideo = () => {
     getAllVideos();
   }, [page]);
 
+
   useEffect(() => {
     const fetchLikes = async () => {
       const updatedVideos = await Promise.all(
@@ -72,15 +72,15 @@ const commentCount = Array.isArray(commentRes.data) ? commentRes.data.length: Ar
   }, [videos]);
 
   const searchedVideos = useMemo(() => {
-    const filteredVideos = filterStatus
-      ? videosWithLikes.filter(v => v.status === filterStatus)
-      : videosWithLikes;
-    return filteredVideos.filter(
-      v =>
-        v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-        v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [videosWithLikes, filterStatus, searchText]);
+  const filteredVideos = filterStatus
+    ? videosWithLikes.filter(v => v.status === filterStatus)
+    : videosWithLikes;
+  return filteredVideos.filter(
+    v =>
+      v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+      v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
+  );
+}, [videosWithLikes, filterStatus, searchText]);
 
   const statusList = Array.from(new Set(videosWithLikes.map(v => v.status))).filter(Boolean);
 

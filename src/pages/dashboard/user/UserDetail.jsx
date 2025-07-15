@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 
@@ -16,10 +16,30 @@ export default function UserDetail() {
   const [openFarms, setOpenFarms] = useState(false);
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
+  const [users, setUsers] = useState([]); 
+
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
-  const [selectedFarmName, setSelectedFarmName] = useState(""); 
+  const [selectedFarmName, setSelectedFarmName] = useState("");
+
+
+  const fetchPaginatedData = async (url, config) => {
+    let allData = [];
+    let page = 1;
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await axios.get(`${url}?page=${page}&limit=50`, config);
+      const pageData = res.data?.data || [];
+      allData = [...allData, ...pageData];
+
+      hasMore = pageData.length > 0 && pageData.length === 50;
+      page++;
+    }
+
+    return allData;
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,82 +47,34 @@ export default function UserDetail() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const userRes = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config);
-        setUser(userRes.data);
 
-        const fetchAllFarms = async () => {
-          let allFarms = [];
-          let page = 1;
-          let hasMore = true;
+        const [userRes, allFarms, allVideos, allPosts, allUsers ] = await Promise.all([
+          axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config), 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/adminfarms`, config), 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, config), 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config),
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-users`, config), 
 
-          while (hasMore) {
-            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, config);
-            const farmsPage = res.data?.data || [];
-            allFarms = [...allFarms, ...farmsPage];
-
-            hasMore = farmsPage.length > 0 && farmsPage.length === 10;
-            page++;
-          }
-
-          return allFarms;
-        };
-
-        const fetchAllVideos = async () => {
-          let allVideos = [];
-          let page = 1;
-          let hasMore = true;
-
-          while (hasMore) {
-            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, config);
-            const videosPage = res.data?.data || [];
-            allVideos = [...allVideos, ...videosPage];
-
-            hasMore = videosPage.length > 0 && videosPage.length === 10;
-            page++;
-          }
-
-          return allVideos;
-        };
-
-        const fetchAllPosts = async () => {
-          let allPosts = [];
-          let page = 1;
-          let hasMore = true;
-
-          while (hasMore) {
-            const res = await axios.get(`https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=${page}&limit=10`, config);
-            const postsPage = res.data?.data || [];
-            allPosts = [...allPosts, ...postsPage];
-
-            hasMore = postsPage.length > 0 && postsPage.length === 10;
-            page++;
-          }
-
-          return allPosts;
-        };
-
-      const farmsRes = await fetchAllFarms();
-      setFarms(farmsRes);
-const [allFarms, allVideos, allPosts] = await Promise.all([
-          fetchAllFarms(),
-          fetchAllVideos(),
-          fetchAllPosts()
         ]);
-        console.log("USER:", userRes.data);
 
-
+        setUser(userRes.data);
         setFarms(allFarms);
         setVideos(allVideos);
         setPosts(allPosts);
-        setLoading(false);
+        setUsers(allUsers);
+        
       } catch (err) {
         console.error(err);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchData();
   }, [id]);
+
+
+
 
   const countVideosByFarm = (farmId) => {
     return videos.filter((v) => v.farmId?.id === farmId).length;
@@ -115,23 +87,11 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
     setOpenVideoDialog(true);
   };
 
-
-
-
-
-
-  const userFarms = farms.filter(
-  (f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id)
-);
-
-
-  console.log("User ID:", user?._id || user?.id);
-
+  const userFarms = farms.filter((f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id));
 
   const userPosts = posts.filter(p => p.authorId === user?.id);
 
   const userVideos = videos.filter(v => v.uploadedBy?.id === user?.id);
-
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><Spinner className="h-12 w-12" /></div>;
@@ -140,9 +100,6 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
   if (!user) {
     return <Typography color="red">Không tìm thấy user.</Typography>;
   }
-
-
-
 
   return (
     <div className="p-8 space-y-8">
@@ -197,7 +154,7 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
               <Typography className="text-gray-900">{new Date(user.createdAt).toLocaleString()}</Typography>
             </div>
             <div>
-              <Typography variant="h6" className="text-gray-700 font-semibold">ngày Updated gần nhất:</Typography>
+              <Typography variant="h6" className="text-gray-700 font-semibold">Ngày Updated gần nhất:</Typography>
               <Typography className="text-gray-900">{new Date(user.updatedAt).toLocaleString()}</Typography>
             </div>
           </div>
@@ -494,18 +451,22 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
                     </div>
 
                     {/* Tác giả */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <Typography className="font-semibold text-gray-700">Tác giả:</Typography>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Typography className="font-semibold">Tác giả:</Typography>
                       <img
                         src={
-                          post.authorId?.avatar?.startsWith("http")
-                            ? post.authorId.avatar
-                            : `https://api-ndolv2.nongdanonline.cc${post.authorId?.avatar || ""}`
-}
-                        alt={post.authorId?.fullName}
-                        className="w-10 h-10 rounded-full"
+
+                          users.find(u => u.id === post.authorId)?.avatar?.startsWith("http")
+                            ? users.find(u => u.id === post.authorId)?.avatar
+                            : `https://api-ndolv2.nongdanonline.cc${users.find(u => u.id === post.authorId)?.avatar || ""}`
+                        }
+                        alt={users.find(u => u.id === post.authorId)?.fullName}
+                        className="w-8 h-8 rounded-full"
+
                       />
-                      <Typography>{post.authorId?.fullName || "Không rõ"}</Typography>
+                      <Typography>
+                        {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
+                      </Typography>
                     </div>
 
                     {/* Mô tả */}
@@ -525,6 +486,17 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
                         </span>
                       ))}
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Typography className="font-semibold">Lượt thích:</Typography>
+                      <Chip
+                        value={
+                          Array.isArray(post.like) ? post.like.length : (post.like || 0)
+                        }
+                        color="blue"
+                        size="sm"
+                      />
+                    </div>
+
 
                     {/* Hình ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -537,6 +509,9 @@ const [allFarms, allVideos, allPosts] = await Promise.all([
                         />
                       ))}
                     </div>
+
+                    
+                    
                   </div>
                 ))}
               </CardBody>

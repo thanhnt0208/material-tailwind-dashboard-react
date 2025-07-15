@@ -39,22 +39,33 @@ export function PostList() {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  const fetchUsers = async () => {
+  const fetchAllUsers  = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/admin-users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json)) {
-        setUsers(json);
-      } else if (res.ok && Array.isArray(json.data)) {
-        setUsers(json.data);
+      let allUsers = [];
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const res = await fetch(`${BASE_URL}/admin-users?page=${page}&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        console.log(`Trang ${page} raw json:`, json);
+
+        if (res.ok && Array.isArray(json.data)) {
+          const usersPage = json.data;
+          console.log(`Trang ${page} trả về:`, usersPage);
+          allUsers = allUsers.concat(usersPage);
+          totalPages = json.totalPages || 1; 
+          page++;
       } else {
-        console.warn("Danh sách users không hợp lệ:", json);
-        setUsers([]);
-      }
-    } catch (err) {
+          console.warn("Danh sách users không hợp lệ:", json);
+          break;
+      } 
+      } while (page <= totalPages);
+        setUsers(allUsers);
+      } catch (err) {
       console.error("Fetch users error:", err);
       setUsers([]);
     }
@@ -140,7 +151,7 @@ export function PostList() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchAllUsers();
     fetchPosts();
   }, [currentPage]);
 
@@ -249,7 +260,7 @@ export function PostList() {
   </Typography>
 
   {/* Bộ lọc */}
-  <div className="flex justify-end items-center flex-wrap gap-3 mb-4">
+  <div className="flex justify-start items-center flex-wrap gap-3 mb-4">
   {/* Tiêu đề */}
   <div className="h-10">
     <Input
@@ -362,11 +373,6 @@ export function PostList() {
                 </td>
                 <td className="p-3 border">
                   <div className="flex items-center gap-2">
-                    <Avatar
-                      src={author?.avatar || "/default-avatar.png"}
-                      alt="avatar"
-                      size="xs"
-                    />
                     <span className="text-sm">{author?.fullName || "Không rõ"}</span>
                   </div>
                 </td>
@@ -417,6 +423,93 @@ export function PostList() {
           )}
         </tbody>
       </table>
+
+      <Dialog open={openEdit} handler={() => setOpenEdit(false)} size="md">
+        <div className="p-4">
+          <Typography variant="h6" className="mb-4">
+            Chỉnh sửa bài viết
+          </Typography>
+
+          <div className="space-y-3">
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tác giả
+              </label>
+              <Input
+                value={(() => {
+                  const author = users.find((u) => u.id === selectedPost?.authorId);
+                  return author?.fullName || "Không rõ";
+                })()}
+                readOnly
+                className="bg-gray-100 cursor-not-allowed"
+              />
+            </div>
+
+            {/* Tiêu đề */}
+            <Input
+              label="Tiêu đề"
+              value={selectedPost?.title || ""}
+              onChange={(e) =>
+                setSelectedPost({ ...selectedPost, title: e.target.value })
+              }
+            />
+
+            {/* Mô tả */}
+            <Input
+              label="Mô tả"
+              value={selectedPost?.description || ""}
+              onChange={(e) =>
+                setSelectedPost({ ...selectedPost, description: e.target.value })
+              }
+            />
+
+            {/* Tags */}
+            <Input
+              label="Tags (phân cách bằng dấu phẩy)"
+              value={selectedPost?.tagsInput || ""}
+              onChange={(e) =>
+                setSelectedPost({ ...selectedPost, tagsInput: e.target.value })
+              }
+            />
+
+            {/* Trạng thái */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Trạng thái
+              </label>
+              <select
+                value={selectedPost?.status ? "true" : "false"}
+                onChange={(e) =>
+                  setSelectedPost({
+                    ...selectedPost,
+                    status: e.target.value === "true",
+                  })
+                }
+                className="w-full border rounded px-3 py-2"
+              >
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Đã ẩn</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Nút hành động */}
+          <div className="flex justify-end gap-2 mt-4">
+            <Button color="red" onClick={() => setOpenEdit(false)}>
+              Hủy
+            </Button>
+            <Button
+              color="green"
+              onClick={() => {
+                updatePost();
+              }}
+            >
+              Lưu
+            </Button>
+          </div>
+        </div>
+      </Dialog>
 
       {/* Pagination */}
       <div className="flex justify-center items-center gap-2 mt-4">
