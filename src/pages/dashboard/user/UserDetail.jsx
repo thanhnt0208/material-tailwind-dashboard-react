@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 
@@ -16,10 +16,13 @@ export default function UserDetail() {
   const [openFarms, setOpenFarms] = useState(false);
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
+  const [users, setUsers] = useState([]); 
+
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
-  const [selectedFarmName, setSelectedFarmName] = useState(""); 
+  const [selectedFarmName, setSelectedFarmName] = useState("");
+
 
   const fetchPaginatedData = async (url, config) => {
     let allData = [];
@@ -27,11 +30,11 @@ export default function UserDetail() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await axios.get(`${url}?page=${page}&limit=10`, config);
+      const res = await axios.get(`${url}?page=${page}&limit=50`, config);
       const pageData = res.data?.data || [];
       allData = [...allData, ...pageData];
 
-      hasMore = pageData.length > 0 && pageData.length === 10;
+      hasMore = pageData.length > 0 && pageData.length === 50;
       page++;
     }
 
@@ -44,17 +47,20 @@ export default function UserDetail() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const [userRes, allFarms, allVideos, allPosts] = await Promise.all([
+        const [userRes, allFarms, allVideos, allPosts, allUsers ] = await Promise.all([
           axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/adminfarms`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, config), 
-          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config) 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config),
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-users`, config), 
         ]);
 
         setUser(userRes.data);
         setFarms(allFarms);
         setVideos(allVideos);
         setPosts(allPosts);
+        setUsers(allUsers);
+        
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,6 +70,9 @@ export default function UserDetail() {
 
     fetchData();
   }, [id]);
+
+
+
 
   const countVideosByFarm = (farmId) => {
     return videos.filter((v) => v.farmId?.id === farmId).length;
@@ -441,18 +450,20 @@ export default function UserDetail() {
                     </div>
 
                     {/* Tác giả */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <Typography className="font-semibold text-gray-700">Tác giả:</Typography>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Typography className="font-semibold">Tác giả:</Typography>
                       <img
                         src={
-                          post.authorId?.avatar?.startsWith("http")
-                            ? post.authorId.avatar
-                            : `https://api-ndolv2.nongdanonline.cc${post.authorId?.avatar || ""}`
+                          users.find(u => u.id === post.authorId)?.avatar?.startsWith("http")
+                            ? users.find(u => u.id === post.authorId)?.avatar
+                            : `https://api-ndolv2.nongdanonline.cc${users.find(u => u.id === post.authorId)?.avatar || ""}`
                         }
-                        alt={post.authorId?.fullName}
-                        className="w-10 h-10 rounded-full"
+                        alt={users.find(u => u.id === post.authorId)?.fullName}
+                        className="w-8 h-8 rounded-full"
                       />
-                      <Typography>{post.authorId?.fullName || "Không rõ"}</Typography>
+                      <Typography>
+                        {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
+                      </Typography>
                     </div>
 
                     {/* Mô tả */}
@@ -472,6 +483,17 @@ export default function UserDetail() {
                         </span>
                       ))}
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Typography className="font-semibold">Lượt thích:</Typography>
+                      <Chip
+                        value={
+                          Array.isArray(post.like) ? post.like.length : (post.like || 0)
+                        }
+                        color="blue"
+                        size="sm"
+                      />
+                    </div>
+
 
                     {/* Hình ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -484,6 +506,9 @@ export default function UserDetail() {
                         />
                       ))}
                     </div>
+
+                    
+                    
                   </div>
                 ))}
               </CardBody>
