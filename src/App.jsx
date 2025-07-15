@@ -1,3 +1,4 @@
+import React, {useEffect} from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
 import VideoFarmById from "./pages/dashboard/VideoFarms/VideoById";
@@ -11,6 +12,21 @@ import { Farms } from "./pages/dashboard/farm/farms";
 import UserDetail from "./pages/dashboard/user/UserDetail";
 import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
+
+  useEffect(() => {
+    const handleUnload = () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("apiBaseUrl");
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+    }
+  }, []);
+
   return (
  <Routes>
       <Route path="/dashboard/*" element={<Dashboard />}>
