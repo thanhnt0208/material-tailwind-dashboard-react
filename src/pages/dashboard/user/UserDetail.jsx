@@ -16,6 +16,8 @@ export default function UserDetail() {
   const [openFarms, setOpenFarms] = useState(false);
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
+  const [users, setUsers] = useState([]); 
+  const [comments, setComments] = useState([]);
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
@@ -27,11 +29,11 @@ export default function UserDetail() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await axios.get(`${url}?page=${page}&limit=10`, config);
+      const res = await axios.get(`${url}?page=${page}&limit=50`, config);
       const pageData = res.data?.data || [];
       allData = [...allData, ...pageData];
 
-      hasMore = pageData.length > 0 && pageData.length === 10;
+      hasMore = pageData.length > 0 && pageData.length === 50;
       page++;
     }
 
@@ -44,17 +46,21 @@ export default function UserDetail() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const [userRes, allFarms, allVideos, allPosts] = await Promise.all([
+        const [userRes, allFarms, allVideos, allPosts, allUsers, allComments ] = await Promise.all([
           axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/adminfarms`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, config), 
-          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config) 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config),
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-users`, config), 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-comment-post`, config), 
         ]);
 
         setUser(userRes.data);
         setFarms(allFarms);
         setVideos(allVideos);
         setPosts(allPosts);
+        setUsers(allUsers);
+        setComments(allComments);
       } catch (err) {
         console.error(err);
       } finally {
@@ -64,6 +70,20 @@ export default function UserDetail() {
 
     fetchData();
   }, [id]);
+
+  const countTotalComments = (postId) => {
+  const postComments = comments.filter(cmt => cmt.postId === postId);
+  let total = 0;
+
+  postComments.forEach(cmt => {
+    total += 1; 
+    if (cmt.replies?.length > 0) {
+      total += cmt.replies.length; 
+    }
+  });
+
+  return total;
+};
 
   const countVideosByFarm = (farmId) => {
     return videos.filter((v) => v.farmId?.id === farmId).length;
@@ -484,6 +504,26 @@ export default function UserDetail() {
                         />
                       ))}
                     </div>
+
+                    <div className="flex items-center gap-3 mb-2">
+                      <Typography className="font-semibold">Tác giả:</Typography>
+                      <img
+                        src={
+                          users.find(u => u.id === post.authorId)?.avatar?.startsWith("http")
+                            ? users.find(u => u.id === post.authorId)?.avatar
+                            : `https://api-ndolv2.nongdanonline.cc${users.find(u => u.id === post.authorId)?.avatar || ""}`
+                        }
+                        alt={users.find(u => u.id === post.authorId)?.fullName}
+                        className="w-8 h-8 rounded-full"
+                      />
+                      <Typography>
+                        {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
+                      </Typography>
+                    </div>
+
+                    <Typography className="text-sm text-gray-600">
+                      <b>Bình luận:</b> {countTotalComments(post._id)}
+                    </Typography>
                   </div>
                 ))}
               </CardBody>
