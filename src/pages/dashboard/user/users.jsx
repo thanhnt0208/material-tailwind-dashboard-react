@@ -237,14 +237,19 @@ setRoles(uniqueRoles);
   </div>
 
   <div className="w-52">
-    <Select label="Lọc theo role" value={filterRole} onChange={val => setFilterRole(val || "")}>
-  <Option value="">Tất cả</Option>
-  {roles.map(r => (
-    <Option key={r} value={r}>
-      {r}
-    </Option>
-  ))}
-</Select>
+   <Select
+    label="Lọc theo role"
+    value={filterRole}
+    onChange={(val) => setFilterRole(val || "")}
+  >
+    <Option value="">Tất cả</Option>
+    {roles.map((r) => (
+      <Option key={r} value={r}>
+        {r}
+      </Option>
+    ))}
+  </Select>
+
 
   </div>
 
