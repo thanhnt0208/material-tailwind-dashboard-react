@@ -19,8 +19,11 @@ export default function UserDetail() {
   const [users, setUsers] = useState([]); 
   const [videoLikes, setVideoLikes] = useState({}); 
   const [videoComments, setVideoComments] = useState({});
-  const [videoCommentCounts, setVideoCommentCounts] = useState({});
-
+  const [selectedVideoLikes, setSelectedVideoLikes] = useState([]);
+  const [selectedVideoComments, setSelectedVideoComments] = useState([]);
+  const [selectedVideoTitle, setSelectedVideoTitle] = useState("");
+  const [openLikesDialog, setOpenLikesDialog] = useState(false);
+  const [openCommentsDialog, setOpenCommentsDialog] = useState(false);
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
   const [selectedFarmName, setSelectedFarmName] = useState("");
@@ -75,6 +78,41 @@ export default function UserDetail() {
   }, [id]);
 
 
+const fetchVideoLikesUsers = async (videoId, videoTitle) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  try {
+    const res = await axios.get(
+      `https://api-ndolv2.nongdanonline.cc/video-like/${videoId}/users`,
+      config
+    );
+    setSelectedVideoTitle(videoTitle);
+    setSelectedVideoLikes(res.data?.users || []); // giả sử API trả về { users: [...] }
+    setOpenLikesDialog(true);
+  } catch (err) {
+    console.error(`Error fetching likes for video ${videoId}:`, err);
+  }
+};
+
+// Hàm lấy danh sách user đã bình luận
+const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  try {
+    const res = await axios.get(
+      `https://api-ndolv2.nongdanonline.cc/video-comment/${videoId}/comments`,
+      config
+    );
+    console.log("Comment response for video", videoId, ":", res.data);
+    setSelectedVideoTitle(videoTitle);
+    setSelectedVideoComments(res.data || []); // giả sử API trả về danh sách comments
+    setOpenCommentsDialog(true);
+  } catch (err) {
+    console.error(`Error fetching comments for video ${videoId}:`, err);
+  }
+};
 
 
   const countVideosByFarm = (farmId) => {
@@ -106,10 +144,14 @@ export default function UserDetail() {
   const commentPromises = videos.map((video) =>
     axios
       .get(`https://api-ndolv2.nongdanonline.cc/video-comment/${video._id}/comments`, config)
-      .then((res) => ({
+      .then((res) => {
+        console.log("Comment response for video", video._id, ":", res.data);
+        return{
           videoId: video._id,
-          count: res.data?.data?.[0]?.comments?.length || 0,
-        }))
+          count: Array.isArray(res.data) ? res.data.length : 0
+        }
+          
+        })
       .catch(() => ({ videoId: video._id, count: 0 }))
   );
 
@@ -379,6 +421,19 @@ export default function UserDetail() {
                       <span>Trạng thái: <strong>{video.status}</strong></span>
                       <span>Link Local: <strong>{video.localFilePath}</strong></span>
                       <span>Link YouTube: <strong>{video.youtubeLink || "Không có"}</strong></span>
+                      <span
+                        className="cursor-pointer text-blue-600 hover:underline"
+                        onClick={() => fetchVideoLikesUsers(video._id, video.title)}
+                      >
+                        Lượt thích: <strong>{videoLikes[video._id] ?? "Đang tải..."}</strong>
+                      </span>
+                      <span
+                        className="cursor-pointer text-blue-600 hover:underline"
+                        onClick={() => fetchVideoCommentsUsers(video._id, video.title)}
+                      >
+                        Lượt bình luận: <strong>{videoComments[video._id] ?? "Đang tải..."}</strong>
+                      </span>
+
                     </div>
                   </div>
                 ))}
@@ -392,6 +447,7 @@ export default function UserDetail() {
         open={openVideoDialog}
         size="xl"
         handler={() => setOpenVideoDialog(false)}
+        dismiss={{ outsidePress: false }}
       >
         <DialogHeader>Danh sách video - {selectedFarmName}</DialogHeader>
 
@@ -457,10 +513,18 @@ export default function UserDetail() {
                   <span>Link Local: <strong>{item.localFilePath}</strong></span>
                   <span>Link YouTube: <strong>{item.youtubeLink || "Không có"}</strong></span>
 
-                  <span>
-                    Lượt thích: <strong>{videoLikes[item._id] ?? "Đang tải..."}</strong>
-                  </span>
-                  <span>Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong></span>
+                  <span
+                        className="cursor-pointer text-blue-600 hover:underline"
+                        onClick={() => fetchVideoLikesUsers(item._id, item.title)}
+                      >
+                        Lượt thích: <strong>{videoLikes[item._id] ?? "Đang tải..."}</strong>
+                      </span>
+                      <span
+                        className="cursor-pointer text-blue-600 hover:underline"
+                        onClick={() => fetchVideoCommentsUsers(item._id, item.title)}
+                      >
+                        Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong>
+                      </span>
                 </div>
               </div>
             ))
@@ -473,6 +537,81 @@ export default function UserDetail() {
           </Button>
         </DialogFooter>
       </Dialog>
+
+      {/* Dialog like */}
+      <Dialog
+        open={openLikesDialog}
+        size="md"
+        handler={() => setOpenLikesDialog(false)}
+        dismiss={{ outsidePress: false }}
+      >
+        <DialogHeader onClick={(e) => e.stopPropagation()}>Danh sách user đã like - {selectedVideoTitle}</DialogHeader>
+        <DialogBody className="space-y-4 max-h-[400px] overflow-y-auto">
+          {selectedVideoLikes.length === 0 ? (
+            <Typography>Chưa có ai like video này.</Typography>
+          ) : (
+            selectedVideoLikes.map((user) => (
+              <div key={user._id} className="flex items-center gap-3">
+                <img
+                  src={
+                    user.avatar?.startsWith("http")
+                      ? user.avatar
+                      : `https://api-ndolv2.nongdanonline.cc${user.avatar}`
+                  }
+                  alt={user.fullName}
+                  className="w-10 h-10 rounded-full"
+                />
+                <Typography>{user.fullName}</Typography>
+              </div>
+            ))
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button color="red" onClick={() => setOpenLikesDialog(false)}>Đóng</Button>
+        </DialogFooter>
+      </Dialog>
+
+      {/* Dialog comment */}
+      <Dialog
+        open={openCommentsDialog}
+        size="md"
+        handler={() => setOpenCommentsDialog(false)}
+        dismiss={{ outsidePress: false }}
+      >
+        <DialogHeader onClick={(e) => e.stopPropagation()}>Danh sách user đã bình luận - {selectedVideoTitle}</DialogHeader>
+        <DialogBody className="space-y-4 max-h-[400px] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          {selectedVideoComments.length === 0 ? (
+            <Typography>Chưa có bình luận nào.</Typography>
+          ) : (
+            selectedVideoComments.map((comment) => (
+              <div key={comment._id} className="border-b pb-2 mb-2">
+                <div className="flex items-center gap-3">
+                  <img
+                    src={
+                      comment.userId?.avatar?.startsWith("http")
+                        ? comment.user.avatar
+                        : `https://api-ndolv2.nongdanonline.cc${comment.userId?.avatar}`
+                    }
+                    alt={comment.userId?.fullName}
+                    className="w-10 h-10 rounded-full"
+                  />
+                  <div>
+                    <Typography className="font-semibold">{comment.userId?.fullName}</Typography>
+                    <Typography className="text-sm text-gray-500">
+                      {new Date(comment.createdAt).toLocaleString()}
+                    </Typography>
+                  </div>
+                </div>
+                <Typography className="mt-1">{comment.comment}</Typography>
+              </div>
+            ))
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button color="red" onClick={(e) =>{e.stopPropagation(); setOpenCommentsDialog(false)}}>Đóng</Button>
+        </DialogFooter>
+      </Dialog>
+
 
       {/* danh sách post */}
       <Card>
