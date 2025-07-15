@@ -75,16 +75,20 @@ export const ListVideo = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredVideos = useMemo(() => {
-    const filtered = filterStatus
-      ? allVideos.filter(v => v.status === filterStatus)
-      : allVideos;
+ const filteredVideos = useMemo(() => {
+  const filtered = filterStatus
+    ? allVideos.filter(v => v.status === filterStatus)
+    : allVideos;
 
-    return filtered.filter(v =>
-      v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-      v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [allVideos, filterStatus, searchText]);
+  const searched = filtered.filter(v =>
+    v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+    v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+ 
+  return searched.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}, [allVideos, filterStatus, searchText]);
+
   const totalPages = Math.ceil(filteredVideos.length / limit);
   const paginatedVideos = useMemo(() => {
     const start = (page - 1) * limit;
