@@ -32,12 +32,23 @@ const fetchAllVideosWithStats = async () => {
             }),
           ]);
 
-          const commentCount = Array.isArray(commentRes.data)
-            ? commentRes.data.length
-            : Array.isArray(commentRes.data.comments)
-              ? commentRes.data.comments.length
-              : commentRes.data.total ?? 0;
-
+     const commentCount = Array.isArray(commentRes.data)
+  ? commentRes.data.reduce(
+      (total, cmt) =>
+        total +
+        1 +
+        (Array.isArray(cmt.replies) ? cmt.replies.length : 0),
+      0
+    )
+  : Array.isArray(commentRes.data.comments)
+    ? commentRes.data.comments.reduce(
+        (total, cmt) =>
+          total +
+          1 +
+          (Array.isArray(cmt.replies) ? cmt.replies.length : 0),
+        0
+      )
+    : commentRes.data.total ?? 0;
           return {
             ...video,
             likeCount: likeRes.data.total || 0,
