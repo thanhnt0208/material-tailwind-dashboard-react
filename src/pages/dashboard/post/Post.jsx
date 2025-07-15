@@ -39,22 +39,33 @@ export function PostList() {
   const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
 
-  const fetchUsers = async () => {
+  const fetchAllUsers  = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${BASE_URL}/admin-users`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const json = await res.json();
-      if (res.ok && Array.isArray(json)) {
-        setUsers(json);
-      } else if (res.ok && Array.isArray(json.data)) {
-        setUsers(json.data);
+      let allUsers = [];
+      let page = 1;
+      let totalPages = 1;
+
+      do {
+        const res = await fetch(`${BASE_URL}/admin-users?page=${page}&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const json = await res.json();
+        console.log(`Trang ${page} raw json:`, json);
+
+        if (res.ok && Array.isArray(json.data)) {
+          const usersPage = json.data;
+          console.log(`Trang ${page} trả về:`, usersPage);
+          allUsers = allUsers.concat(usersPage);
+          totalPages = json.totalPages || 1; 
+          page++;
       } else {
-        console.warn("Danh sách users không hợp lệ:", json);
-        setUsers([]);
-      }
-    } catch (err) {
+          console.warn("Danh sách users không hợp lệ:", json);
+          break;
+      } 
+      } while (page <= totalPages);
+        setUsers(allUsers);
+      } catch (err) {
       console.error("Fetch users error:", err);
       setUsers([]);
     }
@@ -140,7 +151,7 @@ export function PostList() {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchAllUsers();
     fetchPosts();
   }, [currentPage]);
 
