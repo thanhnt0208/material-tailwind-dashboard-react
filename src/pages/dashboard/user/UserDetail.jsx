@@ -47,14 +47,12 @@ export default function UserDetail() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-
         const [userRes, allFarms, allVideos, allPosts, allUsers ] = await Promise.all([
           axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/adminfarms`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config),
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-users`, config), 
-
         ]);
 
         setUser(userRes.data);
@@ -135,15 +133,15 @@ export default function UserDetail() {
             </div>
             <div>
               <Typography variant="h6" className="text-gray-700 font-semibold">Role:</Typography>
-<Typography className="capitalize text-gray-900">{user.role}</Typography>
+              <Typography className="capitalize text-gray-900">{user.role}</Typography>
             </div>
             <div>
               <Typography variant="h6" className="text-gray-700 font-semibold">Status:</Typography>
               <Typography
                 className={`font-semibold ${
                   user.isActive
-                    ? "text-green-600"
-                    : "text-red-600"
+                    ? "text-green-500"
+                    : "text-gray-500"
                 }`}
               >
                 {user.isActive ? "Active" : "Inactive"}
@@ -197,7 +195,7 @@ export default function UserDetail() {
                   <Typography><b>Phường/Xã:</b> {farm.ward}</Typography>
                   <Typography><b>Đường:</b> {farm.street}</Typography>
                   <Typography><b>Vị trí tổng quát:</b> {farm.location}</Typography>
-<Typography><b>Tổng diện tích (m²):</b> {farm.area}</Typography>
+                  <Typography><b>Tổng diện tích (m²):</b> {farm.area}</Typography>
                   <Typography><b>Đất canh tác (m²):</b> {farm.cultivatedArea}</Typography>
                   <Typography><b>Dịch vụ:</b> {(farm.services || []).join(", ") || "—"}</Typography>
                   <Typography><b>Tính năng:</b> {(farm.features || []).join(", ") || "—"}</Typography>
@@ -269,7 +267,7 @@ export default function UserDetail() {
         <Collapse open={openVideos}>
           {openVideos && (
             <div className="overflow-hidden transition-all duration-300">
-<CardBody>
+              <CardBody>
                 {userVideos.length === 0 ? (
                   <Typography>Chưa có video nào.</Typography>
                 ) : userVideos.map((video) => (
@@ -323,7 +321,7 @@ export default function UserDetail() {
                       <span>Tên Farm: <strong>{video.farmId?.name}</strong></span>
                       <span>Ngày đăng: <strong>{new Date(video.createdAt).toLocaleDateString()}</strong></span>
                       <span>Người đăng: <strong>{video.uploadedBy?.fullName}</strong></span>
-<span>Email: <strong>{video.uploadedBy?.email}</strong></span>
+                      <span>Email: <strong>{video.uploadedBy?.email}</strong></span>
                       <span>Trạng thái: <strong>{video.status}</strong></span>
                       <span>Link Local: <strong>{video.localFilePath}</strong></span>
                       <span>Link YouTube: <strong>{video.youtubeLink || "Không có"}</strong></span>
@@ -393,7 +391,8 @@ export default function UserDetail() {
                     Video không tồn tại
                   </div>
                 )}
-{/* Thông tin video */}
+
+                {/* Thông tin video */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-gray-700">
                   <span>Danh sách phát: <strong>{item.playlistName}</strong></span>
                   <span>Tên Farm: <strong>{item.farmId?.name}</strong></span>
@@ -455,14 +454,12 @@ export default function UserDetail() {
                       <Typography className="font-semibold">Tác giả:</Typography>
                       <img
                         src={
-
                           users.find(u => u.id === post.authorId)?.avatar?.startsWith("http")
                             ? users.find(u => u.id === post.authorId)?.avatar
                             : `https://api-ndolv2.nongdanonline.cc${users.find(u => u.id === post.authorId)?.avatar || ""}`
                         }
                         alt={users.find(u => u.id === post.authorId)?.fullName}
                         className="w-8 h-8 rounded-full"
-
                       />
                       <Typography>
                         {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
