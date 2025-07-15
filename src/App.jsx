@@ -12,28 +12,28 @@ import { Farms } from "./pages/dashboard/farm/farms";
 import UserDetail from "./pages/dashboard/user/UserDetail";
 import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/auth/sign-in");
-    }
+  // const navigate = useNavigate();
+  // useEffect(() => {
+  //   const token = localStorage.getItem("token");
+  //   if (!token) {
+  //     navigate("/auth/sign-in");
+  //   }
 
-    const handleUnload = () => {
-      if (performance.getEntriesByType("navigation")[0].type !== "reload") {
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-      localStorage.removeItem("apiBaseUrl");
-    }
-    };
+  //   const handleUnload = () => {
+  //     if (performance.getEntriesByType("navigation")[0].type !== "reload") {
+  //     localStorage.removeItem("token");
+  //     localStorage.removeItem("refreshToken");
+  //     localStorage.removeItem("apiBaseUrl");
+  //   }
+  //   };
 
-    window.addEventListener("beforeunload", handleUnload);
+  //   window.addEventListener("beforeunload", handleUnload);
 
 
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-    }
-  }, [navigate]);
+  //   return () => {
+  //     window.removeEventListener("beforeunload", handleUnload);
+  //   }
+  // }, [navigate]);
 
   return (
  <Routes>

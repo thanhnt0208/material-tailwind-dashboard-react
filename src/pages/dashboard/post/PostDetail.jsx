@@ -16,9 +16,11 @@
     const [post, setPost] = useState(null);
     const [comments, setComments] = useState([]);
     const [users, setUsers] = useState([]);
+    const [likeUsers, setLikeUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [commentLoading, setCommentLoading] = useState(true);
     const [showComments, setShowComments] = useState(false);
+    const [likeDialogOpen, setLikeDialogOpen] = useState(false); 
 
     const token = localStorage.getItem("token");
 
@@ -88,6 +90,23 @@
         setUsers([])
       }
     };
+
+    const fetchLikeUsers = async () => {
+    try {
+      const res = await fetch(`${BASE_URL}/post-feed/${postId}/likes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (res.ok && Array.isArray(json.users)) {
+        setLikeUsers(json.users);
+      } else {
+        setLikeUsers([]);
+      }
+    } catch (err) {
+      console.error("Fetch like users error:", err);
+      setLikeUsers([]);
+    }
+  };
 
     useEffect(() => {
       if (open) {
@@ -191,7 +210,7 @@
                     size="sm"
                   />
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => {fetchLikeUsers(); setLikeDialogOpen(true)}}>
                   <Typography className="font-semibold">Lượt thích:</Typography>
                   <Chip value={post.like || 0} color="blue" size="sm" />
                 </div>
@@ -265,6 +284,32 @@
                   )}
                 </div>
               </div>
+
+              <Dialog open={likeDialogOpen} handler={() => setLikeDialogOpen(false)} size="sm">
+                <DialogHeader className="flex justify-between">
+                  <Typography variant="h5">Người đã thích</Typography>
+                  <Button size="sm" onClick={() => setLikeDialogOpen(false)}>Đóng</Button>
+                </DialogHeader>
+                <DialogBody className="max-h-[60vh] overflow-y-auto">
+                  {likeUsers.length > 0 ? (
+                    likeUsers.map((user) => (
+                      <div key={user.id} className="flex items-center gap-3 mb-2">
+                        <Avatar
+                          src={
+                            user.avatar?.startsWith("http")
+                              ? user.avatar
+                              : `${BASE_URL}${user.avatar || ""}`
+                          }
+                          alt={user.fullName}
+                        />
+                        <Typography>{user.fullName}</Typography>
+                      </div>
+                    ))
+                  ) : (
+                    <Typography>Không có ai thích bài viết này.</Typography>
+                  )}
+                </DialogBody>
+              </Dialog>
             </>
           )}
         </DialogBody>
