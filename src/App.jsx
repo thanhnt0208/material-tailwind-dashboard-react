@@ -1,4 +1,3 @@
-
 import React, {useEffect} from "react";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { Dashboard, Auth } from "@/layouts";
@@ -14,7 +13,6 @@ import UserDetail from "./pages/dashboard/user/UserDetail";
 import VideoById from "./pages/dashboard/VideoFarms/VideoById";
 function App() {
   const navigate = useNavigate();
-
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -36,7 +34,6 @@ function App() {
       window.removeEventListener("beforeunload", handleUnload);
     }
   }, [navigate]);
-
 
   return (
  <Routes>
