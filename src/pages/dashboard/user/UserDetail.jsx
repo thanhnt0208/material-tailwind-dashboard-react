@@ -17,6 +17,8 @@ export default function UserDetail() {
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
   const [users, setUsers] = useState([]); 
+  const [videoLikes, setVideoLikes] = useState({}); 
+  const [videoComments, setVideoComments] = useState({});
 
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
@@ -30,7 +32,7 @@ export default function UserDetail() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await axios.get(`${url}?page=${page}&limit=50`, config);
+      const res = await axios.get(`${url}?page=${page}&limit=100`, config);
       const pageData = res.data?.data || [];
       allData = [...allData, ...pageData];
 
@@ -78,11 +80,73 @@ export default function UserDetail() {
     return videos.filter((v) => v.farmId?.id === farmId).length;
   };
 
-  const showFarmVideos = (farmId, farmName) => {           
+  const fetchVideoStats = async (videos) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  try {
+    const likePromises = videos.map((video) =>
+    axios
+      .get(`https://api-ndolv2.nongdanonline.cc/video-like/${video._id}/users`, config)
+      .then((res) => { 
+        console.log("Likes for video", video._id, ":", res.data);
+        return {
+            videoId: video._id,
+            count: typeof res.data.total === "number" ? res.data.total : 0,
+          };
+
+        })
+        .catch((err) => {
+            console.error(`Error fetching likes for video ${video._id}:`, err);
+            return { videoId: video._id, count: 0 };
+          })
+  );
+  
+  const commentPromises = videos.map((video) =>
+    axios
+      .get(`https://api-ndolv2.nongdanonline.cc/video-comment/${video._id}/comments`, config)
+      .then((res) => {
+          const comments = res.data?.data?.[0]?.comments || [];
+          let totalComments = comments.length;
+
+          
+          comments.forEach((c) => {
+            totalComments += Array.isArray(c.replies) ? c.replies.length : 0;
+          });
+        
+        return {
+            videoId: video._id,
+            count: totalComments,
+          };
+        })
+      .catch(() => ({ videoId: video._id, count: 0 }))
+  );
+
+  const likes = await Promise.all(likePromises);
+  const comments = await Promise.all(commentPromises);
+
+  const likesMap = {};
+  const commentsMap = {};
+  likes.forEach((item) => (likesMap[item.videoId] = item.count));
+  comments.forEach((item) => (commentsMap[item.videoId] = item.count));
+
+  console.log("Likes Map:", likesMap);
+  console.log("Comments Map:", commentsMap);
+
+
+  setVideoLikes(likesMap);
+  setVideoComments(commentsMap);
+}catch (error) {
+    console.error("Error fetching video stats:", error);
+}
+};
+  const showFarmVideos = async (farmId, farmName) => {           
     const relatedVideos = videos.filter((v) => v.farmId?.id === farmId);
     setSelectedFarmVideos(relatedVideos);
     setSelectedFarmName(farmName);
     setOpenVideoDialog(true);
+
+    await fetchVideoStats(relatedVideos);
   };
 
   const userFarms = farms.filter((f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id));
@@ -402,6 +466,13 @@ export default function UserDetail() {
                   <span>Trạng thái: <strong>{item.status}</strong></span>
                   <span>Link Local: <strong>{item.localFilePath}</strong></span>
                   <span>Link YouTube: <strong>{item.youtubeLink || "Không có"}</strong></span>
+
+                  <span>
+                    Lượt thích: <strong>{videoLikes[item._id] ?? "Đang tải..."}</strong>
+                  </span>
+                  <span>
+                    Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong>
+                  </span>
                 </div>
               </div>
             ))

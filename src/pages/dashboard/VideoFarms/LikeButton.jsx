@@ -66,7 +66,7 @@ getLikeVideo()
       <button
       onClick={e => onOpenLike(e, videoId)}
 
-className="px-3 py-1 rounded text-blue-700 bg-blue-100 hover:bg-blue-200 text-sm font-semibold shadow"
+      className="px-3 py-1 rounded text-blue-700 bg-blue-100 hover:bg-blue-200 text-sm font-semibold shadow"
       >
       {videoLike.total} Lượt thích
       </button>
