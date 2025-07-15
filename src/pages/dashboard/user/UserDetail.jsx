@@ -19,7 +19,7 @@ export default function UserDetail() {
   const [users, setUsers] = useState([]); 
   const [videoLikes, setVideoLikes] = useState({}); 
   const [videoComments, setVideoComments] = useState({});
-
+  const [videoCommentCounts, setVideoCommentCounts] = useState({});
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
@@ -60,6 +60,7 @@ export default function UserDetail() {
         setUser(userRes.data);
         setFarms(allFarms);
         setVideos(allVideos);
+        fetchVideoStats(allVideos);
         setPosts(allPosts);
         setUsers(allUsers);
         
@@ -105,20 +106,10 @@ export default function UserDetail() {
   const commentPromises = videos.map((video) =>
     axios
       .get(`https://api-ndolv2.nongdanonline.cc/video-comment/${video._id}/comments`, config)
-      .then((res) => {
-          const comments = res.data?.data?.[0]?.comments || [];
-          let totalComments = comments.length;
-
-          
-          comments.forEach((c) => {
-            totalComments += Array.isArray(c.replies) ? c.replies.length : 0;
-          });
-        
-        return {
-            videoId: video._id,
-            count: totalComments,
-          };
-        })
+      .then((res) => ({
+          videoId: video._id,
+          count: res.data?.data?.[0]?.comments?.length || 0,
+        }))
       .catch(() => ({ videoId: video._id, count: 0 }))
   );
 
@@ -146,7 +137,6 @@ export default function UserDetail() {
     setSelectedFarmName(farmName);
     setOpenVideoDialog(true);
 
-    await fetchVideoStats(relatedVideos);
   };
 
   const userFarms = farms.filter((f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id));
@@ -470,9 +460,7 @@ export default function UserDetail() {
                   <span>
                     Lượt thích: <strong>{videoLikes[item._id] ?? "Đang tải..."}</strong>
                   </span>
-                  <span>
-                    Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong>
-                  </span>
+                  <span>Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong></span>
                 </div>
               </div>
             ))
