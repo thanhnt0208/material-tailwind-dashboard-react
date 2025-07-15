@@ -50,12 +50,18 @@ export default function Users() {
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
       // Tự động lấy danh sách role duy nhất từ users
-const uniqueRoles = Array.from(
-  new Set(usersData.flatMap(user =>
-    Array.isArray(user.role) ? user.role : [user.role]
-  ))
-);
-setRoles(uniqueRoles);
+      const uniqueRoles = Array.from(
+        new Set([
+          ...usersData
+            .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
+            .map(role => role.toLowerCase()),
+
+          filterRole?.toLowerCase() 
+        ])
+      )
+      .filter(Boolean)
+      .map(role => role.charAt(0).toUpperCase() + role.slice(1)); 
+      setRoles(uniqueRoles);
 
       setTotalPages(res.data.totalPages || 1);
 
@@ -273,6 +279,7 @@ setRoles(uniqueRoles);
     <Option key={role} value={role}>{role}</Option>
   ))}
 </Select>
+
 
 
 
