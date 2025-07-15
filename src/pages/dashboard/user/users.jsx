@@ -7,19 +7,19 @@ import {
 } from "@material-tailwind/react";
 import { EllipsisVerticalIcon } from "@heroicons/react/24/outline";
 import { useNavigate } from "react-router-dom";
+import CreatableSelect from 'react-select/creatable';
 
 export default function Users() {
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  // const [roles] = useState(["Customer", "Admin", "Farmer", "Staff" ]);
+  const [counts, setCounts] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [counts, setCounts] = useState({});
 
   const [editOpen, setEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [formData, setFormData] = useState({
-    fullName: "", email: "", phone: "", isActive: true, address: ""
+    fullName: "", email: "", phone: "", isActive: true, addresses: [""]
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
 
@@ -34,6 +34,7 @@ export default function Users() {
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
+  const apiUrl = "https://api-ndolv2.nongdanonline.cc";
 
   // Fetch users + counts
   const fetchUsers = async () => {
@@ -44,26 +45,17 @@ export default function Users() {
       if (filterRole) params.role = filterRole;
       if (filterStatus) params.isActive = filterStatus === "Active";
 
-      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }, params
-      });
+      const res = await axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
-      // Tự động lấy danh sách role duy nhất từ users
-const uniqueRoles = Array.from(
-  new Set(usersData.flatMap(user =>
-    Array.isArray(user.role) ? user.role : [user.role]
-  ))
-);
-setRoles(uniqueRoles);
-
+      setRoles([...new Set(usersData.flatMap(u => Array.isArray(u.role) ? u.role : [u.role]))]);
       setTotalPages(res.data.totalPages || 1);
 
-      // Gọi counts
+      // counts
       const [farmsRes, videosRes, postsRes] = await Promise.all([
-        axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", { headers: { Authorization: `Bearer ${token}` } })
+        axios.get(`${apiUrl}/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
       const farms = farmsRes.data?.data || [];
@@ -93,7 +85,7 @@ setRoles(uniqueRoles);
     }
   };
 
-  // handleSearch: tìm fullName, email, phone
+  // Search
   const handleSearch = async () => {
     if (!token) return;
     setLoading(true);
@@ -103,29 +95,12 @@ setRoles(uniqueRoles);
       if (filterStatus) paramsCommon.isActive = filterStatus === "Active";
 
       const [byName, byEmail, byPhone] = await Promise.all([
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, fullName: searchText }
-        }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, email: searchText }
-        }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { ...paramsCommon, phone: searchText }
-        }),
+        axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, fullName: searchText } }),
+        axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, email: searchText } }),
+        axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params: { ...paramsCommon, phone: searchText } }),
       ]);
-
-      const merged = [
-        ...(byName.data.data || []),
-        ...(byEmail.data.data || []),
-        ...(byPhone.data.data || [])
-      ];
-      const unique = merged.filter(
-        (v, i, a) => a.findIndex(t => t.id === v.id) === i
-      );
-
+      const merged = [...(byName.data.data || []), ...(byEmail.data.data || []), ...(byPhone.data.data || [])];
+      const unique = merged.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
       setUsers(unique);
       setTotalPages(1);
       setPage(1);
@@ -147,38 +122,29 @@ setRoles(uniqueRoles);
     if (!isSearching) fetchUsers();
   }, [token, page, filterRole, filterStatus, isSearching]);
 
-  // Edit user
+  // Edit
   const openEdit = (user) => {
     setSelectedUser(user);
     setFormData({
       fullName: user.fullName, email: user.email,
       phone: user.phone || "", isActive: user.isActive,
-      addresses: user?.addresses || [""],
+      addresses: user?.addresses?.map(a => a.address) || [""],
     });
     setEditOpen(true);
   };
 
-// CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
- const handleUpdate = async () => {
+  const handleUpdate = async () => {
     if (!token || !selectedUser) return;
     try {
-      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
-        { fullName: formData.fullName, phone: formData.phone },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.put(`${apiUrl}/admin-users/${selectedUser.id}`, { fullName: formData.fullName, phone: formData.phone }, { headers: { Authorization: `Bearer ${token}` } });
 
       if (formData.isActive !== selectedUser.isActive) {
-        await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/active`,
-          {}, { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/active`, {}, { headers: { Authorization: `Bearer ${token}` } });
       }
 
       if (selectedUser.addresses?.[0]?.id) {
-        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
-          { address: formData.addresses[0] }, { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`${apiUrl}/user-addresses/${selectedUser.addresses[0].id}`, { address: formData.addresses[0] }, { headers: { Authorization: `Bearer ${token}` } });
       }
-
       alert("Cập nhật thành công!");
       fetchUsers();
       setEditOpen(false);
@@ -187,13 +153,22 @@ setRoles(uniqueRoles);
     }
   };
 
-
+  const handleToggleActive = async (val) => {
+    const newIsActive = val === "Đã cấp quyền";
+    if (!token || !selectedUser) return;
+    try {
+      await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/active`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      setFormData(prev => ({ ...prev, isActive: newIsActive }));
+      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, isActive: newIsActive } : u));
+    } catch {
+      alert("Cập nhật trạng thái thất bại!");
+    }
+  };
 
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc chắn muốn xoá?")) return;
     try {
-      await axios.delete(`https://api-ndolv2.nongdanonline.cc/admin-users/${userId}`,
-        { headers: { Authorization: `Bearer ${token}` } });
+      await axios.delete(`${apiUrl}/admin-users/${userId}`, { headers: { Authorization: `Bearer ${token}` } });
       alert("Đã xoá người dùng!");
       fetchUsers();
     } catch {
@@ -201,42 +176,31 @@ setRoles(uniqueRoles);
     }
   };
 
- const handleAddRole = async () => {
-  if (!token || !selectedUser) return;
-  try {
-    if (selectedRole === "Farmer") {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-farmer`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-    } else {
-      await axios.patch(
-        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
-        { role: selectedRole },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+  const handleAddRole = async () => {
+    if (!token || !selectedUser) return;
+    try {
+      if (selectedRole === "Farmer") {
+        await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/add-farmer`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      } else {
+        await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/add-role`, { role: selectedRole }, { headers: { Authorization: `Bearer ${token}` } });
+      }
+      alert("Thêm role thành công!");
+      fetchUsers();
+    } catch {
+      alert("Thêm role thất bại!");
     }
-    alert("Thêm role thành công!");
-    fetchUsers();
-  } catch {
-    alert("Thêm role thất bại!");
-  }
-};
-
+  };
 
   const handleRemoveRole = async (role) => {
     if (!token || !selectedUser) return;
     try {
-      await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
-        { roles: [role] }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/remove-roles`, { roles: [role] }, { headers: { Authorization: `Bearer ${token}` } });
       alert("Xoá role thành công!");
       fetchUsers();
     } catch {
       alert("Xoá role thất bại!");
     }
   };
-
 
   return (
     <div className="p-4">
@@ -355,48 +319,29 @@ setRoles(uniqueRoles);
       value={formData.phone}
       onChange={e => setFormData({ ...formData, phone: e.target.value })}
     />
-    <Select
-      label="Trạng thái"
-      value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
-      onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}
-    >
-      <Option>Đã cấp quyền</Option>
-      <Option>Chưa cấp quyền</Option>
-    </Select>
+   <Select
+  label="Trạng thái"
+  value={formData.isActive ? "Inactive" : "active"}
+  onChange={handleToggleActive}
+>
+  <Option>Inactive</Option>
+  <Option>active</Option>
+</Select>
+
 
     <Typography className="font-bold">Địa chỉ</Typography>
-    {formData.addresses?.map((addr, idx) => (
-      <div key={idx} className="flex gap-2 mb-2">
-        <Input
-          label={`Địa chỉ ${idx + 1}`}
-          value={addr}
-          onChange={e => {
-            const updated = [...formData.addresses];
-            updated[idx] = e.target.value;
-            setFormData({ ...formData, addresses: updated });
-          }}
-        />
-        <Button
-          variant="outlined"
-          size="sm"
-          onClick={() => {
-            const updated = formData.addresses.filter((_, i) => i !== idx);
-            setFormData({ ...formData, addresses: updated });
-          }}
-        >
-          Xoá
-        </Button>
-      </div>
-    ))}
-    <Button
-      size="sm"
-      variant="outlined"
-      onClick={() =>
-        setFormData({ ...formData, addresses: [...formData.addresses, ""] })
-      }
-    >
-      + Thêm địa chỉ
-    </Button>
+<CreatableSelect
+  isMulti
+  placeholder="Nhập hoặc chọn địa chỉ..."
+  value={formData.addresses.map(addr => ({ label: addr, value: addr }))}
+  onChange={(selected) => {
+    setFormData({
+      ...formData,
+      addresses: selected ? selected.map(item => item.value) : [],
+    });
+  }}
+  formatCreateLabel={(inputValue) => `+ Thêm mới: "${inputValue}"`}
+/>
 
     <Typography className="font-bold">Quản lý role</Typography>
     <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
