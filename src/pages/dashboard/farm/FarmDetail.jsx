@@ -202,49 +202,64 @@ export default function FarmDetail({ open, onClose, farmId }) {
             </div>
 
             <div className="mt-6">
-              <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
-              {videos.length > 0 ? (
-                <div className="border border-gray-200 rounded-md max-h-[400px] overflow-y-auto">
-                  <table className="min-w-full table-auto text-sm text-left">
-                    <thead className="bg-gray-100 sticky top-0 z-10">
-                      <tr>
-                        <th className="border px-3 py-2">#</th>
-                        <th className="border px-3 py-2">Tiêu đề</th>
-                        <th className="border px-3 py-2">Người đăng</th>
-                        <th className="border px-3 py-2">Ngày đăng</th>
-                        <th className="border px-3 py-2">Trạng thái</th>
-                        <th className="border px-3 py-2">Xem</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {videos.map((video, idx) => (
-                        <tr key={video._id || idx} className="hover:bg-gray-50">
-                          <td className="border px-3 py-2">{idx + 1}</td>
-                          <td className="border px-3 py-2">{video.title}</td>
-                          <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
-                          <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
-                          <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
-                          <td className="border px-3 py-2">
-                            <Button
-                              variant="text"
-                              size="sm"
-                              color="blue"
-                              onClick={() => setSelectedVideo(video)}
-                              className="flex items-center gap-1"
-                            >
-                              <PlayIcon className="h-4 w-4" />
-                              Xem
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
-              )}
-            </div>
+  <Typography variant="h6" className="mb-2 text-blue-gray-900">Danh sách video</Typography>
+  {videos.length > 0 ? (
+    <div className="border border-gray-200 rounded-md max-h-[400px] overflow-y-auto">
+      <table className="min-w-full table-auto text-sm text-left">
+        <thead className="bg-gray-100 sticky top-0 z-10">
+          <tr>
+            <th className="border px-3 py-2">#</th>
+            <th className="border px-3 py-2">Tiêu đề</th>
+            <th className="border px-3 py-2">Người đăng</th>
+            <th className="border px-3 py-2">Ngày đăng</th>
+            <th className="border px-3 py-2">Trạng thái</th>
+            <th className="border px-3 py-2">Xem</th>
+          </tr>
+        </thead>
+        <tbody>
+          {videos.map((video, idx) => (
+            <tr key={video._id || idx} className="hover:bg-gray-50">
+              <td className="border px-3 py-2">{idx + 1}</td>
+              <td className="border px-3 py-2">{video.title}</td>
+              <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
+              <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
+              <td className="border px-3 py-2">
+                <span className={`px-2 py-1 rounded text-xs font-semibold
+                  ${video.status === "active" ? "text-green-700 bg-green-100"
+                    : video.status === "pending" ? "text-yellow-700 bg-yellow-100"
+                    : video.status === "hidden" ? "text-red-700 bg-red-100"
+                    : "text-gray-700 bg-gray-100"}`}>
+                  {video.status === "active"
+                    ? "Hiển thị"
+                    : video.status === "pending"
+                    ? "Chờ duyệt"
+                    : video.status === "hidden"
+                    ? "Đã ẩn"
+                    : "Không xác định"}
+                </span>
+              </td>
+              <td className="border px-3 py-2">
+                <Button
+                  variant="text"
+                  size="sm"
+                  color="blue"
+                  onClick={() => setSelectedVideo(video)}
+                  className="flex items-center gap-1"
+                >
+                  <PlayIcon className="h-4 w-4" />
+                  Xem
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  ) : (
+    <Typography className="text-sm italic text-gray-500">Chưa có video nào</Typography>
+  )}
+</div>
+
 
             <Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
               <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>

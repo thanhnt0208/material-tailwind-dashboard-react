@@ -48,7 +48,20 @@ export default function Users() {
       const res = await axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
+<<<<<<< HEAD
       setRoles([...new Set(usersData.flatMap(u => Array.isArray(u.role) ? u.role : [u.role]))]);
+=======
+      // Tự động lấy danh sách role duy nhất từ users
+      const uniqueRoles = Array.from(
+  new Set(
+    usersData
+      .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
+      .map(role => role.toLowerCase()) // chuẩn hóa về lowercase
+  )
+).map(role => role.charAt(0).toUpperCase() + role.slice(1)); // Viết hoa chữ cái đầu
+setRoles(uniqueRoles);
+
+>>>>>>> 605a6028420492a9486ab0b867a570b201ef824e
       setTotalPages(res.data.totalPages || 1);
 
       // counts

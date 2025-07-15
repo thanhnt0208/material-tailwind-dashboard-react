@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 
@@ -16,10 +16,15 @@ export default function UserDetail() {
   const [openFarms, setOpenFarms] = useState(false);
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
+  const [users, setUsers] = useState([]); 
+  const [videoLikes, setVideoLikes] = useState({}); 
+  const [videoComments, setVideoComments] = useState({});
+
 
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
-  const [selectedFarmName, setSelectedFarmName] = useState(""); 
+  const [selectedFarmName, setSelectedFarmName] = useState("");
+
 
   const fetchPaginatedData = async (url, config) => {
     let allData = [];
@@ -27,11 +32,11 @@ export default function UserDetail() {
     let hasMore = true;
 
     while (hasMore) {
-      const res = await axios.get(`${url}?page=${page}&limit=10`, config);
+      const res = await axios.get(`${url}?page=${page}&limit=100`, config);
       const pageData = res.data?.data || [];
       allData = [...allData, ...pageData];
 
-      hasMore = pageData.length > 0 && pageData.length === 10;
+      hasMore = pageData.length > 0 && pageData.length === 50;
       page++;
     }
 
@@ -44,17 +49,20 @@ export default function UserDetail() {
         const token = localStorage.getItem("token");
         const config = { headers: { Authorization: `Bearer ${token}` } };
 
-        const [userRes, allFarms, allVideos, allPosts] = await Promise.all([
+        const [userRes, allFarms, allVideos, allPosts, allUsers ] = await Promise.all([
           axios.get(`https://api-ndolv2.nongdanonline.cc/admin-users/${id}`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/adminfarms`, config), 
           fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-video-farm`, config), 
-          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config) 
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-post-feed`, config),
+          fetchPaginatedData(`https://api-ndolv2.nongdanonline.cc/admin-users`, config), 
         ]);
 
         setUser(userRes.data);
         setFarms(allFarms);
         setVideos(allVideos);
         setPosts(allPosts);
+        setUsers(allUsers);
+        
       } catch (err) {
         console.error(err);
       } finally {
@@ -65,15 +73,80 @@ export default function UserDetail() {
     fetchData();
   }, [id]);
 
+
+
+
   const countVideosByFarm = (farmId) => {
     return videos.filter((v) => v.farmId?.id === farmId).length;
   };
 
-  const showFarmVideos = (farmId, farmName) => {           
+  const fetchVideoStats = async (videos) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  try {
+    const likePromises = videos.map((video) =>
+    axios
+      .get(`https://api-ndolv2.nongdanonline.cc/video-like/${video._id}/users`, config)
+      .then((res) => { 
+        console.log("Likes for video", video._id, ":", res.data);
+        return {
+            videoId: video._id,
+            count: typeof res.data.total === "number" ? res.data.total : 0,
+          };
+
+        })
+        .catch((err) => {
+            console.error(`Error fetching likes for video ${video._id}:`, err);
+            return { videoId: video._id, count: 0 };
+          })
+  );
+  
+  const commentPromises = videos.map((video) =>
+    axios
+      .get(`https://api-ndolv2.nongdanonline.cc/video-comment/${video._id}/comments`, config)
+      .then((res) => {
+          const comments = res.data?.data?.[0]?.comments || [];
+          let totalComments = comments.length;
+
+          
+          comments.forEach((c) => {
+            totalComments += Array.isArray(c.replies) ? c.replies.length : 0;
+          });
+        
+        return {
+            videoId: video._id,
+            count: totalComments,
+          };
+        })
+      .catch(() => ({ videoId: video._id, count: 0 }))
+  );
+
+  const likes = await Promise.all(likePromises);
+  const comments = await Promise.all(commentPromises);
+
+  const likesMap = {};
+  const commentsMap = {};
+  likes.forEach((item) => (likesMap[item.videoId] = item.count));
+  comments.forEach((item) => (commentsMap[item.videoId] = item.count));
+
+  console.log("Likes Map:", likesMap);
+  console.log("Comments Map:", commentsMap);
+
+
+  setVideoLikes(likesMap);
+  setVideoComments(commentsMap);
+}catch (error) {
+    console.error("Error fetching video stats:", error);
+}
+};
+  const showFarmVideos = async (farmId, farmName) => {           
     const relatedVideos = videos.filter((v) => v.farmId?.id === farmId);
     setSelectedFarmVideos(relatedVideos);
     setSelectedFarmName(farmName);
     setOpenVideoDialog(true);
+
+    await fetchVideoStats(relatedVideos);
   };
 
   const userFarms = farms.filter((f) => String(f.ownerId) === String(user?.id) || String(f.createBy) === String(user?.id));
@@ -393,6 +466,13 @@ export default function UserDetail() {
                   <span>Trạng thái: <strong>{item.status}</strong></span>
                   <span>Link Local: <strong>{item.localFilePath}</strong></span>
                   <span>Link YouTube: <strong>{item.youtubeLink || "Không có"}</strong></span>
+
+                  <span>
+                    Lượt thích: <strong>{videoLikes[item._id] ?? "Đang tải..."}</strong>
+                  </span>
+                  <span>
+                    Lượt bình luận: <strong>{videoComments[item._id] ?? "Đang tải..."}</strong>
+                  </span>
                 </div>
               </div>
             ))
@@ -441,18 +521,20 @@ export default function UserDetail() {
                     </div>
 
                     {/* Tác giả */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <Typography className="font-semibold text-gray-700">Tác giả:</Typography>
+                    <div className="flex items-center gap-3 mb-2">
+                      <Typography className="font-semibold">Tác giả:</Typography>
                       <img
                         src={
-                          post.authorId?.avatar?.startsWith("http")
-                            ? post.authorId.avatar
-                            : `https://api-ndolv2.nongdanonline.cc${post.authorId?.avatar || ""}`
+                          users.find(u => u.id === post.authorId)?.avatar?.startsWith("http")
+                            ? users.find(u => u.id === post.authorId)?.avatar
+                            : `https://api-ndolv2.nongdanonline.cc${users.find(u => u.id === post.authorId)?.avatar || ""}`
                         }
-                        alt={post.authorId?.fullName}
-                        className="w-10 h-10 rounded-full"
+                        alt={users.find(u => u.id === post.authorId)?.fullName}
+                        className="w-8 h-8 rounded-full"
                       />
-                      <Typography>{post.authorId?.fullName || "Không rõ"}</Typography>
+                      <Typography>
+                        {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
+                      </Typography>
                     </div>
 
                     {/* Mô tả */}
@@ -472,6 +554,17 @@ export default function UserDetail() {
                         </span>
                       ))}
                     </div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Typography className="font-semibold">Lượt thích:</Typography>
+                      <Chip
+                        value={
+                          Array.isArray(post.like) ? post.like.length : (post.like || 0)
+                        }
+                        color="blue"
+                        size="sm"
+                      />
+                    </div>
+
 
                     {/* Hình ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -484,6 +577,9 @@ export default function UserDetail() {
                         />
                       ))}
                     </div>
+
+                    
+                    
                   </div>
                 ))}
               </CardBody>
