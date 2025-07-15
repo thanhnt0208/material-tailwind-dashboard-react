@@ -185,7 +185,6 @@ getCommentVideo()
 )} 
 
 <div className="flex justify-between items-center mt-2">
-  {(item.status === "uploaded") && (
     <>
       <div>
         <LikeButton onOpenLike={handleOpenLike} videoId={item._id} />
@@ -199,7 +198,6 @@ getCommentVideo()
         </button>
       </div>
     </>
-  )}
 </div>
 
    <span className="text-sm text-gray-600 cursor-pointer">
