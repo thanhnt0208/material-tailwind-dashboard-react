@@ -38,7 +38,6 @@ const hideReply = (videoId, commentIndex, replyIndex) =>
 export default function CommentVideo({ open, onClose, videoId }) {
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
-console.log(comments)
   const [newComment, setNewComment] = useState("");
   const [replyBox, setReplyBox] = useState({ commentIndex: null, text: "" }); 
   const load = () => {
