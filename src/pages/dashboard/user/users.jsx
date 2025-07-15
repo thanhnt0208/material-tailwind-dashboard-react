@@ -158,52 +158,34 @@ setRoles(uniqueRoles);
     setEditOpen(true);
   };
 
-const handleUpdate = async () => {
-  if (!token || !selectedUser) return;
-  try {
-    // Update user
-    await axios.put(
-      `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/active`,
-      {
-        fullName: formData.fullName,
-        phone: formData.phone,
-        isActive: formData.isActive,
-      },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+// CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
+ const handleUpdate = async () => {
+    if (!token || !selectedUser) return;
+    try {
+      await axios.put(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}`,
+        { fullName: formData.fullName, phone: formData.phone },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-    // Update ĐỊA CHỈ an toàn
-    for (let i = 0; i < formData.addresses.length; i++) {
-      const addr = formData.addresses[i];
-      const existing = selectedUser.addresses?.[i];
-      if (existing?.id) {
-        // Có ID thì PUT
-        await axios.put(
-          `https://api-ndolv2.nongdanonline.cc/user-addresses/${existing.id}`,
-          { address: addr },
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-      } else {
-        // Không có thì POST mới
-        await axios.post(
-          `https://api-ndolv2.nongdanonline.cc/user-addresses`,
-          {
-            userId: selectedUser.id,
-            address: addr,
-          },
-          { headers: { Authorization: `Bearer ${token}` } }
+      if (formData.isActive !== selectedUser.isActive) {
+        await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/active`,
+          {}, { headers: { Authorization: `Bearer ${token}` } }
         );
       }
-    }
 
-    alert("Cập nhật thành công!");
-    fetchUsers();
-    setEditOpen(false);
-  } catch (err) {
-    console.error("Update LỖI:", err);
-    alert("Cập nhật thất bại!");
-  }
-};
+      if (selectedUser.addresses?.[0]?.id) {
+        await axios.put(`https://api-ndolv2.nongdanonline.cc/user-addresses/${selectedUser.addresses[0].id}`,
+          { address: formData.addresses[0] }, { headers: { Authorization: `Bearer ${token}` } }
+        );
+      }
+
+      alert("Cập nhật thành công!");
+      fetchUsers();
+      setEditOpen(false);
+    } catch {
+      alert("Cập nhật thất bại!");
+    }
+  };
 
 
 
@@ -219,29 +201,42 @@ const handleUpdate = async () => {
     }
   };
 
-  const handleAddRole = async () => {
-    if (!token || !selectedUser) return;
-    try {
-      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
-        { role: selectedRole }, { headers: { Authorization: `Bearer ${token}` } });
-      alert("Thêm role thành công!");
-      fetchUsers();
-    } catch {
-      alert("Thêm role thất bại!");
+ const handleAddRole = async () => {
+  if (!token || !selectedUser) return;
+  try {
+    if (selectedRole === "Farmer") {
+      await axios.patch(
+        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-farmer`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } else {
+      await axios.patch(
+        `https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/add-role`,
+        { role: selectedRole },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
     }
-  };
+    alert("Thêm role thành công!");
+    fetchUsers();
+  } catch {
+    alert("Thêm role thất bại!");
+  }
+};
+
 
   const handleRemoveRole = async (role) => {
     if (!token || !selectedUser) return;
     try {
-      await axios.post(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
-        { role }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.patch(`https://api-ndolv2.nongdanonline.cc/admin-users/${selectedUser.id}/remove-roles`,
+        { roles: [role] }, { headers: { Authorization: `Bearer ${token}` } });
       alert("Xoá role thành công!");
       fetchUsers();
     } catch {
       alert("Xoá role thất bại!");
     }
   };
+
 
   return (
     <div className="p-4">
