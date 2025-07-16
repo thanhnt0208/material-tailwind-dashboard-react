@@ -852,37 +852,36 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
 
               {/* Hiển thị reply nếu có */}
               {comment.replies?.length > 0 && (
-  <div className="ml-6 mt-2 space-y-2">
-    {comment.replies.map((reply, index) => (
-      <div key={index} className="border-l-2 pl-4">
-        <div className="flex items-center gap-3">
-          {reply.userId ? (
-            <>
-              <img
-                src={
-                  reply.userId.avatar?.startsWith("http")
-                    ? reply.userId.avatar
-                    : `https://api-ndolv2.nongdanonline.cc${reply.userId.avatar}`
-                }
-                alt={reply.userId.fullName}
-                className="w-8 h-8 rounded-full"
-              />
-              <Typography className="font-semibold">
-                {reply.userId?.fullName}
-              </Typography>
-            </>
-          ) : (
-            <Typography className="italic text-gray-500">Ẩn danh</Typography>
-          )}
-        </div>
-        <Typography className="text-sm text-gray-700">
-          {reply.comment}
-        </Typography>
-      </div>
-    ))}
-  </div>
-)}
-
+                <div className="ml-6 mt-2 space-y-2">
+                  {comment.replies.map((reply, index) => (
+                    <div key={index} className="border-l-2 pl-4">
+                      <div className="flex items-center gap-3">
+                        {reply.userId ? (
+                          <>
+                            <img
+                              src={
+                                reply.userId.avatar?.startsWith("http")
+                                  ? reply.userId.avatar
+                                  : `https://api-ndolv2.nongdanonline.cc${reply.userId.avatar}`
+                              }
+                              alt={reply.userId.fullName}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <Typography className="font-semibold">
+                              {reply.userId?.fullName}
+                            </Typography>
+                          </>
+                        ) : (
+                          <Typography className="italic text-gray-500">Ẩn danh</Typography>
+                        )}
+                      </div>
+                      <Typography className="text-sm text-gray-700">
+                        {reply.comment}
+                      </Typography>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         )}

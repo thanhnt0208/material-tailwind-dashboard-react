@@ -25,7 +25,7 @@ export default function Users() {
 console.log(formData)
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 10;
+  const limit = 100;
 
   const [filterRole, setFilterRole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -63,8 +63,8 @@ setRoles(uniqueRoles);
 
       // counts
       const [farmsRes, videosRes, postsRes] = await Promise.all([
-        axios.get(`${apiUrl}/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${apiUrl}/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/adminfarms?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/admin-video-farm?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
 
