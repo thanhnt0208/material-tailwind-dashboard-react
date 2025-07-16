@@ -35,62 +35,81 @@ console.log(formData)
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   // Fetch users + counts
-  const fetchUsers = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const params = { page, limit };
-      if (filterRole) params.role = filterRole;
-      if (filterStatus) params.isActive = filterStatus === "Active";
+const fetchUsers = async () => {
 
-      const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
-        headers: { Authorization: `Bearer ${token}` }, params
-      });
-      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
-      setUsers(usersData);
-      // Tự động lấy danh sách role duy nhất từ users
-const uniqueRoles = Array.from(
-  new Set(usersData.flatMap(user =>
-    Array.isArray(user.role) ? user.role : [user.role]
-  ))
-);
-setRoles(uniqueRoles);
+  if (!token) return;
+  setLoading(true);
+  try {
+    const params = { page, limit };
+    if (filterRole) params.role = filterRole;
+    if (filterStatus) params.isActive = filterStatus === "Active";
 
-      setTotalPages(res.data.totalPages || 1);
+    const res = await axios.get("https://api-ndolv2.nongdanonline.cc/admin-users", {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+    });
 
-      // Gọi counts
-      const [farmsRes, videosRes, postsRes] = await Promise.all([
-        axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+    // Normalize role to array
+    const usersData = (Array.isArray(res.data.data) ? res.data.data : []).map(u => ({
+      ...u,
+      role: Array.isArray(u.role)
+        ? u.role
+        : typeof u.role === "string"
+          ? u.role.split(",").map(r => r.trim())
+          : [],
+    }));
 
-      const farms = farmsRes.data?.data || [];
-      const videos = videosRes.data?.data || [];
-      const posts = postsRes.data?.data || [];
+    setUsers(usersData);
 
-      const postCountsMap = {};
-      posts.forEach(p => {
-        const uid = p.userId || p.authorId;
-        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
-      });
+    // Extract unique roles from all users
+    const uniqueRoles = Array.from(
+      new Set(usersData.flatMap(user => user.role))
+    );
+    setRoles(uniqueRoles);
 
-      const countsObj = {};
-      usersData.forEach(user => {
-        countsObj[user.id] = {
-          farms: farms.filter(f => f.ownerId === user.id).length,
-          videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
-          posts: postCountsMap[user.id] || 0
-        };
-      });
-      setCounts(countsObj);
-    } catch (err) {
-      console.error("Lỗi khi tải users:", err);
-      setError("Lỗi khi tải danh sách người dùng.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setTotalPages(res.data.totalPages || 1);
+
+    // Fetch counts (posts, farms, videos)
+    const [farmsRes, videosRes, postsRes] = await Promise.all([
+      axios.get(`https://api-ndolv2.nongdanonline.cc/adminfarms?page=${page}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios.get(`https://api-ndolv2.nongdanonline.cc/admin-video-farm?page=${page}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+      axios.get("https://api-ndolv2.nongdanonline.cc/admin-post-feed?page=1&limit=1000", {
+        headers: { Authorization: `Bearer ${token}` },
+      }),
+    ]);
+
+    const farms = farmsRes.data?.data || [];
+    const videos = videosRes.data?.data || [];
+    const posts = postsRes.data?.data || [];
+
+    const postCountsMap = {};
+    posts.forEach(p => {
+      const uid = p.userId || p.authorId;
+      if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+    });
+
+    const countsObj = {};
+    usersData.forEach(user => {
+      countsObj[user.id] = {
+        farms: farms.filter(f => f.ownerId === user.id).length,
+        videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
+        posts: postCountsMap[user.id] || 0,
+      };
+    });
+    
+    setCounts(countsObj);
+  } catch (err) {
+    console.error("Lỗi khi tải users:", err);
+    setError("Lỗi khi tải danh sách người dùng.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // handleSearch: tìm fullName, email, phone
   const handleSearch = async () => {
@@ -185,9 +204,6 @@ console.log(users)
       alert("Cập nhật thất bại!");
     }
   };
-
-
-
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc chắn muốn xoá?")) return;
     try {
@@ -262,18 +278,16 @@ console.log(users)
   </div>
 
   <div className="w-52">
-   <Select
+<Select
   label="Lọc theo role"
-  value={filterRole}
-  onChange={(val) => setFilterRole(val ?? "")}
+  value={filterRole || ""}
+  onChange={val => setFilterRole(val || "")}
 >
   <Option value="">Tất cả</Option>
   {roles.map(role => (
     <Option key={role} value={role}>{role}</Option>
   ))}
 </Select>
-
-
 
   </div>
 
