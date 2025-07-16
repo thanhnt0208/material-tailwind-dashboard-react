@@ -22,7 +22,7 @@ export default function Users() {
     fullName: "", email: "", phone: "", isActive: true, address: ""
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
-
+console.log(formData)
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
@@ -34,7 +34,6 @@ export default function Users() {
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
-
   // Fetch users + counts
   const fetchUsers = async () => {
     if (!token) return;
@@ -157,7 +156,7 @@ setRoles(uniqueRoles);
     });
     setEditOpen(true);
   };
-
+console.log(users)
 // CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
  const handleUpdate = async () => {
     if (!token || !selectedUser) return;
@@ -355,14 +354,14 @@ setRoles(uniqueRoles);
       value={formData.phone}
       onChange={e => setFormData({ ...formData, phone: e.target.value })}
     />
-    <Select
-      label="Trạng thái"
-      value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
-      onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}
-    >
-      <Option>Đã cấp quyền</Option>
-      <Option>Chưa cấp quyền</Option>
-    </Select>
+  <Select
+  label="Trạng thái"
+  value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
+  onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}
+>
+  <Option value="Đã cấp quyền">Đã cấp quyền</Option>
+  <Option value="Chưa cấp quyền">Chưa cấp quyền</Option>
+</Select>
 
     <Typography className="font-bold">Địa chỉ</Typography>
     {formData.addresses?.map((addr, idx) => (
