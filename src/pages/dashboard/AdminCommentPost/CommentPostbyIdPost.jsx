@@ -14,6 +14,7 @@ export const CommentPostbyIdPost = () => {
     const [editCommentIndex, setEditCommentIndex] = useState(null);
     const [editComment, setEditComment] = useState(null);
     const [editContent, setEditContent] = useState("");
+    const [post, setPost] = useState("");
 
 
     const {postId}=useParams()
@@ -23,7 +24,7 @@ try {
         {headers:{Authorization:`Bearer ${tokenUser}` }})
   if(res.status===200){
    setCommentByIdPost(res.data)
-   
+
   }
 
 } catch (error) {
@@ -38,7 +39,26 @@ const handleEditComment=async(comment,index)=>{
 setEditContent(comment.comment)
 }
 
+const callPost=async()=>{
+try {
 
+ const res = await axios.get(`${BaseUrl}/admin-post-feed/${postId}`, {
+      headers: { Authorization: `Bearer ${tokenUser}` }
+    });
+
+if(res.status===200){
+setPost(res.data)
+// setTotalPages(res.data.totalPages)
+ setLoading(false) 
+}
+} catch (error) {
+    console.log("Lỗi nè",error)
+    setLoading(false)
+}
+
+}
+
+console.log(post)
     const handleUpdateComment=async()=>{
 try {
     const res= await axios.put(`${BaseUrl}/admin-comment-post/${postId}/comment/${editCommentIndex}`,
@@ -76,6 +96,7 @@ try {
 
     useEffect(()=>{
 getCommentById()
+callPost()
     setLoading(false)
 
     },[])
@@ -99,7 +120,7 @@ getCommentById()
       <div>
         <div className="border bg-white rounded-lg shadow p-4 mb-6">
           <div className="mb-2 text-gray-700 font-semibold">
-            ID bài viết: <span className="font-normal">{CommentByIdPost.postId}</span>
+            Bài viết: <span className="font-normal">{post.title}</span>
           </div>
           <div className="mb-2 text-gray-700">
             Ngày đăng: <span className="font-medium">{CommentByIdPost.createdAt ? new Date(CommentByIdPost.createdAt).toLocaleDateString() : ""}</span>

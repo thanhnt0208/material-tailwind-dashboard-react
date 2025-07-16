@@ -22,7 +22,7 @@ export default function Users() {
     fullName: "", email: "", phone: "", isActive: true, addresses: [""]
   });
   const [selectedRole, setSelectedRole] = useState("Farmer");
-
+console.log(formData)
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const limit = 10;
@@ -142,8 +142,9 @@ setRoles(uniqueRoles);
     });
     setEditOpen(true);
   };
-
-  const handleUpdate = async () => {
+console.log(users)
+// CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
+ const handleUpdate = async () => {
     if (!token || !selectedUser) return;
     try {
       await axios.put(`${apiUrl}/admin-users/${selectedUser.id}`, { fullName: formData.fullName, phone: formData.phone }, { headers: { Authorization: `Bearer ${token}` } });
@@ -347,14 +348,12 @@ setRoles(uniqueRoles);
     />
   <Select
   label="Trạng thái"
-  value={formData.isActive ? "Active" : "Inactive"}
-  onChange={handleToggleActive}
+  value={formData.isActive ? "Đã cấp quyền" : "Chưa cấp quyền"}
+  onChange={val => setFormData({ ...formData, isActive: val === "Đã cấp quyền" })}
 >
-  <Option value="Active">Active</Option>
-  <Option value="Inactive">Inactive</Option>
+  <Option value="Đã cấp quyền">Đã cấp quyền</Option>
+  <Option value="Chưa cấp quyền">Chưa cấp quyền</Option>
 </Select>
-
-
 
     <Typography className="font-bold">Địa chỉ</Typography>
 <CreatableSelect
