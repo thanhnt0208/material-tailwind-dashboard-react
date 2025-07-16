@@ -37,63 +37,70 @@ console.log(formData)
   const apiUrl = "https://api-ndolv2.nongdanonline.cc";
 
   // Fetch users + counts
-  const fetchUsers = async () => {
-    if (!token) return;
-    setLoading(true);
-    try {
-      const params = { page, limit };
-      if (filterRole) params.role = filterRole;
-      if (filterStatus) params.isActive = filterStatus === "Active";
+const fetchUsers = async () => {
+  setLoading(true);
+  try {
+    const params = {};
+    if (filterRole) params.role = filterRole;
+    if (filterStatus) params.isActive = filterStatus === "Active";
+    params.page = page;
+    params.limit = limit;
 
-      const res = await axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params });
-      const usersData = Array.isArray(res.data.data) ? res.data.data : [];
-      setUsers(usersData);
+    const res = await axios.get(`${apiUrl}/admin-users`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params,
+    });
+    const usersData = Array.isArray(res.data.data) ? res.data.data : [];
+    setUsers(usersData);
 
-      // Tự động lấy danh sách role duy nhất từ users
-      const uniqueRoles = Array.from(
-  new Set(
-    usersData
-      .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
-      .map(role => role.toLowerCase()) // chuẩn hóa về lowercase
-  )
-).map(role => role.charAt(0).toUpperCase() + role.slice(1)); // Viết hoa chữ cái đầu
-setRoles(uniqueRoles);
+    // Lấy danh sách role duy nhất từ users
+    const uniqueRoles = Array.from(
+      new Set(
+        usersData
+          .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
+          .filter(Boolean)
+          .map(role => role.charAt(0).toUpperCase() + role.slice(1).toLowerCase())
+      )
+    );
+    setRoles(uniqueRoles);
 
-      setTotalPages(res.data.totalPages || 1);
+    setTotalPages(res.data.totalPages || 1);
 
-      // counts
-      const [farmsRes, videosRes, postsRes] = await Promise.all([
-        axios.get(`${apiUrl}/adminfarms?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${apiUrl}/admin-video-farm?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } })
-      ]);
+    // Fetch counts (posts, farms, videos)
+    const [farmsRes, videosRes, postsRes] = await Promise.all([
+      axios.get(`${apiUrl}/adminfarms?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get(`${apiUrl}/admin-video-farm?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+      axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+    ]);
 
-      const farms = farmsRes.data?.data || [];
-      const videos = videosRes.data?.data || [];
-      const posts = postsRes.data?.data || [];
+    const farms = farmsRes.data?.data || [];
+    const videos = videosRes.data?.data || [];
+    const posts = postsRes.data?.data || [];
 
-      const postCountsMap = {};
-      posts.forEach(p => {
-        const uid = p.userId || p.authorId;
-        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
-      });
+    const postCountsMap = {};
+    posts.forEach(p => {
+      const uid = p.userId || p.authorId;
+      if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+    });
 
-      const countsObj = {};
-      usersData.forEach(user => {
-        countsObj[user.id] = {
-          farms: farms.filter(f => f.ownerId === user.id).length,
-          videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
-          posts: postCountsMap[user.id] || 0
-        };
-      });
-      setCounts(countsObj);
-    } catch (err) {
-      console.error("Lỗi khi tải users:", err);
-      setError("Lỗi khi tải danh sách người dùng.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const countsObj = {};
+    usersData.forEach(user => {
+      countsObj[user.id] = {
+        farms: farms.filter(f => f.ownerId === user.id).length,
+        videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
+        posts: postCountsMap[user.id] || 0,
+      };
+    });
+
+    setCounts(countsObj);
+  } catch (err) {
+    console.error("Lỗi khi tải users:", err);
+    setError("Lỗi khi tải danh sách người dùng.");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Search
   const handleSearch = async () => {
@@ -254,18 +261,16 @@ console.log(users)
   </div>
 
   <div className="w-52">
-   <Select
+<Select
   label="Lọc theo role"
-  value={filterRole}
-  onChange={(val) => setFilterRole(val ?? "")}
+  value={filterRole || ""}
+  onChange={val => setFilterRole(val || "")}
 >
   <Option value="">Tất cả</Option>
   {roles.map(role => (
     <Option key={role} value={role}>{role}</Option>
   ))}
 </Select>
-
-
 
   </div>
 
