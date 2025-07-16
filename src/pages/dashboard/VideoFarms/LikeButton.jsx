@@ -1,46 +1,59 @@
 // src/components/LikeButton.jsx
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BaseUrl } from '@/ipconfig';
 import { useNavigate } from 'react-router-dom';
-
-export default function LikeButton({ videoId }) {
+export default function LikeButton({ videoId,onOpenLike }) {
   const [liked, setLiked] = useState(false);
   const [loading, setLoading] = useState(false);
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
+    const [videoLike,setVideoLike]=useState([])
 
-  const handleLikeToggle = async () => {
-    if (!videoId || !token) return;
-    setLoading(true);
+const getLikeVideo = async()=>{
+  try {
+    const res= await axios.get(`${BaseUrl}/video-like/${videoId}/users`,{headers:{Authorization: `Bearer ${token}`}})
+if(res.status===200){
+setVideoLike(res.data)
+setLoading(false)
+}
+  } catch (error) {
+    console.log("Lỗi nè:",error)
+        setLoading(false)
 
-    try {
-      const url = liked
-        ? `${BaseUrl}/video-like/${videoId}/unlike`
-        : `${BaseUrl}/video-like/${videoId}/like`;
+  }
+}
 
-      await axios.post(url, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  // const handleLikeToggle = async () => {
+  //   if (!videoId || !token) return;
+  //   setLoading(true);
 
-      // Toggle trạng thái
-      setLiked(!liked);
-    } catch (error) {
-      console.error('Lỗi khi Like/Unlike video:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //   try {
+  //     const url = liked
+  //       ? `${BaseUrl}/video-like/${videoId}/unlike`
+  //       : `${BaseUrl}/video-like/${videoId}/like`;
+
+  //     await axios.post(url, {}, {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //     setLiked(!liked);
+  //   } catch (error) {
+  //     console.error('Lỗi khi Like/Unlike video:', error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handleViewLikes = () => {
-    // Điều hướng đến trang hiển thị danh sách users đã Like
     navigate(`/dashboard/video-like/${videoId}`);
   };
-
+useEffect(()=>{
+getLikeVideo()
+},[])
   return (
     <div className="flex gap-2">
-      <button
+      {/* <button
         onClick={handleLikeToggle}
         disabled={loading}
         className={`px-3 py-1 rounded text-white text-sm font-semibold shadow ${
@@ -48,13 +61,14 @@ export default function LikeButton({ videoId }) {
         }`}
       >
         {loading ? '...' : liked ? 'Bỏ Like' : 'Like'}
-      </button>
+      </button> */}
 
       <button
-        onClick={handleViewLikes}
-        className="px-3 py-1 rounded text-blue-700 bg-blue-100 hover:bg-blue-200 text-sm font-semibold shadow"
+      onClick={e => onOpenLike(e, videoId)}
+
+      className="px-3 py-1 rounded text-blue-700 bg-blue-100 hover:bg-blue-200 text-sm font-semibold shadow"
       >
-        👥 Xem Like
+      {videoLike.total} Lượt thích
       </button>
     </div>
   );
