@@ -112,8 +112,6 @@
       if (open) {
         setPost(null);
         setComments([]);
-
-
         fetchPost();
         fetchComments();
         fetchUsers();

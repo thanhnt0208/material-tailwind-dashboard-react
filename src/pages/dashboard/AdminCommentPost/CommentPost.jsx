@@ -10,14 +10,13 @@ export const CommentPost = () => {
   const navigate=useNavigate()
    const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1);
-    const limit = 10;
+    const limit = 50;
 const [comment,setComment]=useState([])
 const [post,setPost]=useState([])
-const allPostIds = comment.map(item => item.postId);
 const gotoCommentId=(id)=>{
 navigate(`/dashboard/CommentPostbyId/${id}`)
 }
-// console.log(post)
+console.log(post)
 
 
 
@@ -54,20 +53,36 @@ useEffect(() => {
  getPost()
 }, [comment]);
 
-const getPost = async (ids) => {
+const postMap = React.useMemo(() => {
+  const map = {};
+  post.forEach(p => {
+    // Dùng cả id và _id, ép kiểu về chuỗi, loại bỏ khoảng trắng
+    map[String(p.id ?? p._id).trim()] = p;
+  });
+  return map;
+}, [post]);
+
+const getPost = async () => {
   try {
-   const ids = comment.map(item => item.postId).join(',');
-const res = await axios.get(`${BaseUrl}/admin-post-feed?ids=${ids}`, {
-  headers: { Authorization: `Bearer ${tokenUser}` }
-});
+    const uniqueIds = [...new Set(comment.map(item => item.postId))]; // loại bỏ trùng
+    if (uniqueIds.length === 0) return;
+
+    const res = await axios.get(`${BaseUrl}/admin-post-feed?ids=${uniqueIds.join(',')}`, {
+      headers: { Authorization: `Bearer ${tokenUser}` }
+    });
+
     if (res.status === 200) {
+      console.log('API trả về post:', res.data.data);
+
       setPost(res.data.data);
       setLoading(false);
     }
   } catch (error) {
     setLoading(false);
+    console.error("Lỗi getPost:", error);
   }
 };
+
 
   return (
     <div>
@@ -83,11 +98,15 @@ const res = await axios.get(`${BaseUrl}/admin-post-feed?ids=${ids}`, {
     </div>
     ):(
 comment.map((item) => {
-const postInfo = post.find(p => String(p.id) === String(item.postId));
+ const postInfo = postMap[String(item.postId).trim()];
+  const title = postInfo && postInfo.title && postInfo.title.trim()
+    ? postInfo.title
+    : "Bài viết đã bị xóa hoặc không xác định";
   return (
     <div onClick={() => gotoCommentByIdPost(item.postId)} key={item.postId} className="mb-4 p-4 border rounded bg-white">
       <div className="cursor-pointer font-bold mb-2 w-full flex flex-col">
-        Tiêu đề bài viết: {postInfo ? postInfo.title : "Không tìm thấy tiêu đề"}
+        Tiêu đề bài viết: {title}
+
         <span>
           Ngày đăng: {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Chưa cập nhật"}
         </span>
