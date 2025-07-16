@@ -25,88 +25,75 @@ export default function Users() {
 console.log(formData)
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const limit = 10;
+  const limit = 100;
 
   const [filterRole, setFilterRole] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [myAddresses, setMyAddresses] = useState([]);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
   const apiUrl = "https://api-ndolv2.nongdanonline.cc";
 
   // Fetch users + counts
-const fetchUsers = async () => {
-  setLoading(true);
-  try {
-    const params = {};
-    if (filterRole) params.role = filterRole;
-    if (filterStatus) params.isActive = filterStatus === "Active";
-    params.page = page;
-    params.limit = limit;
+  const fetchUsers = async () => {
+    if (!token) return;
+    setLoading(true);
+    try {
+      const params = { page, limit };
+      if (filterRole) params.role = filterRole;
+      if (filterStatus) params.isActive = filterStatus === "Active";
 
       const res = await axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
-const oldAddress = selectedUser?.addresses?.[0]?.address || "";
-const newAddress = formData.addresses[0];
 
-if (oldAddress && newAddress && oldAddress !== newAddress) {
-  await axios.put(`${apiUrl}/user-addresses/${selectedUser.addresses[0].id}`, {
-    address: newAddress
-  }, { headers: { Authorization: `Bearer ${token}` } });
-}
- 
       // Tự động lấy danh sách role duy nhất từ users
       const uniqueRoles = Array.from(
   new Set(
     usersData
       .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
-      .filter(role => typeof role === "string" && role.trim()) // loại bỏ null, undefined, số, chuỗi rỗng
-      .map(role => role.toLowerCase())
+      .map(role => role.toLowerCase()) // chuẩn hóa về lowercase
   )
 ).map(role => role.charAt(0).toUpperCase() + role.slice(1)); // Viết hoa chữ cái đầu
 setRoles(uniqueRoles);
 
-    setTotalPages(res.data.totalPages || 1);
+      setTotalPages(res.data.totalPages || 1);
 
-    // Fetch counts (posts, farms, videos)
-    const [farmsRes, videosRes, postsRes] = await Promise.all([
-      axios.get(`${apiUrl}/adminfarms?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
-      axios.get(`${apiUrl}/admin-video-farm?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
-      axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
-    ]);
+      // counts
+      const [farmsRes, videosRes, postsRes] = await Promise.all([
+        axios.get(`${apiUrl}/adminfarms?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/admin-video-farm?page=${page}&limit=1000`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${apiUrl}/admin-post-feed?page=1&limit=1000`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
 
-    const farms = farmsRes.data?.data || [];
-    const videos = videosRes.data?.data || [];
-    const posts = postsRes.data?.data || [];
+      const farms = farmsRes.data?.data || [];
+      const videos = videosRes.data?.data || [];
+      const posts = postsRes.data?.data || [];
 
-    const postCountsMap = {};
-    posts.forEach(p => {
-      const uid = p.userId || p.authorId;
-      if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
-    });
+      const postCountsMap = {};
+      posts.forEach(p => {
+        const uid = p.userId || p.authorId;
+        if (uid) postCountsMap[uid] = (postCountsMap[uid] || 0) + 1;
+      });
 
-    const countsObj = {};
-    usersData.forEach(user => {
-      countsObj[user.id] = {
-        farms: farms.filter(f => f.ownerId === user.id).length,
-        videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
-        posts: postCountsMap[user.id] || 0,
-      };
-    });
-
-    setCounts(countsObj);
-  } catch (err) {
-    console.error("Lỗi khi tải users:", err);
-    setError("Lỗi khi tải danh sách người dùng.");
-  } finally {
-    setLoading(false);
-  }
-};
-
+      const countsObj = {};
+      usersData.forEach(user => {
+        countsObj[user.id] = {
+          farms: farms.filter(f => f.ownerId === user.id).length,
+          videos: videos.filter(v => v.uploadedBy?.id === user.id).length,
+          posts: postCountsMap[user.id] || 0
+        };
+      });
+      setCounts(countsObj);
+    } catch (err) {
+      console.error("Lỗi khi tải users:", err);
+      setError("Lỗi khi tải danh sách người dùng.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Search
   const handleSearch = async () => {
@@ -136,53 +123,26 @@ setRoles(uniqueRoles);
     }
   };
 
-  const fetchMyAddresses = async () => {
-  try {
-    const res = await axios.get(`${apiUrl}/user-addresses`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    setMyAddresses(res.data?.data || []);
-  } catch (err) {
-    console.error("Không lấy được địa chỉ người dùng đăng nhập", err);
-  }
-};
-
-useEffect(() => {
-  if (!token) {
-    setError("Không tìm thấy token!");
-    setLoading(false);
-    return;
-  }
-
-  fetchMyAddresses(); // Thêm dòng này
-  if (!isSearching) fetchUsers();
-}, [token, page, filterRole, filterStatus, isSearching]);
-
+  useEffect(() => {
+    if (!token) {
+      setError("Không tìm thấy token!");
+      setLoading(false);
+      return;
+    }
+    if (!isSearching) fetchUsers();
+  }, [token, page, filterRole, filterStatus, isSearching]);
 
   // Edit
- const openEdit = async (user) => {
-  setSelectedUser(user);
-  try {
-    const res = await axios.get(`${apiUrl}/user-addresses?userId=${user.id}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const addresses = res.data?.data || [];
-
+  const openEdit = (user) => {
+    setSelectedUser(user);
     setFormData({
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone || "",
-      isActive: user.isActive,
-      addresses: addresses.length > 0 ? [addresses[0].address] : [""],
+      fullName: user.fullName, email: user.email,
+      phone: user.phone || "", isActive: user.isActive,
+      addresses: user?.addresses?.map(a => a.address) || [""],
     });
-
-    setSelectedUser(prev => ({ ...prev, addresses }));
     setEditOpen(true);
-  } catch (err) {
-    alert("Không lấy được địa chỉ của user.");
-  }
-};
-
+  };
+console.log(users)
 // CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
  const handleUpdate = async () => {
     if (!token || !selectedUser) return;
@@ -294,19 +254,17 @@ useEffect(() => {
   </div>
 
   <div className="w-52">
-    {roles.length > 0 && (
-
    <Select
   label="Lọc theo role"
-  value={filterRole || ""}
-  onChange={val => setFilterRole(val || "")}
+  value={filterRole}
+  onChange={(val) => setFilterRole(val ?? "")}
 >
   <Option value="">Tất cả</Option>
-  {roles.map(roles => (
-    <Option key={roles} value={roles}>{roles}</Option>
+  {roles.map(role => (
+    <Option key={role} value={role}>{role}</Option>
   ))}
 </Select>
-    )}
+
 
 
   </div>
@@ -398,18 +356,24 @@ useEffect(() => {
 </Select>
 
     <Typography className="font-bold">Địa chỉ</Typography>
-<Select
-  label="Chọn địa chỉ"
-  value={formData.addresses[0] || ""}
-  onChange={(val) => setFormData({ ...formData, addresses: [val] })}
->
-  {myAddresses.map((addr) => (
-    <Option key={addr.id} value={addr.address}>
-      {addr.address}
-    </Option>
-  ))}
-</Select>
-
+<CreatableSelect
+  isClearable
+  placeholder="Nhập hoặc chọn địa chỉ mới..."
+  value={formData.addresses[0] ? { label: formData.addresses[0], value: formData.addresses[0] } : null}
+  options={
+    selectedUser?.addresses?.map(addr => ({
+      label: addr.address,
+      value: addr.address
+    })) || []
+  }
+  onChange={(selected) => {
+    setFormData({
+      ...formData,
+      addresses: selected ? [selected.value] : [],
+    });
+  }}
+  formatCreateLabel={(inputValue) => `+ Thêm mới: "${inputValue}"`}
+/>
 
 
     <Typography className="font-bold">Quản lý role</Typography>
