@@ -252,7 +252,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
                               ? "deleted"
                               : video.status === "failed"
                               ? "failed"
-                              : "lổi"}
+                              : "lổi video"}
                           </span>
                         </td>
 
@@ -316,7 +316,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
       );
     }
 
-    return <Typography className="text-red-500">Không tìm thấy video.</Typography>;
+      return <Typography className="text-red-500">Không tìm thấy video.</Typography>;
   })() : (
     <Typography className="text-red-500">Không tìm thấy video.</Typography>
   )}
