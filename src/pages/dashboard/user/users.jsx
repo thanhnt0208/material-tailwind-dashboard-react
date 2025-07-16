@@ -31,6 +31,7 @@ console.log(formData)
   const [filterStatus, setFilterStatus] = useState("");
   const [searchText, setSearchText] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const [myAddresses, setMyAddresses] = useState([]);
 
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
@@ -48,13 +49,22 @@ console.log(formData)
       const res = await axios.get(`${apiUrl}/admin-users`, { headers: { Authorization: `Bearer ${token}` }, params });
       const usersData = Array.isArray(res.data.data) ? res.data.data : [];
       setUsers(usersData);
+const oldAddress = selectedUser?.addresses?.[0]?.address || "";
+const newAddress = formData.addresses[0];
 
+if (oldAddress && newAddress && oldAddress !== newAddress) {
+  await axios.put(`${apiUrl}/user-addresses/${selectedUser.addresses[0].id}`, {
+    address: newAddress
+  }, { headers: { Authorization: `Bearer ${token}` } });
+}
+ 
       // Tự động lấy danh sách role duy nhất từ users
       const uniqueRoles = Array.from(
   new Set(
     usersData
       .flatMap(user => Array.isArray(user.role) ? user.role : [user.role])
-      .map(role => role.toLowerCase()) // chuẩn hóa về lowercase
+      .filter(role => typeof role === "string" && role.trim()) // loại bỏ null, undefined, số, chuỗi rỗng
+      .map(role => role.toLowerCase())
   )
 ).map(role => role.charAt(0).toUpperCase() + role.slice(1)); // Viết hoa chữ cái đầu
 setRoles(uniqueRoles);
@@ -123,26 +133,53 @@ setRoles(uniqueRoles);
     }
   };
 
-  useEffect(() => {
-    if (!token) {
-      setError("Không tìm thấy token!");
-      setLoading(false);
-      return;
-    }
-    if (!isSearching) fetchUsers();
-  }, [token, page, filterRole, filterStatus, isSearching]);
+  const fetchMyAddresses = async () => {
+  try {
+    const res = await axios.get(`${apiUrl}/user-addresses`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setMyAddresses(res.data?.data || []);
+  } catch (err) {
+    console.error("Không lấy được địa chỉ người dùng đăng nhập", err);
+  }
+};
+
+useEffect(() => {
+  if (!token) {
+    setError("Không tìm thấy token!");
+    setLoading(false);
+    return;
+  }
+
+  fetchMyAddresses(); // Thêm dòng này
+  if (!isSearching) fetchUsers();
+}, [token, page, filterRole, filterStatus, isSearching]);
+
 
   // Edit
-  const openEdit = (user) => {
-    setSelectedUser(user);
-    setFormData({
-      fullName: user.fullName, email: user.email,
-      phone: user.phone || "", isActive: user.isActive,
-      addresses: user?.addresses?.map(a => a.address) || [""],
+ const openEdit = async (user) => {
+  setSelectedUser(user);
+  try {
+    const res = await axios.get(`${apiUrl}/user-addresses?userId=${user.id}`, {
+      headers: { Authorization: `Bearer ${token}` }
     });
+    const addresses = res.data?.data || [];
+
+    setFormData({
+      fullName: user.fullName,
+      email: user.email,
+      phone: user.phone || "",
+      isActive: user.isActive,
+      addresses: addresses.length > 0 ? [addresses[0].address] : [""],
+    });
+
+    setSelectedUser(prev => ({ ...prev, addresses }));
     setEditOpen(true);
-  };
-console.log(users)
+  } catch (err) {
+    alert("Không lấy được địa chỉ của user.");
+  }
+};
+
 // CẬP NHẬT NGƯỜI DÙNG + ĐỊA CHỈ
  const handleUpdate = async () => {
     if (!token || !selectedUser) return;
@@ -254,17 +291,19 @@ console.log(users)
   </div>
 
   <div className="w-52">
+    {roles.length > 0 && (
+
    <Select
   label="Lọc theo role"
   value={filterRole}
   onChange={(val) => setFilterRole(val ?? "")}
 >
   <Option value="">Tất cả</Option>
-  {roles.map(role => (
-    <Option key={role} value={role}>{role}</Option>
+  {roles.map(roles => (
+    <Option key={roles} value={roles}>{roles}</Option>
   ))}
 </Select>
-
+    )}
 
 
   </div>
@@ -356,24 +395,18 @@ console.log(users)
 </Select>
 
     <Typography className="font-bold">Địa chỉ</Typography>
-<CreatableSelect
-  isClearable
-  placeholder="Nhập hoặc chọn địa chỉ mới..."
-  value={formData.addresses[0] ? { label: formData.addresses[0], value: formData.addresses[0] } : null}
-  options={
-    selectedUser?.addresses?.map(addr => ({
-      label: addr.address,
-      value: addr.address
-    })) || []
-  }
-  onChange={(selected) => {
-    setFormData({
-      ...formData,
-      addresses: selected ? [selected.value] : [],
-    });
-  }}
-  formatCreateLabel={(inputValue) => `+ Thêm mới: "${inputValue}"`}
-/>
+<Select
+  label="Chọn địa chỉ"
+  value={formData.addresses[0] || ""}
+  onChange={(val) => setFormData({ ...formData, addresses: [val] })}
+>
+  {myAddresses.map((addr) => (
+    <Option key={addr.id} value={addr.address}>
+      {addr.address}
+    </Option>
+  ))}
+</Select>
+
 
 
     <Typography className="font-bold">Quản lý role</Typography>
