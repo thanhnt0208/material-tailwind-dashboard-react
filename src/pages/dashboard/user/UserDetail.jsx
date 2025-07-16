@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import {
-  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip
+  Card, CardHeader, CardBody, Typography, Spinner, Collapse, Dialog, DialogBody, DialogFooter, DialogHeader, Button, Chip,
+  Avatar
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
 
@@ -17,6 +18,7 @@ export default function UserDetail() {
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
   const [users, setUsers] = useState([]); 
+  const [commentsCount, setCommentsCount] = useState({});
   const [videoLikes, setVideoLikes] = useState({}); 
   const [videoComments, setVideoComments] = useState({});
   const [selectedVideoLikes, setSelectedVideoLikes] = useState([]);
@@ -27,7 +29,10 @@ export default function UserDetail() {
   const [openVideoDialog, setOpenVideoDialog] = useState(false);        
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
   const [selectedFarmName, setSelectedFarmName] = useState("");
+  const [commentCounts, setCommentCounts] = useState({});
+  const [postCommentsCount, setPostCommentsCount] = useState({});
 
+  
 
   const fetchPaginatedData = async (url, config) => {
     let allData = [];
@@ -45,6 +50,31 @@ export default function UserDetail() {
 
     return allData;
   };
+
+  const fetchCommentCount = async (postId) => {
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(`https://api-ndolv2.nongdanonline.cc/admin-comment-post/post/${postId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const json = await res.json();
+    if (res.ok && Array.isArray(json.comments)) {
+      const comments = json.comments;
+      const totalReplies = comments.reduce(
+        (sum, cmt) => sum + (cmt.replies?.length || 0),
+        0
+      );
+      return comments.length + totalReplies;
+    }
+    return 0;
+  } catch (err) {
+    console.error(`Lỗi lấy comment cho post ${postId}:`, err);
+    return 0;
+  }
+};
+
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,6 +97,7 @@ export default function UserDetail() {
         setPosts(allPosts);
         setUsers(allUsers);
         
+        
       } catch (err) {
         console.error(err);
       } finally {
@@ -77,6 +108,20 @@ export default function UserDetail() {
     fetchData();
   }, [id]);
 
+  useEffect(() => {
+  const fetchAllCommentCounts = async () => {
+    const counts = {};
+    for (const post of posts) {
+      const count = await fetchCommentCount(post._id);
+      counts[post._id] = count;
+    }
+    setCommentCounts(counts);
+  };
+
+  if (posts.length > 0) {
+    fetchAllCommentCounts();
+  }
+}, [posts]);
 
 const fetchVideoLikesUsers = async (videoId, videoTitle) => {
   const token = localStorage.getItem("token");
@@ -88,7 +133,7 @@ const fetchVideoLikesUsers = async (videoId, videoTitle) => {
       config
     );
     setSelectedVideoTitle(videoTitle);
-    setSelectedVideoLikes(res.data?.users || []); // giả sử API trả về { users: [...] }
+    setSelectedVideoLikes(res.data?.users || []); 
     setOpenLikesDialog(true);
   } catch (err) {
     console.error(`Error fetching likes for video ${videoId}:`, err);
@@ -613,7 +658,7 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
       </Dialog>
 
 
-      {/* danh sách post */}
+      {/* Danh sách post */}
       <Card>
         <div
           onClick={() => setOpenPosts(!openPosts)}
@@ -681,6 +726,16 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                         </span>
                       ))}
                     </div>
+                      {/* bình luận */}
+                    <div className="flex gap-2 items-center">
+                      <Typography className="font-semibold">Bình luận:</Typography>
+                      <Chip
+                        value={commentCounts[post._id] || 0}
+                        color="deep-purple"
+                        size="sm"
+                      />
+                    </div>
+
                     <div className="flex items-center gap-2 mb-3">
                       <Typography className="font-semibold">Lượt thích:</Typography>
                       <Chip
