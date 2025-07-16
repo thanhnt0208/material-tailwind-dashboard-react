@@ -163,17 +163,33 @@ setRoles(uniqueRoles);
     }
   };
 
-  const handleToggleActive = async (val) => {
-    const newIsActive = val === "Đã cấp quyền";
-    if (!token || !selectedUser) return;
-    try {
-      await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/active`, {}, { headers: { Authorization: `Bearer ${token}` } });
-      setFormData(prev => ({ ...prev, isActive: newIsActive }));
-      setUsers(prev => prev.map(u => u.id === selectedUser.id ? { ...u, isActive: newIsActive } : u));
-    } catch {
-      alert("Cập nhật trạng thái thất bại!");
-    }
-  };
+ const handleToggleActive = async (val) => {
+  if (!token || !selectedUser) return;
+
+  const isCurrentlyActive = selectedUser.isActive;
+  const newIsActive = val === "Active";
+
+  // Nếu trạng thái không thay đổi
+  if (isCurrentlyActive === newIsActive) {
+    alert(`Người dùng đã ở trạng thái ${newIsActive ? "Active" : "Inactive"} rồi.`);
+    return;
+  }
+
+  try {
+    await axios.patch(`${apiUrl}/admin-users/${selectedUser.id}/active`, {}, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    setFormData(prev => ({ ...prev, isActive: newIsActive }));
+    setUsers(prev =>
+      prev.map(u => u.id === selectedUser.id ? { ...u, isActive: newIsActive } : u)
+    );
+
+    alert("Cập nhật trạng thái thành công!");
+  } catch {
+    alert("Cập nhật trạng thái thất bại!");
+  }
+};
 
   const handleDelete = async (userId) => {
     if (!window.confirm("Bạn chắc chắn muốn xoá?")) return;
@@ -329,29 +345,37 @@ setRoles(uniqueRoles);
       value={formData.phone}
       onChange={e => setFormData({ ...formData, phone: e.target.value })}
     />
-   <Select
+  <Select
   label="Trạng thái"
-  value={formData.isActive ? "Inactive" : "active"}
+  value={formData.isActive ? "Active" : "Inactive"}
   onChange={handleToggleActive}
 >
-  <Option>Inactive</Option>
-  <Option>active</Option>
+  <Option value="Active">Active</Option>
+  <Option value="Inactive">Inactive</Option>
 </Select>
+
 
 
     <Typography className="font-bold">Địa chỉ</Typography>
 <CreatableSelect
-  isMulti
-  placeholder="Nhập hoặc chọn địa chỉ..."
-  value={formData.addresses.map(addr => ({ label: addr, value: addr }))}
+  isClearable
+  placeholder="Nhập hoặc chọn địa chỉ mới..."
+  value={formData.addresses[0] ? { label: formData.addresses[0], value: formData.addresses[0] } : null}
+  options={
+    selectedUser?.addresses?.map(addr => ({
+      label: addr.address,
+      value: addr.address
+    })) || []
+  }
   onChange={(selected) => {
     setFormData({
       ...formData,
-      addresses: selected ? selected.map(item => item.value) : [],
+      addresses: selected ? [selected.value] : [],
     });
   }}
   formatCreateLabel={(inputValue) => `+ Thêm mới: "${inputValue}"`}
 />
+
 
     <Typography className="font-bold">Quản lý role</Typography>
     <Select label="Thêm role" value={selectedRole} onChange={setSelectedRole}>
