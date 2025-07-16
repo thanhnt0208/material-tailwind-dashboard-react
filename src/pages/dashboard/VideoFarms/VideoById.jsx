@@ -43,6 +43,16 @@ setLoading(false)
   }
 }
 
+const totalCommentCount = Array.isArray(videoComment)
+  ? videoComment.reduce(
+      (total, cmt) =>
+        total +
+        1 +
+        (Array.isArray(cmt.replies) ? cmt.replies.length : 0),
+      0
+    )
+  : 0;
+
  const handleOpenLike = (e, videoId) => {
   e.stopPropagation(); 
   setSelectedVideoId(videoId);
@@ -185,7 +195,6 @@ getCommentVideo()
 )} 
 
 <div className="flex justify-between items-center mt-2">
-  {item.status === "uploaded" && (
     <>
       <div>
         <LikeButton onOpenLike={handleOpenLike} videoId={item._id} />
@@ -195,11 +204,10 @@ getCommentVideo()
           onClick={(e) => { handleOpenComment(e, item._id) }}
           className="flex items-center gap-1 px-3 py-1 rounded text-green-700 bg-green-100 hover:bg-green-200 text-sm font-semibold shadow transition"
         >
-          <span className="material-icons text-base">{videoComment.length} bình luận</span>
+        <span className="material-icons text-base">{totalCommentCount} bình luận</span>
         </button>
       </div>
     </>
-  )}
 </div>
 
    <span className="text-sm text-gray-600 cursor-pointer">

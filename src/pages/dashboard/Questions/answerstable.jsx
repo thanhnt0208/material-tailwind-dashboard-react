@@ -18,6 +18,7 @@ import axios from "axios";
 import { Audio } from "react-loader-spinner";
 
 const API_URL = "https://api-ndolv2.nongdanonline.cc/answers";
+const FILE_BASE_URL = "https://api-ndolv2.nongdanonline.cc";
 let token = localStorage.getItem("token");
 
 // Auto-refresh token
@@ -77,7 +78,6 @@ export function AnswersTable() {
 
   const [searchText, setSearchText] = useState("");
   const [filterOption, setFilterOption] = useState("");
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -251,15 +251,28 @@ export function AnswersTable() {
             setCurrentPage(1);
           }}
         />
-        <Input
-          label="Lọc theo đáp án"
-          value={filterOption}
-          onChange={(e) => {
-            setFilterOption(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
       </div>
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Lọc theo đáp án</label>
+  <select
+    value={filterOption}
+    onChange={(e) => {
+      setFilterOption(e.target.value);
+      setCurrentPage(1);
+    }}
+    style={{ width: '50%' , height:'50%' }}
+    className="border rounded px-3 py-2"
+  >
+    <option value="">Tất cả</option>
+    {[...new Set(questionAnFarmId.flatMap((item) => item.selectedOptions || []))].map((opt, idx) => (
+      <option key={idx} value={opt}>
+        {opt}
+      </option>
+    ))}
+  </select>
+</div>
+
+
 
       {loading ? (
         <Audio height="80" width="80" radius="9" color="green" ariaLabel="loading" />
@@ -289,7 +302,7 @@ export function AnswersTable() {
                     ? item.uploadedFiles.map((file, i) => (
                         <a
                           key={i}
-                          href={file}
+                          href={`${FILE_BASE_URL}${file}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-600 underline block"
@@ -349,22 +362,25 @@ export function AnswersTable() {
       {/* Dialog Form */}
       <Dialog open={open} handler={() => setOpen(!open)}>
         <DialogHeader>{editData ? "Chỉnh sửa" : "Thêm mới"} câu trả lời</DialogHeader>
-        <DialogBody className="space-y-4">
+        <DialogBody className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input label="Farm ID" value={form.farmId} onChange={(e) => setForm({ ...form, farmId: e.target.value })} />
           <Input label="Question ID" value={form.questionId} onChange={(e) => setForm({ ...form, questionId: e.target.value })} />
-          <Input
-            label="Selected Options (cách nhau bằng dấu phẩy)"
-            value={form.selectedOptions.join(", ")}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                selectedOptions: e.target.value
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean),
-              })
-            }
-          />
+          <div className="max-w-sm">
+            <Input
+              label="Selected Options (cách nhau bằng dấu phẩy)"
+              value={form.selectedOptions.join(", ")}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  selectedOptions: e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean),
+                })
+              }
+            />
+          </div>
+
           <Input label="Other Text" value={form.otherText} onChange={(e) => setForm({ ...form, otherText: e.target.value })} />
           <Input type="file" onChange={handleUploadImage} />
           {uploading && <span className="text-sm text-gray-500">Đang tải lên...</span>}

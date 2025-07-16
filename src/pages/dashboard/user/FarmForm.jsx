@@ -5,12 +5,11 @@ import {
   DialogBody,
   DialogFooter,
   Input,
-  Textarea,
   Button,
   Typography,
-  Spinner,
 } from "@material-tailwind/react";
 import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 
 const serviceOptions = [
   { label: "Bán trực tiếp", value: "direct_selling" },
@@ -35,7 +34,7 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
   const [form, setForm] = useState({
     name: "",
     code: "",
-    tags: "",
+    tags: [],
     province: "",
     district: "",
     ward: "",
@@ -58,7 +57,7 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
       if (initialData) {
         setForm({
           ...initialData,
-          tags: (initialData.tags || []).join(", "),
+          tags: initialData.tags || [],
           services: initialData.services || [],
           features: initialData.features || [],
           ownerInfo: { name: initialData.ownerInfo?.name || "" },
@@ -68,7 +67,7 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
         setForm({
           name: "",
           code: "",
-          tags: "",
+          tags: [],
           province: "",
           district: "",
           ward: "",
@@ -106,9 +105,9 @@ function FarmForm({ open, onClose, initialData, onSubmit }) {
     try {
       const payload = {
         ...form,
-        tags: form.tags.split(",").map((t) => t.trim()),
+        tags: form.tags,
       };
-await onSubmit(payload); // Call add/edit
+      await onSubmit(payload);
       onClose();
     } catch (err) {
       console.error(err);
@@ -125,7 +124,20 @@ await onSubmit(payload); // Call add/edit
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input label="Tên nông trại" name="name" value={form.name} onChange={handleChange} />
           <Input label="Mã nông trại" name="code" value={form.code} onChange={handleChange} />
-          <Input label="Tags (phân cách bằng dấu phẩy)" name="tags" value={form.tags} onChange={handleChange} />
+          <div>
+            <label className="block mb-1 text-gray-700">Tags</label>
+            <CreatableSelect
+              isMulti
+              value={(form.tags || []).map((t) => ({ label: t, value: t }))}
+              onChange={(selected) =>
+                setForm((prev) => ({
+                  ...prev,
+                  tags: selected.map((item) => item.value),
+                }))
+              }
+              placeholder="Nhập tag và nhấn Enter..."
+            />
+          </div>
           <Input label="Tỉnh/Thành phố" name="province" value={form.province} onChange={handleChange} />
           <Input label="Quận/Huyện" name="district" value={form.district} onChange={handleChange} />
           <Input label="Phường/Xã" name="ward" value={form.ward} onChange={handleChange} />
@@ -143,7 +155,6 @@ await onSubmit(payload); // Call add/edit
           />
         </div>
 
-        {/* Multi select */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block mb-1 text-gray-700">Dịch vụ</label>
@@ -168,13 +179,12 @@ await onSubmit(payload); // Call add/edit
             />
           </div>
         </div>
-
       </DialogBody>
       <DialogFooter>
-<Button variant="text" onClick={onClose} disabled={loading}>
+        <Button variant="text" onClick={onClose} disabled={loading}>
           Huỷ
         </Button>
-        <Button color="blue" onClick={handleSubmit} loading={loading}>
+        <Button color="blue" onClick={handleSubmit} disabled={loading}>
           {initialData ? "Cập nhật" : "Tạo mới"}
         </Button>
       </DialogFooter>

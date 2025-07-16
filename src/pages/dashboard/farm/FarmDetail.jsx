@@ -79,8 +79,19 @@ export default function FarmDetail({ open, onClose, farmId }) {
 
   const fetchImages = async () => {
     try {
-      const res = await axios.get(`${BASE_URL}/farm-pictures/${farmId}`, getOpts());
-      setImages(res.data.data || []);
+      const [farmRes, imageRes] = await Promise.all([
+        axios.get(`${BASE_URL}/adminfarms/${farmId}`, getOpts()),
+        axios.get(`${BASE_URL}/farm-pictures/${farmId}`, getOpts()),
+      ]);
+
+      const user = farmRes.data?.data?.ownerInfo;
+      const farmImages = imageRes.data?.data || [];
+
+      const avatarImage = user?.avatar
+        ? [{ url: user.avatar, isAvatar: true }]
+        : [];
+
+      setImages([...avatarImage, ...farmImages]);
     } catch (err) {
       console.error("Lỗi ảnh:", err);
     }
@@ -97,6 +108,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
       setVideoCount(0);
     }
   };
+
   const fetchQuestions = async () => {
     setLoadingQuestions(true);
     try {
@@ -109,7 +121,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
       setLoadingQuestions(false);
     }
   };
-
 
   const fetchAnswers = async () => {
     setLoadingAnswers(true);
@@ -151,6 +162,7 @@ export default function FarmDetail({ open, onClose, farmId }) {
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <Info label="Chủ sở hữu" value={farm.ownerInfo?.name} />
               <Info label="Tên nông trại" value={farm.name} />
               <Info label="Mã nông trại" value={farm.code} />
               <Info label="Tags" value={(farm.tags || []).join(", ")} />
@@ -167,7 +179,6 @@ export default function FarmDetail({ open, onClose, farmId }) {
               <Info label="Đất canh tác (m²)" value={farm.cultivatedArea} />
               <Info label="Dịch vụ" value={mapToLabel(farm.services, serviceOptions)} />
               <Info label="Tính năng" value={mapToLabel(farm.features, featureOptions)} />
-              <Info label="Chủ sở hữu" value={farm.ownerInfo?.name} />
               <Info label="Số điện thoại" value={farm.phone} />
               <Info label="Zalo" value={farm.zalo} />
               <Info label="Số video nông trại" value={videoCount} />
@@ -181,18 +192,22 @@ export default function FarmDetail({ open, onClose, farmId }) {
                 </Typography>
               </div>
             )}
-
+                  
+                  {/* hình ảnh chó */}
             <div>
               <Typography variant="h6" className="mb-2 text-blue-gray-900">Hình ảnh</Typography>
               {images.length > 0 ? (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                   {images.map((img, idx) => (
-                    <div key={img.id || idx}>
+                    <div key={idx}>
                       <img
-                        src={`https://api-ndolv2.nongdanonline.cc${img.url || img.path || img.image}`}
-                        alt={`Ảnh ${idx + 1}`}
+                        src={`${BASE_URL}${post.images[0]}`}
+                        alt={img.isAvatar ? "Ảnh" : `Ảnh ${idx + 1}`}
                         className="w-full h-40 object-cover rounded-lg border shadow-sm"
                       />
+                      {img.isAvatar && (
+                        <Typography className="text-xs text-center text-gray-600 mt-1">Ảnh</Typography>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -223,7 +238,24 @@ export default function FarmDetail({ open, onClose, farmId }) {
                           <td className="border px-3 py-2">{video.title}</td>
                           <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
                           <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
-                          <td className="border px-3 py-2">{video.status === "active" ? "Hiển thị" : "Ẩn"}</td>
+                          <td className="border px-3 py-2">
+                          <span className={`px-2 py-1 rounded text-xs font-semibold
+                            ${video.status === "active" ? "text-green-700 bg-green-100"
+                              : video.status === "pending" ? "text-yellow-700 bg-yellow-100"
+                              : video.status === "deleted" ? "text-red-700 bg-red-100"
+                              : "text-gray-700 bg-gray-100"}`}>
+                            {video.status === "uploaded"
+                              ? "uploaded"
+                              : video.status === "pending"
+                              ? "pending"
+                              : video.status === "deleted"
+                              ? "deleted"
+                              : video.status === "failed"
+                              ? "failed"
+                              : "lổi video"}
+                          </span>
+                        </td>
+
                           <td className="border px-3 py-2">
                             <Button
                               variant="text"
@@ -246,46 +278,59 @@ export default function FarmDetail({ open, onClose, farmId }) {
               )}
             </div>
 
-            <Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
-              <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
-              <DialogBody divider className="flex justify-center">
-                {selectedVideo?.status === "pending" && selectedVideo?.localFilePath ? (
-                  <video
-                    controls
-                    src={
-                      selectedVideo.localFilePath.startsWith("http")
-                        ? selectedVideo.localFilePath
-                        : `${BASE_URL}${selectedVideo.localFilePath}`
-                    }
-                    className="max-h-[70vh] w-full rounded shadow"
-                  />
-                ) : selectedVideo?.youtubeLink && selectedVideo.status === "uploaded" ? (
-                  selectedVideo.youtubeLink.endsWith(".mp4") ? (
-                    <video
-                      controls
-                      src={selectedVideo.youtubeLink}
-                      className="max-h-[70vh] w-full rounded shadow"
-                    />
-                  ) : (
-                    <iframe
-                      src={
-                        "https://www.youtube.com/embed/" +
-                        (selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
-                      }
-                      title="YouTube video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="h-[360px] rounded shadow w-full"
-                    ></iframe>
-                  )
-                ) : (
-                  <Typography className="text-red-500">Không tìm thấy video.</Typography>
-                )}
-              </DialogBody>
-              <DialogFooter>
-                <Button color="blue" onClick={() => setSelectedVideo(null)}>Đóng</Button>
-              </DialogFooter>
-            </Dialog>
+<Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
+  <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
+
+  <DialogBody divider className="flex justify-center">
+  {selectedVideo ? (() => {
+    const videoSrc = selectedVideo.localFilePath?.startsWith("http")
+      ? selectedVideo.localFilePath
+      : selectedVideo.localFilePath
+      ? `${BASE_URL}${selectedVideo.localFilePath}`
+      : selectedVideo.youtubeLink?.endsWith(".mp4")
+      ? selectedVideo.youtubeLink
+      : null;
+
+    if (videoSrc) {
+      return (
+        <video
+          controls
+          className="max-h-[70vh] w-full rounded shadow"
+        >
+          <source src={videoSrc} type="video/mp4" />
+          Trình duyệt của bạn không hỗ trợ phát video.
+        </video>
+      );
+    }
+
+    if (selectedVideo.youtubeLink) {
+      const youtubeId = selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1];
+      return (
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}`}
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-[360px] rounded shadow w-full"
+        ></iframe>
+      );
+    }
+
+      return <Typography className="text-red-500">Không tìm thấy video.</Typography>;
+  })() : (
+    <Typography className="text-red-500">Không tìm thấy video.</Typography>
+  )}
+</DialogBody>
+
+
+  <DialogFooter>
+    <Button color="blue" onClick={() => setSelectedVideo(null)}>
+      Đóng
+    </Button>
+  </DialogFooter>
+</Dialog>
+
+
 
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
