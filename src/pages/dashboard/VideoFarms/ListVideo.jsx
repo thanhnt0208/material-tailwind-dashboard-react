@@ -32,12 +32,23 @@ const fetchAllVideosWithStats = async () => {
             }),
           ]);
 
-          const commentCount = Array.isArray(commentRes.data)
-            ? commentRes.data.length
-            : Array.isArray(commentRes.data.comments)
-              ? commentRes.data.comments.length
-              : commentRes.data.total ?? 0;
-
+     const commentCount = Array.isArray(commentRes.data)
+  ? commentRes.data.reduce(
+      (total, cmt) =>
+        total +
+        1 +
+        (Array.isArray(cmt.replies) ? cmt.replies.length : 0),
+      0
+    )
+  : Array.isArray(commentRes.data.comments)
+    ? commentRes.data.comments.reduce(
+        (total, cmt) =>
+          total +
+          1 +
+          (Array.isArray(cmt.replies) ? cmt.replies.length : 0),
+        0
+      )
+    : commentRes.data.total ?? 0;
           return {
             ...video,
             likeCount: likeRes.data.total || 0,
@@ -75,16 +86,20 @@ export const ListVideo = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredVideos = useMemo(() => {
-    const filtered = filterStatus
-      ? allVideos.filter(v => v.status === filterStatus)
-      : allVideos;
+ const filteredVideos = useMemo(() => {
+  const filtered = filterStatus
+    ? allVideos.filter(v => v.status === filterStatus)
+    : allVideos;
 
-    return filtered.filter(v =>
-      v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-      v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [allVideos, filterStatus, searchText]);
+  const searched = filtered.filter(v =>
+    v.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+    v.playlistName?.toLowerCase().includes(searchText.toLowerCase())
+  );
+
+ 
+  return searched.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+}, [allVideos, filterStatus, searchText]);
+
   const totalPages = Math.ceil(filteredVideos.length / limit);
   const paginatedVideos = useMemo(() => {
     const start = (page - 1) * limit;
