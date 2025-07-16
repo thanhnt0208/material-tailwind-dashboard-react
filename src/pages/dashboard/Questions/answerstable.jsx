@@ -62,6 +62,9 @@ const fetchWithAuth = async (url, options = {}) => {
 };
 
 export function AnswersTable() {
+  const [detailAnswer, setDetailAnswer] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [questionAnFarmId, setQuestionAndFarmId] = useState([]);
   const [answers, setAnswers] = useState([]);
   const [form, setForm] = useState({
@@ -232,6 +235,19 @@ export function AnswersTable() {
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+const fetchAnswerDetail = async (id) => {
+  setDetailLoading(true);
+  try {
+    const res = await fetchWithAuth(`${API_URL}/${id}`);
+    const data = await res.json();
+    setDetailAnswer(data);
+    setDetailOpen(true);
+  } catch (err) {
+    alert("Lỗi khi lấy chi tiết câu trả lời: " + err.message);
+  } finally {
+    setDetailLoading(false);
+  }
+};
 
   return (
     <div className="p-6">
@@ -291,7 +307,11 @@ export function AnswersTable() {
           </thead>
           <tbody>
             {paginatedData.map((item, index) => (
-              <tr key={item._id} className="hover:bg-gray-50 transition">
+              <tr
+                key={item._id}
+                className="hover:bg-gray-50 transition cursor-pointer"
+                onClick={() => fetchAnswerDetail(item._id)}
+              >
                 <td className="px-4 py-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
                 <td className="px-4 py-3">{item.farm?.name || <i className="text-gray-400">chưa có</i>}</td>
                 <td className="px-4 py-3">{item.question?.text || <i className="text-gray-400">chưa có</i>}</td>
@@ -390,6 +410,62 @@ export function AnswersTable() {
           <Button color="blue" onClick={handleSubmit}>{editData ? "Cập nhật" : "Tạo mới"}</Button>
         </DialogFooter>
       </Dialog>
+      <Dialog open={detailOpen} handler={() => setDetailOpen(false)} size="lg">
+  <DialogHeader className="justify-between">
+    Chi tiết câu trả lời
+    <IconButton variant="text" onClick={() => setDetailOpen(false)}>✕</IconButton>
+  </DialogHeader>
+  <DialogBody className="space-y-4">
+  {detailLoading ? (
+    <Typography variant="small" className="text-gray-500">
+      Đang tải chi tiết...
+    </Typography>
+  ) : detailAnswer ? (
+    <>
+      <Typography variant="small">
+        <strong>Farm ID:</strong> {detailAnswer.farmId}
+      </Typography>
+      <Typography variant="small">
+        <strong>Question ID:</strong> {detailAnswer.questionId}
+      </Typography>
+      <Typography variant="small">
+        <strong>Đáp án chọn:</strong>{" "}
+        {detailAnswer.selectedOptions?.join(", ") || "—"}
+      </Typography>
+      <Typography variant="small">
+        <strong>Khác:</strong> {detailAnswer.otherText || "—"}
+      </Typography>
+      <div>
+        <Typography variant="small">
+          <strong>File đính kèm:</strong>
+        </Typography>
+        {detailAnswer.uploadedFiles?.length > 0 ? (
+          <ul className="list-disc list-inside text-blue-600">
+            {detailAnswer.uploadedFiles.map((file, i) => (
+              <li key={i}>
+                <a
+                  href={`${FILE_BASE_URL}${file}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  File {i + 1}
+                </a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Typography variant="small">—</Typography>
+        )}
+      </div>
+    </>
+  ) : (
+    <Typography variant="small">Không có dữ liệu</Typography>
+  )}
+</DialogBody>
+
+</Dialog>
+
     </div>
   );
 }

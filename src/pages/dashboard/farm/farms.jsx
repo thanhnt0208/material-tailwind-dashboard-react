@@ -55,7 +55,7 @@ export function Farms() {
       const res = await axios.get(`${BASE_URL}/adminfarms`, {
         ...getOpts(),
         params: {
-          limit: 10000, // lấy tất cả
+          limit: 10000,
         },
       });
       const farms = res.data?.data || [];
@@ -186,6 +186,7 @@ export function Farms() {
               <thead>
                 <tr className="bg-blue-gray-50 text-blue-gray-700 text-sm">
                   <th className="px-2 py-2 font-semibold uppercase">Tên</th>
+                  <th className="px-2 py-2 font-semibold uppercase">Tag</th>
                   <th className="px-2 py-2 font-semibold uppercase">Mã</th>
                   <th className="px-2 py-2 font-semibold uppercase">Chủ sở hữu</th>
                   <th className="px-2 py-2 font-semibold uppercase">SĐT</th>
@@ -203,10 +204,15 @@ export function Farms() {
                     onClick={() => handleOpenDetail(farm._id)}
                   >
                     <td className="px-2 py-2">{farm.name}</td>
+                    <td className="px-2 py-2">
+                      {Array.isArray(farm.tags) ? farm.tags.join(", ") : farm.tag || "—"}
+                    </td>
                     <td className="px-2 py-2">{farm.code}</td>
                     <td className="px-2 py-2">{farm.ownerInfo?.name || "—"}</td>
                     <td className="px-2 py-2">{farm.phone || "—"}</td>
-                    <td className="px-2 py-2">{farm.location}</td>
+                    <td className="px-2 py-2" title={farm.location}>
+  {farm.location?.length > 10 ? `${farm.location.slice(0, 10)}...` : farm.location}
+</td>
                     <td className="px-2 py-2">{farm.area} m²</td>
                     <td className="px-2 py-2">
                       <Chip
