@@ -253,9 +253,6 @@ const fetchAnswerDetail = async (id) => {
     <div className="p-6">
       <div className="flex justify-between items-center mb-4">
         <Typography variant="h5">Danh sách câu trả lời</Typography>
-        <Button color="green" onClick={() => openForm()}>
-          Thêm mới
-        </Button>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
@@ -340,14 +337,16 @@ const fetchAnswerDetail = async (id) => {
                       </IconButton>
                     </MenuHandler>
                     <MenuList>
-                      <MenuItem onClick={() => openForm(item)}>Sửa</MenuItem>
-                      <MenuItem
-                        onClick={() => handleDelete(item._id)}
-                        className="text-red-500"
-                      >
-                        Xoá
-                      </MenuItem>
-                    </MenuList>
+                    <MenuItem onClick={() => openForm()}>Thêm mới</MenuItem>
+                    <MenuItem onClick={() => openForm(item)}>Sửa</MenuItem>
+                    <MenuItem
+                      onClick={() => handleDelete(item._id)}
+                      className="text-red-500"
+                    >
+                      Xoá
+                    </MenuItem>
+                  </MenuList>
+
                   </Menu>
                 </td>
               </tr>
@@ -411,6 +410,9 @@ const fetchAnswerDetail = async (id) => {
         </DialogFooter>
       </Dialog>
       <Dialog open={detailOpen} handler={() => setDetailOpen(false)} size="lg">
+
+
+          {/* Dialog chi tiết */}
   <DialogHeader className="justify-between">
     Chi tiết câu trả lời
     <IconButton variant="text" onClick={() => setDetailOpen(false)}>✕</IconButton>
@@ -427,6 +429,12 @@ const fetchAnswerDetail = async (id) => {
       </Typography>
       <Typography variant="small">
         <strong>Question ID:</strong> {detailAnswer.questionId}
+      </Typography>
+      <Typography variant="small">
+        <strong>Người trả lời:</strong> {detailAnswer.userId || "—"}
+      </Typography>
+      <Typography variant="small">
+        <strong>Ngày trả lời:</strong> {new Date(detailAnswer.createdAt).toLocaleString() || "—"}
       </Typography>
       <Typography variant="small">
         <strong>Đáp án chọn:</strong>{" "}
@@ -463,6 +471,7 @@ const fetchAnswerDetail = async (id) => {
     <Typography variant="small">Không có dữ liệu</Typography>
   )}
 </DialogBody>
+
 
 </Dialog>
 

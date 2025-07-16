@@ -48,24 +48,40 @@ export function Farms() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  // ✅ Fetch tất cả nông trại (client lọc)
-  const fetchFarms = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${BASE_URL}/adminfarms`, {
-        ...getOpts(),
-        params: {
-          limit: 10000,
-        },
-      });
-      const farms = res.data?.data || [];
-      setAllFarms(farms);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchFarms = async () => {
+  setLoading(true);
+  try {
+    const res = await axios.get(`${BASE_URL}/adminfarms`, {
+      ...getOpts(),
+      params: {
+        limit: 10000,
+      },
+    });
+
+    const farms = res.data?.data || [];
+
+    // 🔽 Lấy video count cho từng farm
+    const farmWithVideoCount = await Promise.all(
+      farms.map(async (farm) => {
+        try {
+          const videoRes = await axios.get(`${BASE_URL}/admin-video-farm/farm/${farm._id}`, getOpts());
+          const videos = videoRes.data?.data || [];
+          return { ...farm, videoCount: videos.length };
+        } catch (err) {
+          console.error("Lỗi khi lấy video của farm:", farm._id);
+          return { ...farm, videoCount: 0 };
+        }
+      })
+    );
+
+    setAllFarms(farmWithVideoCount);
+  } catch (err) {
+    setError(err.response?.data?.message || err.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const addFarm = async (data) => {
     try {
@@ -186,12 +202,13 @@ export function Farms() {
               <thead>
                 <tr className="bg-blue-gray-50 text-blue-gray-700 text-sm">
                   <th className="px-2 py-2 font-semibold uppercase">Tên</th>
-                  <th className="px-2 py-2 font-semibold uppercase">Tag</th>
+                  <th className="px-2 py-2 font-semibold uppercase">Tags</th>
                   <th className="px-2 py-2 font-semibold uppercase">Mã</th>
                   <th className="px-2 py-2 font-semibold uppercase">Chủ sở hữu</th>
                   <th className="px-2 py-2 font-semibold uppercase">SĐT</th>
                   <th className="px-2 py-2 font-semibold uppercase">Địa chỉ</th>
                   <th className="px-2 py-2 font-semibold uppercase">Diện tích</th>
+                  <th className="px-2 py-2 font-semibold uppercase">Số video</th>
                   <th className="px-2 py-2 font-semibold uppercase">Trạng thái</th>
                   <th className="px-2 py-2 font-semibold uppercase">Thao tác</th>
                 </tr>
@@ -205,15 +222,33 @@ export function Farms() {
                   >
                     <td className="px-2 py-2">{farm.name}</td>
                     <td className="px-2 py-2">
-                      {Array.isArray(farm.tags) ? farm.tags.join(", ") : farm.tag || "—"}
-                    </td>
+                          {Array.isArray(farm.tags) && farm.tags.length > 0 ? (
+                            <div className="flex items-center gap-2">
+                              <Chip
+                                size="sm"
+                                value={
+                                  farm.tags[0].length > 10
+                                    ? farm.tags[0].slice(0, 10) + "..."
+                                    : farm.tags[0]
+                                }
+                                className="bg-gray-200 text-gray-800"
+                              />
+                              {farm.tags.length > 1 && (
+                                <span className="text-sm text-gray-600 font-medium">+{farm.tags.length - 1}</span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                      </td>
                     <td className="px-2 py-2">{farm.code}</td>
                     <td className="px-2 py-2">{farm.ownerInfo?.name || "—"}</td>
                     <td className="px-2 py-2">{farm.phone || "—"}</td>
-                    <td className="px-2 py-2" title={farm.location}>
-  {farm.location?.length > 10 ? `${farm.location.slice(0, 10)}...` : farm.location}
-</td>
+                    <td className="px-2 py-2">
+                      {farm.location?.length > 10 ? farm.location.slice(0, 10) + "..." : farm.location}
+                    </td>
                     <td className="px-2 py-2">{farm.area} m²</td>
+                    <td className="px-2 py-2">{farm.videoCount ?? 0}</td>
                     <td className="px-2 py-2">
                       <Chip
                         value={
