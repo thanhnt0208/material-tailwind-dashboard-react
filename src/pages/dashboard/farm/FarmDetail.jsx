@@ -239,20 +239,23 @@ export default function FarmDetail({ open, onClose, farmId }) {
                           <td className="border px-3 py-2">{video.uploadedBy?.fullName || video.uploadedBy?.name || "—"}</td>
                           <td className="border px-3 py-2">{new Date(video.createdAt).toLocaleDateString()}</td>
                           <td className="border px-3 py-2">
-                            <span className={`px-2 py-1 rounded text-xs font-semibold
-                              ${video.status === "active" ? "text-green-700 bg-green-100"
-                                : video.status === "pending" ? "text-yellow-700 bg-yellow-100"
-                                : video.status === "hidden" ? "text-red-700 bg-red-100"
-                                : "text-gray-700 bg-gray-100"}`}>
-                              {video.status === "active"
-                                ? "Hiển thị"
-                                : video.status === "pending"
-                                ? "Chờ duyệt"
-                                : video.status === "hidden"
-                                ? "Đã ẩn"
-                                : "Không xác định"}
-                            </span>
-                          </td>
+                          <span className={`px-2 py-1 rounded text-xs font-semibold
+                            ${video.status === "active" ? "text-green-700 bg-green-100"
+                              : video.status === "pending" ? "text-yellow-700 bg-yellow-100"
+                              : video.status === "deleted" ? "text-red-700 bg-red-100"
+                              : "text-gray-700 bg-gray-100"}`}>
+                            {video.status === "uploaded"
+                              ? "uploaded"
+                              : video.status === "pending"
+                              ? "pending"
+                              : video.status === "deleted"
+                              ? "deleted"
+                              : video.status === "failed"
+                              ? "failed"
+                              : "lổi"}
+                          </span>
+                        </td>
+
                           <td className="border px-3 py-2">
                             <Button
                               variant="text"
@@ -275,50 +278,59 @@ export default function FarmDetail({ open, onClose, farmId }) {
               )}
             </div>
 
-            <Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
-              <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
-              <DialogBody divider className="flex justify-center">
-                {selectedVideo ? (
-                  selectedVideo.localFilePath ? (
-                    <video
-                      controls
-                      src={
-                        selectedVideo.localFilePath.startsWith("http")
-                          ? selectedVideo.localFilePath
-                          : `${BASE_URL}${selectedVideo.localFilePath}`
-                      }
-                      className="max-h-[70vh] w-full rounded shadow"
-                    />
-                  ) : selectedVideo.youtubeLink ? (
-                    selectedVideo.youtubeLink.endsWith(".mp4") ? (
-                      <video
-                        controls
-                        src={selectedVideo.youtubeLink}
-                        className="max-h-[70vh] w-full rounded shadow"
-                      />
-                    ) : (
-                      <iframe
-                        src={
-                          "https://www.youtube.com/embed/" +
-                          (selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1] || "")
-                        }
-                        title="YouTube video"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="h-[360px] rounded shadow w-full"
-                      ></iframe>
-                    )
-                  ) : (
-                    <Typography className="text-red-500">Không tìm thấy video hợp lệ.</Typography>
-                  )
-                ) : (
-                  <Typography className="text-red-500">Không tìm thấy video.</Typography>
-                )}
-              </DialogBody>
-              <DialogFooter>
-                <Button color="blue" onClick={() => setSelectedVideo(null)}>Đóng</Button>
-              </DialogFooter>
-            </Dialog>
+<Dialog open={!!selectedVideo} handler={() => setSelectedVideo(null)} size="lg">
+  <DialogHeader>{selectedVideo?.title || "Xem video"}</DialogHeader>
+
+  <DialogBody divider className="flex justify-center">
+  {selectedVideo ? (() => {
+    const videoSrc = selectedVideo.localFilePath?.startsWith("http")
+      ? selectedVideo.localFilePath
+      : selectedVideo.localFilePath
+      ? `${BASE_URL}${selectedVideo.localFilePath}`
+      : selectedVideo.youtubeLink?.endsWith(".mp4")
+      ? selectedVideo.youtubeLink
+      : null;
+
+    if (videoSrc) {
+      return (
+        <video
+          controls
+          className="max-h-[70vh] w-full rounded shadow"
+        >
+          <source src={videoSrc} type="video/mp4" />
+          Trình duyệt của bạn không hỗ trợ phát video.
+        </video>
+      );
+    }
+
+    if (selectedVideo.youtubeLink) {
+      const youtubeId = selectedVideo.youtubeLink.match(/(?:v=|\/embed\/|\.be\/)([^\s&?]+)/)?.[1];
+      return (
+        <iframe
+          src={`https://www.youtube.com/embed/${youtubeId}`}
+          title="YouTube video"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="h-[360px] rounded shadow w-full"
+        ></iframe>
+      );
+    }
+
+    return <Typography className="text-red-500">Không tìm thấy video.</Typography>;
+  })() : (
+    <Typography className="text-red-500">Không tìm thấy video.</Typography>
+  )}
+</DialogBody>
+
+
+  <DialogFooter>
+    <Button color="blue" onClick={() => setSelectedVideo(null)}>
+      Đóng
+    </Button>
+  </DialogFooter>
+</Dialog>
+
+
 
             <div className="mt-6">
               <Button onClick={handleToggleChanges} color="blue" variant="outlined" size="sm">
