@@ -5,7 +5,7 @@ import {
   Avatar
 } from "@material-tailwind/react";
 import { useParams } from "react-router-dom";
-
+import PostLikeUserDialog from "./listpostlikeUser";
 
 export default function UserDetail() {
   const { id } = useParams();
@@ -30,8 +30,10 @@ export default function UserDetail() {
   const [selectedFarmName, setSelectedFarmName] = useState("");
   const [commentCounts, setCommentCounts] = useState({});
   const [openPostLikesDialog, setOpenPostLikesDialog] = useState(false);
-  const [selectedPostLikes, setSelectedPostLikes] = useState([]);
   const [selectedPostTitle, setSelectedPostTitle] = useState("");
+  const [selectedPostLikes, setSelectedPostLikes] = useState([]);
+  const [openPostCommentDialog, setOpenPostCommentDialog] = useState(false);
+  const [selectedPostComments, setSelectedPostComments] = useState([]);
 
   const fetchPaginatedData = async (url, config) => {
     let allData = [];
@@ -50,30 +52,55 @@ export default function UserDetail() {
     return allData;
   };
 
-  const fetchCommentCount = async (postId) => {
+  const fetchPostCommentsUsers = async (postId, postTitle) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
   try {
-    const token = localStorage.getItem("token");
-    const res = await fetch(`https://api-ndolv2.nongdanonline.cc/admin-comment-post/post/${postId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    const res = await axios.get(
+      `https://api-ndolv2.nongdanonline.cc/admin-comment-post/post/${postId}`,
+      config
+    );
+
+    setSelectedPostTitle(postTitle);
+    setSelectedPostComments(res.data.comments || []);
+    setOpenPostCommentDialog(true);
+  } catch (err) {
+    console.error(`Error fetching comments for post ${postId}:`, err);
+  }
+};
+
+const fetchCommentCount = async (postId) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  try {
+    const res = await axios.get(
+      `https://api-ndolv2.nongdanonline.cc/admin-comment-post/post/${postId}`,
+      config
+    );
+
+    const comments = res.data.comments || [];
+
+    // Tính tổng số comment bao gồm reply nếu có dạng nested (dạng cha - con)
+    let totalCount = 0;
+
+    comments.forEach(comment => {
+      totalCount += 1; // count chính comment
+
+      if (Array.isArray(comment.reply)) {
+        totalCount += comment.reply.length; // count reply nếu có
+      }
     });
-    const json = await res.json();
-    
-    console.log("Response for", postId, "=", json);
 
-    if (res.ok && Array.isArray(json.comments)) {
-      const count = json.comments.length + json.comments.reduce((acc, cmt) => acc + (cmt.replies?.length || 0), 0);
-      console.log(">>> count =", count);
-      return count;
-    }
-
-    return 0;
-  } catch (error) {
-    console.error("Error fetching comment count for post", postId, error);
+    return totalCount;
+  } catch (err) {
+    console.error(`Lỗi khi lấy comment cho post ${postId}:`, err);
     return 0;
   }
 };
+
+
 
 const fetchPostLikesUsers = async (postId, postTitle) => {
   const token = localStorage.getItem("token");
@@ -81,9 +108,11 @@ const fetchPostLikesUsers = async (postId, postTitle) => {
 
   try {
     const res = await axios.get(
-      `https://api-ndolv2.nongdanonline.cc/post-feed/${postId}/likes`, // Đảm bảo đúng endpoint
+      `https://api-ndolv2.nongdanonline.cc/post-feed/${postId}/likes`, 
       config
     );
+    console.log("Likes response:", res.data);
+
     setSelectedPostTitle(postTitle);
     setSelectedPostLikes(res.data?.users || []);
     setOpenPostLikesDialog(true);
@@ -91,6 +120,7 @@ const fetchPostLikesUsers = async (postId, postTitle) => {
     console.error(`Error fetching likes for post ${postId}:`, err);
   }
 };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -125,10 +155,10 @@ const fetchPostLikesUsers = async (postId, postTitle) => {
   useEffect(() => {
   const loadCommentCounts = async () => {
     const promises = posts
-      .filter(post => post._id) // lọc bài viết có _id
+      .filter(post => post.id) 
       .map(async (post) => {
-        const count = await fetchCommentCount(post._id);
-        return { id: post._id, count };
+        const count = await fetchCommentCount(post.id);
+        return { id: post.id, count };
       });
 
     const results = await Promise.all(promises);
@@ -712,13 +742,11 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                   <div key={post._id} className="border p-4 mb-6 rounded shadow">
                     {/* Tiêu đề */}
                     <Typography variant="h6" className="mb-2">{post.title}</Typography>
-
                     {/* Ngày tạo và cập nhật */}
                     <div className="text-sm text-gray-600 mb-2">
                       <p><b>Ngày tạo:</b> {new Date(post.createdAt).toLocaleString("vi-VN")}</p>
                       <p><b>Cập nhật:</b> {new Date(post.updatedAt).toLocaleString("vi-VN")}</p>
                     </div>
-
                     {/* Tác giả */}
                     <div className="flex items-center gap-3 mb-2">
                       <Typography className="font-semibold">Tác giả:</Typography>
@@ -735,12 +763,10 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                         {users.find(u => u.id === post.authorId)?.fullName || "Không rõ"}
                       </Typography>
                     </div>
-
                     {/* Mô tả */}
                     <Typography className="mb-3">
                       <b>Mô tả:</b> {post.description}
                     </Typography>
-
                     {/* Tags */}
                     <div className="flex gap-2 flex-wrap mb-3">
                       <Typography className="font-semibold text-gray-700">Tags:</Typography>
@@ -754,29 +780,23 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                       ))}
                     </div>
                       {/* bình luận */}
-                    <div className="flex gap-2 items-center">
-                      <Typography className="font-semibold">Bình luận:</Typography>
+                    <div className="flex gap-2 items-center" onClick={() => fetchPostCommentsUsers(post.id, post.title)}>
+                      <Typography className="font-semibold cursor-pointer">Bình luận:</Typography>
                       <Chip
-                        value={commentCounts[post._id] || 0}
+                        value={commentCounts[post.id] || 0}
                         color="deep-purple"
                         size="sm"
                       />
                     </div>
-
-
                     <div className="flex items-center gap-2 mb-3">
-                      <Typography className="font-semibold">Lượt thích:</Typography>
+                      <Typography className="font-semibold cursor-pointer" onClick={() => fetchPostLikesUsers(post.id, post.title)}>Lượt thích:</Typography>
                       <Chip
                         value={Array.isArray(post.like) ? post.like.length : (post.like || 0)}
                         color="blue"
                         size="sm"
-                        onClick={() => fetchPostLikesUsers(post._id, post.title)}
-                        className="cursor-pointer"
+                        
                       />
                     </div>
-
-
-
                     {/* Hình ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                       {post.images?.map((img, idx) => (
@@ -788,9 +808,6 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                         />
                       ))}
                     </div>
-
-                    
-                    
                   </div>
                 ))}
               </CardBody>
@@ -799,41 +816,89 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
         </Collapse>
       </Card>
 
-      {/* Dialog danh sách người like bài post */}
-      <Dialog
-        open={openPostLikesDialog}
-        size="md"
-        handler={() => setOpenPostLikesDialog(false)}
-        dismiss={{ outsidePress: false }}
-      >
-        <DialogHeader onClick={(e) => e.stopPropagation()}>
-          Danh sách người đã thích bài viết - {selectedPostTitle}
-        </DialogHeader>
-        <DialogBody className="space-y-4 max-h-[400px] overflow-y-auto">
-          {selectedPostLikes.length === 0 ? (
-            <Typography>Chưa có ai thích bài viết này.</Typography>
-          ) : (
-            selectedPostLikes.map((user) => (
-              <div key={user._id} className="flex items-center gap-3">
+    <Dialog
+      open={openPostCommentDialog}
+      size="md"
+      handler={() => setOpenPostCommentDialog(false)}
+      dismiss={{ outsidePress: false }}
+    >
+      <DialogHeader>Danh sách bình luận - {selectedPostTitle}</DialogHeader>
+      <DialogBody className="space-y-4 max-h-[400px] overflow-y-auto">
+        {selectedPostComments.length === 0 ? (
+          <Typography>Chưa có bình luận nào.</Typography>
+        ) : (
+          selectedPostComments.map((comment) => (
+            <div key={comment._id} className="border-b pb-2 mb-2">
+              <div className="flex items-center gap-3">
                 <img
                   src={
-                    user.avatar?.startsWith("http")
-                      ? user.avatar
-                      : `https://api-ndolv2.nongdanonline.cc${user.avatar}`
+                    comment.userId?.avatar?.startsWith("http")
+                      ? comment.userId.avatar
+                      : `https://api-ndolv2.nongdanonline.cc${comment.userId?.avatar}`
                   }
-                  alt={user.fullName}
+                  alt={comment.userId?.fullName}
                   className="w-10 h-10 rounded-full"
                 />
-                <Typography>{user.fullName}</Typography>
+                <div>
+                  <Typography className="font-semibold">
+                    {comment.userId?.fullName}
+                  </Typography>
+                  <Typography className="text-sm text-gray-500">
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </Typography>
+                </div>
               </div>
-            ))
-          )}
-        </DialogBody>
-        <DialogFooter>
-          <Button color="red" onClick={() => setOpenPostLikesDialog(false)}>Đóng</Button>
-        </DialogFooter>
-      </Dialog>
+              <Typography className="mt-1">{comment.comment}</Typography>
 
+              {/* Hiển thị reply nếu có */}
+              {comment.replies?.length > 0 && (
+  <div className="ml-6 mt-2 space-y-2">
+    {comment.replies.map((reply, index) => (
+      <div key={index} className="border-l-2 pl-4">
+        <div className="flex items-center gap-3">
+          {reply.userId ? (
+            <>
+              <img
+                src={
+                  reply.userId.avatar?.startsWith("http")
+                    ? reply.userId.avatar
+                    : `https://api-ndolv2.nongdanonline.cc${reply.userId.avatar}`
+                }
+                alt={reply.userId.fullName}
+                className="w-8 h-8 rounded-full"
+              />
+              <Typography className="font-semibold">
+                {reply.userId?.fullName}
+              </Typography>
+            </>
+          ) : (
+            <Typography className="italic text-gray-500">Ẩn danh</Typography>
+          )}
+        </div>
+        <Typography className="text-sm text-gray-700">
+          {reply.comment}
+        </Typography>
+      </div>
+    ))}
+  </div>
+)}
+
+            </div>
+          ))
+        )}
+      </DialogBody>
+      <DialogFooter>
+        <Button color="red" onClick={() => setOpenPostCommentDialog(false)}>Đóng</Button>
+      </DialogFooter>
+    </Dialog>
+
+          
+        <PostLikeUserDialog
+          open={openPostLikesDialog}
+          onClose={() => setOpenPostLikesDialog(false)}
+          postTitle={selectedPostTitle}
+          likeUsers={selectedPostLikes}
+        />
     </div>
   );
 }
