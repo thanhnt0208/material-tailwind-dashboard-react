@@ -18,7 +18,6 @@ export default function UserDetail() {
   const [openVideos, setOpenVideos] = useState(false);
   const [openPosts, setOpenPosts] = useState(false);
   const [users, setUsers] = useState([]); 
-  const [commentsCount, setCommentsCount] = useState({});
   const [videoLikes, setVideoLikes] = useState({}); 
   const [videoComments, setVideoComments] = useState({});
   const [selectedVideoLikes, setSelectedVideoLikes] = useState([]);
@@ -30,9 +29,9 @@ export default function UserDetail() {
   const [selectedFarmVideos, setSelectedFarmVideos] = useState([]);     
   const [selectedFarmName, setSelectedFarmName] = useState("");
   const [commentCounts, setCommentCounts] = useState({});
-  const [postCommentsCount, setPostCommentsCount] = useState({});
-
-  
+  const [openPostLikesDialog, setOpenPostLikesDialog] = useState(false);
+  const [selectedPostLikes, setSelectedPostLikes] = useState([]);
+  const [selectedPostTitle, setSelectedPostTitle] = useState("");
 
   const fetchPaginatedData = async (url, config) => {
     let allData = [];
@@ -55,27 +54,43 @@ export default function UserDetail() {
   try {
     const token = localStorage.getItem("token");
     const res = await fetch(`https://api-ndolv2.nongdanonline.cc/admin-comment-post/post/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     const json = await res.json();
+    
+    console.log("Response for", postId, "=", json);
+
     if (res.ok && Array.isArray(json.comments)) {
-      const comments = json.comments;
-      const totalReplies = comments.reduce(
-        (sum, cmt) => sum + (cmt.replies?.length || 0),
-        0
-      );
-      return comments.length + totalReplies;
+      const count = json.comments.length + json.comments.reduce((acc, cmt) => acc + (cmt.replies?.length || 0), 0);
+      console.log(">>> count =", count);
+      return count;
     }
+
     return 0;
-  } catch (err) {
-    console.error(`Lỗi lấy comment cho post ${postId}:`, err);
+  } catch (error) {
+    console.error("Error fetching comment count for post", postId, error);
     return 0;
   }
 };
 
+const fetchPostLikesUsers = async (postId, postTitle) => {
+  const token = localStorage.getItem("token");
+  const config = { headers: { Authorization: `Bearer ${token}` } };
 
-
-
+  try {
+    const res = await axios.get(
+      `https://api-ndolv2.nongdanonline.cc/post-feed/${postId}/likes`, // Đảm bảo đúng endpoint
+      config
+    );
+    setSelectedPostTitle(postTitle);
+    setSelectedPostLikes(res.data?.users || []);
+    setOpenPostLikesDialog(true);
+  } catch (err) {
+    console.error(`Error fetching likes for post ${postId}:`, err);
+  }
+};
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -97,7 +112,6 @@ export default function UserDetail() {
         setPosts(allPosts);
         setUsers(allUsers);
         
-        
       } catch (err) {
         console.error(err);
       } finally {
@@ -109,19 +123,32 @@ export default function UserDetail() {
   }, [id]);
 
   useEffect(() => {
-  const fetchAllCommentCounts = async () => {
+  const loadCommentCounts = async () => {
+    const promises = posts
+      .filter(post => post._id) // lọc bài viết có _id
+      .map(async (post) => {
+        const count = await fetchCommentCount(post._id);
+        return { id: post._id, count };
+      });
+
+    const results = await Promise.all(promises);
+
     const counts = {};
-    for (const post of posts) {
-      const count = await fetchCommentCount(post._id);
-      counts[post._id] = count;
-    }
+    results.forEach(({ id, count }) => {
+      counts[id] = count;
+    });
+
     setCommentCounts(counts);
+    console.log("Đếm bình luận:", counts);
   };
 
   if (posts.length > 0) {
-    fetchAllCommentCounts();
+    loadCommentCounts();
   }
 }, [posts]);
+
+
+
 
 const fetchVideoLikesUsers = async (videoId, videoTitle) => {
   const token = localStorage.getItem("token");
@@ -736,16 +763,18 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
                       />
                     </div>
 
+
                     <div className="flex items-center gap-2 mb-3">
                       <Typography className="font-semibold">Lượt thích:</Typography>
                       <Chip
-                        value={
-                          Array.isArray(post.like) ? post.like.length : (post.like || 0)
-                        }
+                        value={Array.isArray(post.like) ? post.like.length : (post.like || 0)}
                         color="blue"
                         size="sm"
+                        onClick={() => fetchPostLikesUsers(post._id, post.title)}
+                        className="cursor-pointer"
                       />
                     </div>
+
 
 
                     {/* Hình ảnh */}
@@ -769,6 +798,42 @@ const fetchVideoCommentsUsers = async (videoId, videoTitle) => {
           )}
         </Collapse>
       </Card>
+
+      {/* Dialog danh sách người like bài post */}
+      <Dialog
+        open={openPostLikesDialog}
+        size="md"
+        handler={() => setOpenPostLikesDialog(false)}
+        dismiss={{ outsidePress: false }}
+      >
+        <DialogHeader onClick={(e) => e.stopPropagation()}>
+          Danh sách người đã thích bài viết - {selectedPostTitle}
+        </DialogHeader>
+        <DialogBody className="space-y-4 max-h-[400px] overflow-y-auto">
+          {selectedPostLikes.length === 0 ? (
+            <Typography>Chưa có ai thích bài viết này.</Typography>
+          ) : (
+            selectedPostLikes.map((user) => (
+              <div key={user._id} className="flex items-center gap-3">
+                <img
+                  src={
+                    user.avatar?.startsWith("http")
+                      ? user.avatar
+                      : `https://api-ndolv2.nongdanonline.cc${user.avatar}`
+                  }
+                  alt={user.fullName}
+                  className="w-10 h-10 rounded-full"
+                />
+                <Typography>{user.fullName}</Typography>
+              </div>
+            ))
+          )}
+        </DialogBody>
+        <DialogFooter>
+          <Button color="red" onClick={() => setOpenPostLikesDialog(false)}>Đóng</Button>
+        </DialogFooter>
+      </Dialog>
+
     </div>
   );
 }
